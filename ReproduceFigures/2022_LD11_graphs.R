@@ -1,0 +1,737 @@
+# Clear the workspace
+rm(list=ls())
+
+# Set working directory to location of this file
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+
+# Source files
+source('../ParameterOptimization/soybean_parameter_expansion.R')
+co2_opt = 'ambient'
+source('../Data/Soybean-BioCro_Parameters/soybean_parameters.R')
+source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
+# Load packages
+library(BioCro)
+library(lattice)
+library(latticeExtra)
+library(reshape2)
+library(ggplot2)
+
+
+# Load saved data
+# load('../../energy-farm-biocro/soybean_development_2022/soybean_development_data_2022.RData') # no development stage data yet
+load('../../energy-farm-biocro/soybean_ld11_biomass_2022/soybean_ld11_biomass_2022.RData') 
+load('../../energy-farm-biocro/ball_berry_curves_2021/soybean_ld11_ball_berry_parameters_2021.RData')
+load('../../energy-farm-biocro/aci_curves_2021/soybean_ld11_fvcb_parameters_2021.RData')
+load('../../energy-farm-biocro/weather_2022/weather2022_hourly.RData')
+load('../Data/Soybean-BioCro_Parameters/full_soybean_ld11.RData') 
+load('../Data/Weather_data/weather2022supplement.RData')
+carb.data <- read.csv('../Data/2022_Carb_data/LD11_Leaf_Carbs.csv')
+TNC.data <- read.csv('../Data/2022_Carb_data/2022_LD11_TNC.csv')
+# Modify the modules
+full_soybean_ld11$direct_modules <- steady_state_module_names
+full_soybean_ld11$differential_modules <- derivative_module_names
+
+# Set up basic properties for the solver
+full_soybean_ld11$ode_solver <- solver
+solver$type <- 'boost_rkck54'
+solver$adaptive_max_steps <- 10000
+
+optim_params_short <-c(0.233784,    0.004728,    0.034942,    0.022596,
+                       0.962753,    0.164531,    1.840606,    1.357177,
+                       3.092379,    0.293349,    0.317670,    0.779145,
+                       1.198915,    0.013672,    0.039876,
+                       10.891061,   14.012313,   -5.537149,   -5.798883,
+                       0.883654,    1.995483)
+
+# optim_params_short <-c(0.273470,    0.028917,    0.067696,    0.048373,
+#                        0.715883,    1.511239,    1.799835,    1.165064,
+#                        0.564379,    0.130939,    0.548013,    0.746798,
+#                        1.673044,    0.049328,    0.002033,   16.316789,
+#                        17.809283,   -8.156955,   -9.435581,    0.993601,    1.895145)
+
+# optim_params_short <-c(0.206012,    0.031045,    0.088225,    0.058949,    
+#                        0.829010,    1.075231,    1.382857,    0.829888,    
+#                        0.061062,    0.176592,    0.806139,    0.853595,    
+#                        1.954715,    0.010247,    0.029257,   17.337494,   
+#                        20.570165,   -9.282540,   -9.234703,    0.805723,    2.088481)
+# optim_params_short <-c(0.209146,    0.028595,    0.081848,    0.022199,    
+#                        0.970469,    1.043158,    1.292285,    0.269514,    
+#                        0.248755,    0.199301,    0.964022,    0.927604,    
+#                        1.991928,    0.047789,    0.020186,   15.232006,   
+#                        17.085292,   -6.806143,   -7.739268,    0.800743,    2.076481)
+
+# optim_params_short[19] = 1.6
+full_soybean_ld11$parameters$Rd = 1.28
+fitted.thornley.params <- optim_params_conversion(optim_params_short)
+names(fitted.thornley.params) <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
+                                   'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
+                                   'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 5, 6
+                                   'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 7, 8
+                                   'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 9,10,11,12
+                                   'Leaf_respiration_factor', 'Stem_respiration_factor', # 13, 14
+                                   'Root_respiration_factor', 'Pod_respiration_factor', # 15, 16
+                                   'substrate_conductance_Leaf_to_Stem', 'substrate_conductance_Stem_to_Root', # 17, 18
+                                   'substrate_conductance_Stem_to_Pod', # 'transportation_beta_exponent', # 19, 20
+                                   'Leaf_senescence_rate_max','Stem_senescence_rate_max', # 21, 22
+                                   'Leaf_senescence_alpha', 'Stem_senescence_alpha',# 23, 24
+                                   'Leaf_senescence_beta', 'Stem_senescence_beta', # 25, 26
+                                   'Pod_start_dvi', 'stop_growth_dvi') # 27, 28
+
+# fitted.thornley.params$Stem_carbon_to_mass_factor = 0.15
+parameters <-c(parameters, fitted.thornley.params)[!duplicated(c(names(parameters), 
+                                                                 names(fitted.thornley.params)), 
+                                                               fromLast = TRUE)]
+
+update_parameters = TRUE
+if (update_parameters){
+  updated.params <- full_soybean_ld11$parameters[names(full_soybean_ld11$parameters) %in% names(parameters)]
+  full_soybean_ld11$parameters <-c(parameters, 
+                                   updated.params)[!duplicated(c(names(parameters), 
+                                                                 names(updated.params)), 
+                                                               fromLast = TRUE)]
+}else{
+  full_soybean_ld11$parameters <- parameters
+}
+
+# full_soybean_ld11[['2021']]$parameters$Catm <- 414.7 # 2021 value from NOAA
+full_soybean_ld11$parameters$Catm <- 417.2 # 2022 value from NOAA
+
+
+# update initial values
+sub_frac <- 0.1           # substrate_fraction
+str_frac <- 1 - sub_frac  # structural_fraction
+seed_mass <- soybean_ld11_biomass_2022$initial_seed[1]
+i <- 2
+mass_t <- sum(soybean_ld11_biomass_2022[i, c('leaf', 'stem', 'root')])
+leaf_frac <- soybean_ld11_biomass_2022$leaf[i]/mass_t
+stem_frac <- soybean_ld11_biomass_2022$stem[i]/mass_t
+root_frac <- soybean_ld11_biomass_2022$root[i]/mass_t
+cf <- optim_params_short[1]
+
+initial_state <- list(
+  Leaf_respiration_loss = 0.0,
+  Stem_respiration_loss = 0.0,
+  Root_respiration_loss = 0.0,
+  Pod_respiration_loss = 0.0,
+  # senescence related initial state
+  Leaf_senescence_loss = 0.0,
+  Stem_senescence_loss = 0.0,
+  Root_senescence_loss = 0.0,
+  Pod_senescence_loss = 0.0,
+  # Other variables
+  TTc = 0.0,
+  soil_water_content = 0.32,
+  cws1=                     0.32,          # dimensionless, current water status, soil layer 1
+  cws2=                     0.32,          # dimensionless, current water status, soil layer 2
+  Rhizome =                 0.0000001,     # Mg / ha
+  RhizomeLitter =           0,               # Mg / ha
+  # Variables related to the utilization growth model starting from first datapoint
+  # Biomass
+  Leaf = seed_mass * leaf_frac,
+  Stem = seed_mass * stem_frac,
+  Root = seed_mass * root_frac,
+  Pod = 1e-3 * cf, 
+  Leaf_substrate_carbon = sub_frac * seed_mass * leaf_frac / cf,
+  Leaf_structural_carbon = str_frac * seed_mass * leaf_frac / cf,
+  Stem_substrate_carbon = sub_frac * seed_mass * stem_frac / cf, 
+  Stem_structural_carbon = str_frac * seed_mass * stem_frac / cf,
+  Root_substrate_carbon =  sub_frac * seed_mass * root_frac / cf,
+  Root_structural_carbon = str_frac * seed_mass * root_frac / cf,
+  Pod_substrate_carbon = 1e-4,  
+  Pod_structural_carbon = 9e-4)
+
+update_init = TRUE
+if (update_init){
+  updated.init <- full_soybean_ld11$initial_values[names(full_soybean_ld11$initial_values) %in% names(initial_state)]
+  full_soybean_ld11$initial_values <-c(initial_state, 
+                                       updated.init)[!duplicated(c(names(initial_state), 
+                                                                   names(updated.init)), 
+                                                                 fromLast = TRUE)]
+}else{
+  full_soybean_ld11$initial_values <- initial_state
+}
+
+
+
+
+# Make some decisions about what to do
+MAKE_OPTIONAL_PLOTS <- TRUE
+SET_NEW_PARAMETER_VALUES <- TRUE
+VERBOSE_MODEL_VALIDATION <- FALSE
+SLA_AS_DRIVER <- TRUE
+
+sowing_time <- soybean_ld11_biomass_2022$time[1]
+first_data_time <- soybean_ld11_biomass_2022$time[1]
+idx_diff <- which(weather2022_hourly$time == first_data_time) - which(weather2022_hourly$time == sowing_time)
+
+# Add DVI to weather file
+weather2022.aftersowing <- weather2022_hourly[weather2022_hourly$time >= first_data_time, ]
+# weather2022.aftersowing$DVI <- weather2022.supplement$DVI[-(1:idx_diff)]
+weather2022.aftersowing$DVI <- weather2022.supplement$DVI
+
+# start from emergence time
+weather2022.aftersowing <- weather2022.aftersowing[-(1:which.min(abs(weather2022.aftersowing$DVI))),]
+
+if (SLA_AS_DRIVER) {
+  # The experimental data indicates a non-monotonic dependence of SLA on
+  # time. As a test, try including it as a driver instead of a parameter,
+  # where the values are interpolated from the experimental ones.
+  soybean_ld11_biomass_2022$SLA[1] <- soybean_ld11_biomass_2022$SLA[2]-
+    (soybean_ld11_biomass_2022$time[2]-soybean_ld11_biomass_2022$time[1])* 
+    (soybean_ld11_biomass_2022$SLA[3]-soybean_ld11_biomass_2022$SLA[2])/
+    (soybean_ld11_biomass_2022$time[3]-soybean_ld11_biomass_2022$time[2])
+  sla_func <- approxfun(
+    soybean_ld11_biomass_2022$time,
+    soybean_ld11_biomass_2022$SLA,
+    rule = 2,
+    na.rm = TRUE,
+    method = 'linear'
+  )
+  
+  weather2022.aftersowing$iSp <- sla_func(weather2022.aftersowing$time)
+  
+  full_soybean_ld11$parameters$iSp <- NULL
+}
+
+full_soybean_ld11$parameters$timestep <- 1
+# Run the soybean simulation starting at noon on June 17 (DOY 168)
+biocro_result <- with(full_soybean_ld11, {run_biocro(
+    initial_values,
+    parameters,
+    weather2022.aftersowing,
+    direct_modules,
+    differential_modules,
+    ode_solver
+)})
+
+# Run the simulation with reduced light intensity by 20%
+weather2022.aftersowing.lowlight <- weather2022.aftersowing
+weather2022.aftersowing.lowlight$solar <- weather2022.aftersowing.lowlight$solar * 0.8
+biocro_result_lowlight <- with(full_soybean_ld11, {run_biocro(
+  initial_values,
+  parameters,
+  weather2022.aftersowing.lowlight,
+  direct_modules,
+  differential_modules,
+  ode_solver
+)})
+
+# Run the simulation with increased temperature by 1 degree Celcius
+weather2022.aftersowing.highT <- weather2022.aftersowing
+weather2022.aftersowing.highT$temp <- weather2022.aftersowing.highT$temp + 1
+biocro_result_highT <- with(full_soybean_ld11, {run_biocro(
+  initial_values,
+  parameters,
+  weather2022.aftersowing.highT,
+  direct_modules,
+  differential_modules,
+  ode_solver
+)})
+
+print((max(biocro_result_lowlight$Leaf)-max(biocro_result$Leaf))/max(biocro_result$Leaf))
+print((max(biocro_result_lowlight$Stem)-max(biocro_result$Stem))/max(biocro_result$Stem))
+print((max(biocro_result_lowlight$Root)-max(biocro_result$Root))/max(biocro_result$Root))
+print((max(biocro_result_lowlight$Pod)-max(biocro_result$Pod))/max(biocro_result$Pod))
+
+# Plot the biomass along with the measured values
+xyplot(
+    Leaf + Stem + Root + Pod ~ time,
+    data = biocro_result,
+    type = 'l',
+    auto = TRUE,
+    grid = TRUE,
+    xlab = 'Day of year (2022)',
+    ylab = 'Soybean biomass (Mg / ha)',
+    ylim = c(-1, 8),
+    panel = function(...) {
+        panel.xyplot(...)
+        panel.points(
+            soybean_ld11_biomass_2022$leaf ~ soybean_ld11_biomass_2022$time,
+            type = 'b',
+            col = 'darkblue',
+            pch = 16,
+            lty = 2
+        )
+        panel.points(
+            soybean_ld11_biomass_2022$root ~ soybean_ld11_biomass_2022$time,
+            type = 'b',
+            col = 'darkgreen',
+            pch = 16,
+            lty = 2
+        )
+        panel.points(
+            soybean_ld11_biomass_2022$stem ~ soybean_ld11_biomass_2022$time,
+            type = 'b',
+            col = 'darkmagenta',
+            pch = 16,
+            lty = 2
+        )
+        panel.points(
+            soybean_ld11_biomass_2022$pod ~ soybean_ld11_biomass_2022$time,
+            type = 'b',
+            col = 'darkred',
+            pch = 16,
+            lty = 2
+        )
+    }
+)
+
+biocro_organ_biomass <- biocro_result[c('time', 'Leaf', 'Stem', 'Root', 'Pod')]
+biocro_organ_biomass_tall <- melt(biocro_organ_biomass, id.vars = 'time')
+names(biocro_organ_biomass_tall) <- c('time','Organ', 'biomass')
+
+biocro_organ_lowlight_biomass <- biocro_result_lowlight[c('time', 'Leaf', 'Stem', 'Root', 'Pod')]
+biocro_organ_biomass_lowlight_tall <- melt(biocro_organ_lowlight_biomass, id.vars = 'time')
+names(biocro_organ_biomass_lowlight_tall) <- c('time','Organ', 'biomass')
+
+field_organ_biomass <- soybean_ld11_biomass_2022[c('time', 'leaf', 'stem', 'root', 'pod')]
+names(field_organ_biomass)[names(field_organ_biomass) %in% c('leaf', 'stem', 'root', 'pod')] <- c('Leaf', 'Stem', 'Root', 'Pod')
+field_organ_biomass_tall <- melt(field_organ_biomass, id.vars = 'time')
+names(field_organ_biomass_tall) <- c('time','Organ', 'biomass')
+
+
+# Save the data for plotting
+biocro_organ_biomass_tall_2022_ld11 <- biocro_organ_biomass_tall
+field_organ_biomass_tall_2022_ld11 <- field_organ_biomass_tall
+save(biocro_organ_biomass_tall_2022_ld11, field_organ_biomass_tall_2022_ld11, file = 'organ_biomass_plot_2022_ld11.RData')
+
+size.title <- 16
+size.axislabel <-14
+size.axis <- 16
+size.legend <- 14
+
+col.palette.muted <- c( "#117733", "#999933",  "#882255", "#332288")
+
+ggplot() + theme_classic() +
+  geom_line(data = biocro_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), size = 1) +
+  geom_line(data = biocro_organ_biomass_lowlight_tall, aes(x = time, y = biomass, color = Organ), size = 1, linetype = 'dashed') +
+  geom_point(data = field_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), shape = 15, size = 4)+
+  theme(plot.title=element_text(size=size.title, hjust=0.5),
+        axis.text=element_text(size=size.axis),
+        axis.title=element_text(size=size.axislabel),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(), x='Day of Year (2022)',y='Biomass (Mg/ha)')+
+  scale_color_manual(values = col.palette.muted)
+
+# 
+# # Plot the LAI along with the measured values
+# xyplot(
+#   lai ~ time,
+#   data = biocro_result,
+#   type = 'l',
+#   auto = TRUE,
+#   grid = TRUE,
+#   xlab = 'Day of year (2021)',
+#   ylab = 'Soybean LAI (dimensionless)',
+#   panel = function(...) {
+#     panel.xyplot(...)
+#     panel.points(
+#       soybean_ld11_biomass_2022$LAI ~ soybean_ld11_biomass_2022$time,
+#       type = 'b',
+#       col = 'darkblue',
+#       pch = 16,
+#       lty = 2
+#     )
+#   }
+# )
+# 
+# # Plot the specific leaf area along with the measured values
+# xyplot(
+#   Sp ~ time,
+#   data = biocro_result,
+#   type = 'l',
+#   auto = TRUE,
+#   grid = TRUE,
+#   xlab = 'Day of year (2021)',
+#   ylab = 'Soybean specific leaf area (ha / Mg)',
+#   ylim = c(0, 4),
+#   panel = function(...) {
+#     panel.xyplot(...)
+#     panel.points(
+#       soybean_ld11_biomass_2022$SLA ~ soybean_ld11_biomass_2022$time,
+#       type = 'b',
+#       col = 'darkblue',
+#       pch = 16,
+#       lty = 2
+#     )
+#   }
+# )
+# 
+# # Plot the Leaf nonstructural C along with total nonstructural carbon
+# biocro_result$total_substrate = biocro_result$Leaf_substrate_carbon + biocro_result$Stem_substrate_carbon + biocro_result$Root_substrate_carbon + biocro_result$Pod_substrate_carbon
+# xyplot(
+#   Sp ~ total_substrate,
+#   data = biocro_result[1:which.max(biocro_result$Pod),],
+#   type = 'l',
+#   auto = TRUE,
+#   grid = TRUE,
+#   xlab = 'Soybean total substrate C (Mg / ha)',
+#   ylab = 'Specific Leaf Area (ha / Mg)'
+# )
+# 
+# Plot the nonstructural C 
+xyplot(
+  Leaf_substrate_carbon + Stem_substrate_carbon + Root_substrate_carbon + Pod_substrate_carbon ~ time,
+  data = biocro_result[1:which.max(biocro_result$Pod),],
+  type = 'l',
+  auto = TRUE,
+  auto.key = list(space = "top"),
+  grid = TRUE,
+  xlab = 'DOY (2022)',
+  ylab = 'Substrate C (mol/m^2)'
+)
+
+# Plot the structural C 
+xyplot(
+  Leaf_structural_carbon + Stem_structural_carbon + Root_structural_carbon + Pod_structural_carbon ~ time,
+  data = biocro_result[1:which.max(biocro_result$Pod),],
+  type = 'l',
+  auto = TRUE,
+  auto.key = list(space = "top"),
+  grid = TRUE,
+  xlab = 'DOY (2022)',
+  ylab = 'Structural C (mol/m^2)'
+)
+
+# 
+# Plot senescence
+# s_key <- list(text = c('Leaf Litter',
+#                        'Stem Litter'),
+#               x = .05, y = .95)
+# cf <- optim_params_short[1]
+# biocro_senescence_plot <- xyplot(data = biocro_result,
+#                                  Leaf_senescence_loss * cf
+#                                  +Stem_senescence_loss * cf
+#                                  ~time,
+#                                  main = '2022 Senescence Litter', 
+#                                  xlab = 'DOY', 
+#                                  ylab='Litter (Mg/ha)',
+#                                  ylim = c(0,2), auto.key=s_key)
+# 
+# experiment_plot <- xyplot(data = soybean_ld11_biomass_2022,
+#                           stem_litter + leaf_litter ~time,
+#                           cex = 2)
+# 
+# dev.new()
+# biocro_senescence_plot+as.layer(experiment_plot)
+# 
+# weather2022.aftersowing$too_cold[which(weather2022.aftersowing$temp<13)]='Blue'
+# weather2022.aftersowing$too_cold[which(weather2022.aftersowing$temp>=13)]='Black'
+# weather2022.aftersowing$too_cold[which(weather2022.aftersowing$temp>=18)]='darkgreen'
+# weather2022.aftersowing$too_cold[which(weather2022.aftersowing$temp>=30)]='Red'
+# plot(data = weather2021.aftersowing, temp~doy, col = too_cold, xlim = c(200,280), ylim=c(5,35))
+# 
+# not_really_cold <- unique(weather2022.aftersowing$doy[weather2022.aftersowing$doy == unique(weather2022.aftersowing$doy[weather2022.aftersowing$temp<13]) & weather2022.aftersowing$temp > 18])
+# night_cold <- unique(weather2021.aftersowing$doy[weather2022_hourly.aftersowing$too_cold=='Blue'])
+# night_cold[!(night_cold %in% not_really_cold)]
+
+# plot the Carbohydrates
+carb.data$carbs_total <- carb.data$Starch + carb.data$GFS_total
+# unit conversion from x carb data unit [nmol C/mg leaf] to y simulated unit [mol C/m^2 land]
+# 1 nmol/mg = 1E-9 mol/1E-9 x Mg leaf = 1 mol C/leaf Mg
+# 1 Mg leaf / 1 ha land = 1E-04 Mg leaf / 1 m^2 land
+for (i in 1:length(carb.data$time)){
+  carb.data$Leaf[i] <- biocro_result$Leaf[which.min(abs(biocro_result$time - carb.data$time[i]))]
+}
+carb.data$Leaf_substrate_carbon <- carb.data$carbs_total * carb.data$Leaf * 10^(-4) # SU stands for Simulation Unit
+plot(data=carb.data, Leaf_substrate_carbon~time)
+
+# plot the measured data
+dodge_pos <- position_dodge(width = 0.8)
+ggplot(carb.data, aes(x = factor(Time))) +
+  geom_bar(aes(y = Starch, fill = "Starch", group = Date), 
+           stat = "identity", position = dodge_pos, width = 0.4) +
+  geom_bar(aes(y = GFS_total, fill = "GFS", group = Date), 
+           stat = "identity", position = dodge_pos, width = 0.4) +
+  geom_errorbar(aes(ymin = Starch - Starch_std, ymax = Starch + Starch_std, group = Date), 
+                position = dodge_pos, width = 0.2) +
+  geom_errorbar(aes(ymin = GFS_total - GFS_std, ymax = GFS_total + GFS_std, group = Date), 
+                position = dodge_pos, width = 0.2) +
+  labs(title = "Starch and GFS Averages and Standard Deviation by Time",
+       fill = 'Type',
+       x = "Time",
+       y = "Average Value") +
+  scale_fill_manual(values = c("Starch" = "#88CCEE", "GFS" = "#CC6677")) +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+# Create the ggplot object with facets for each date
+carb.data$Date <- factor(carb.data$Date, levels = unique(carb.data$Date))
+
+ggplot(carb.data, aes(x = hour, y = Starch, fill = "Starch")) +
+  geom_bar(stat = "identity", position = "dodge", width = 2) +
+  geom_errorbar(aes(ymin = Starch - Starch_std, 
+                    ymax = Starch + Starch_std)) +
+  geom_bar(aes(y = GFS_total, fill = "GFS"), stat = "identity", width = 2) +
+  geom_errorbar(aes(ymin = GFS_total - GFS_std, 
+                    ymax = GFS_total + GFS_std)) +
+  facet_wrap(~ Date, ncol = 2) +
+  labs(fill = 'Type', x = "Hour", y = "Leaf Carbohydrate Concentration (nmol/mg)") +
+  theme_minimal() +
+  theme(legend.position = 'bottom',
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  scale_x_continuous(breaks = seq(0, 24, 4), limits = c(0, 24))
+
+# Aug 3rd update
+library(tidyverse)
+# Reshape your data to be long
+df_long <- carb.data %>% 
+  pivot_longer(cols = c("Starch", "GFS_total"), 
+               names_to = "Measurement", 
+               values_to = "Value")
+
+df_std <- carb.data %>% 
+  pivot_longer(cols = c("Starch_std", "GFS_std"), 
+               names_to = "Measurement", 
+               values_to = "Std")
+
+# Join the two reshaped data frames
+df_joined <- data.frame(df_long$Time, df_long$Date, df_long$hour, 
+                        df_long$Measurement, df_long$Value, df_long$carbs_total,
+                        df_std$Std)
+
+# Create the plot
+p <- ggplot(df_joined, aes(x = df_long.hour, y = df_long.Value, fill = df_long.Measurement)) + 
+  geom_bar(stat = "identity", position = "stack", width = 2) +
+  geom_errorbar(aes(ymin = ifelse(df_long.Measurement=='Starch', # since GFS is stacked on starch
+                                  df_long.Value, df_long.carbs_total) - df_std.Std, 
+                    ymax = ifelse(df_long.Measurement=='Starch', # since GFS is stacked on starch
+                                  df_long.Value, df_long.carbs_total) + df_std.Std)) +  # To align the error bars correctly
+  facet_wrap(~ df_long.Date) +         # Creates a subplot for each date
+  theme_minimal() +
+  labs(fill ='Type', x = "Hour", y = "Leaf Carbohydrate Concentration (nmol/mg)",
+       labels=c('GFS total', 'Starch')) +
+  scale_fill_brewer(palette = "Set2") + # Choose the color palette
+  scale_x_continuous(breaks = seq(0, 24, 4), limits = c(0, 24))+
+  scale_y_continuous(breaks = seq(0, 1500, 300), limits = c(0, 1500))+
+  theme(legend.position = 'right',
+        legend.text = element_text(size = 8),  # Adjust text size
+        legend.key.size = unit(0.4, "cm"))
+
+# Display the plot
+print(p)
+
+
+
+# Compare Land-based TNC
+TNC.data$Source <- 'Measured'
+TNC.data$time <- TNC.data$DOY + TNC.data$hour/24
+
+data_long <- tidyr::gather(TNC.data[,c('time', 'Leaf', 'Stem')], key="Type", value="Value", -time)
+
+# Create line plot
+ggplot(data_long, aes(x=time, y=Value, color=Type)) +
+  theme_classic() +
+  scale_color_discrete(labels = c("Leaf", "Stem"))+
+  theme(legend.position = c(0.8, 0.8), 
+        panel.background = element_rect(fill = "transparent",colour = NA))+
+  geom_line()+
+  labs(x='Day of Year (2022)',
+       y='Substrate C (mol C / Mg Dry Mass)')
+
+# Plot measured vs simulated TNC per m2 
+# Measured alone
+for (i in 1:dim(TNC.data)[1]){
+  TNC.data[i, 'Leaf_substrate_carbon'] <- 
+    TNC.data[i, 'Leaf'] * 10^(-4) *
+    soybean_ld11_biomass_2022[which(soybean_ld11_biomass_2022$doy==TNC.data[i, 'Biomass_DOY']), 'leaf']
+  
+  TNC.data[i, 'Stem_substrate_carbon'] <- 
+    TNC.data[i, 'Stem'] * 10^(-4) *
+    soybean_ld11_biomass_2022[which(soybean_ld11_biomass_2022$doy==TNC.data[i, 'Biomass_DOY']), 'stem']
+}
+
+data_long_per_m2 <- tidyr::gather(TNC.data[,c('time', 'Leaf_substrate_carbon', 'Stem_substrate_carbon')], key="Type", value="Value", -time)
+
+# Create line plot
+ggplot(data_long_per_m2, aes(x=time, y=Value, color=Type)) +
+  theme_classic() +
+  scale_color_discrete(labels = c("Leaf", "Stem"))+
+  theme(legend.position = "bottom", 
+    panel.background = element_rect(fill = "transparent",colour = NA))+
+  geom_line()+
+  labs(title = 'Substrate C per land area', 
+       x='Day of Year (2022)',
+       y='Substrate C (mol C/m^2)')
+
+# Simulated + Measured
+# Leaf
+inds <- which(biocro_result$time %in% TNC.data$time)
+# TNC.data$Leaf_substrate_carbon <- biocro_result$Leaf[inds] * TNC.data$Leaf * 10^(-4)
+# TNC.data$Stem_substrate_carbon <- biocro_result$Stem[inds] * TNC.data$Stem * 10^(-4)
+
+biocro_result$Source <- 'Simulated'
+Leaf.carb.data <- rbind(biocro_result[,c('time','Leaf_substrate_carbon','Source')], 
+                        TNC.data[, c('time','Leaf_substrate_carbon','Source')])
+
+ggplot(Leaf.carb.data, aes(time, Leaf_substrate_carbon, group = Source)) + 
+  geom_point(aes(shape=Source, color=Source, size=Source))+
+  scale_shape_manual(values=c(18, 16)) +
+  scale_size_manual(values=c(2, 0.5)) +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.85),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(), 
+       x='Day of Year (2022)',
+       y='Leaf Substrate C (mol C/m^2)')
+
+# Stem
+biocro_result$Source <- 'Simulated'
+Stem.carb.data <- rbind(biocro_result[,c('time','Stem_substrate_carbon','Source')], 
+                        TNC.data[, c('time','Stem_substrate_carbon','Source')])
+
+ggplot(Stem.carb.data, aes(time, Stem_substrate_carbon, group = Source)) + 
+  geom_point(aes(shape=Source, color=Source, size=Source))+
+  scale_shape_manual(values=c(18, 16)) +
+  scale_size_manual(values=c(2, 0.5)) +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.85),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(), 
+       x='Day of Year (2022)',
+       y='Stem Substrate C (mol C/m^2)')
+
+# Plot measured vs simulated TNC per mass 
+# Simulated alone
+sim_substrate_C_by_mass <- data.frame(
+  time = biocro_result$time,
+  hour = biocro_result$hour,
+  Leaf = 10^4 * biocro_result$Leaf_substrate_carbon / biocro_result$Leaf,
+  Stem = 10^4 * biocro_result$Stem_substrate_carbon / biocro_result$Stem
+)
+
+data_long_per_mass <- tidyr::gather(sim_substrate_C_by_mass[1:2600,c('time', 'Leaf', 
+                                                     'Stem')], 
+                                    key="Type", value="Value", -time)
+
+# Create line plot
+ggplot(data_long_per_mass, aes(x=time, y=Value/1000, color=Type)) +
+  theme_classic() +
+  scale_color_discrete(labels = c("Leaf", "Stem"))+
+  theme(legend.position = "bottom", 
+        panel.background = element_rect(fill = "transparent",colour = NA))+
+  geom_line()+
+  labs(title = 'Substrate C per mass', 
+       x='Day of Year (2022)',
+       y='Substrate C (mol C/ kg)')
+
+# Simulated + Measured
+# Leaf
+sim_substrate_C_by_mass$Source <- 'Simulated'
+
+Leaf.carb.data <- rbind(sim_substrate_C_by_mass[,c('time','Leaf','Source')], 
+                        TNC.data[, c('time','Leaf','Source')])
+
+ggplot(Leaf.carb.data, aes(time, Leaf, group = Source)) + 
+  geom_point(aes(shape=Source, color=Source, size=Source))+
+  scale_shape_manual(values=c(18, 16)) +
+  scale_size_manual(values=c(2, 0.5)) +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.85),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  #scale_y_continuous(limits = c(0, 6), breaks = seq(0, 6, 1)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(), 
+       x='Day of Year (2022)',
+       y='Leaf Substrate C (mol C/Mg)')
+
+# Stem
+Stem.carb.data <- rbind(sim_substrate_C_by_mass[,c('time','Stem','Source')], 
+                        TNC.data[, c('time','Stem','Source')])
+
+ggplot(Stem.carb.data, aes(time, Stem, group = Source)) + 
+  geom_point(aes(shape=Source, color=Source, size=Source))+
+  scale_shape_manual(values=c(18, 16)) +
+  scale_size_manual(values=c(2, 0.5)) +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.85),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(), 
+       x='Day of Year (2022)',
+       y='Stem Substrate C (mol C/Mg)')
+
+# diurnal changes of substrate C
+# take out the last TNC data because in simulation the crop has stopped growing
+TNC.data <- TNC.data[-length(TNC.data$time),]
+TNC.data$Source <- 'Measured'
+sim_substrate_C_by_mass$DOY <- as.integer(sim_substrate_C_by_mass$time)
+ind.sampling.days <- which(sim_substrate_C_by_mass$DOY %in% TNC.data$DOY)
+leaf.subCbymass.sampling.days <- rbind(sim_substrate_C_by_mass[ind.sampling.days,
+                                                               c('DOY','hour','Leaf', 'Source')],
+                                        TNC.data[,c('DOY', 'hour', 'Leaf', 'Source')])
+ggplot(leaf.subCbymass.sampling.days, aes(hour, Leaf, group = Source)) + 
+  geom_point(aes(shape=Source, color=Source, size=Source))+
+  facet_wrap("DOY") +
+  scale_shape_manual(values=c(18, 16)) +
+  scale_size_manual(values=c(2, 0.5)) +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.2),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(), 
+       x='Day of Year (2022)',
+       y='Leaf Substrate C (mol C/Mg)')
+
+stem.subCbymass.sampling.days <- rbind(sim_substrate_C_by_mass[ind.sampling.days,
+                                                               c('DOY','hour','Stem', 'Source')],
+                                       TNC.data[,c('DOY', 'hour', 'Stem', 'Source')])
+ggplot(stem.subCbymass.sampling.days, aes(hour, Stem, group = Source)) + 
+  geom_point(aes(shape=Source, color=Source, size=Source))+
+  facet_wrap("DOY") +
+  scale_shape_manual(values=c(18, 16)) +
+  scale_size_manual(values=c(2, 0.5)) +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.2),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(), 
+       x='Day of Year (2022)',
+       y='Stem Substrate C (mol C/Mg)')
+
+source('plot_partitioning.R')
+allocation_percentage_tall <- plot_partitioning(biocro_result, '2022')
+allocation_percentage_tall$Sunlight <- 'Measured'
+allocation_percentage_lowlight_tall <- plot_partitioning(biocro_result_lowlight, '2022')
+allocation_percentage_lowlight_tall$Sunlight <- 'Measured -20%'
+allocation_percentage_tall_combined <- rbind(allocation_percentage_tall, allocation_percentage_lowlight_tall)
+
+ggplot() + theme_classic() +
+  geom_point(data = allocation_percentage_tall_combined, aes(x = DOY, y = Percentage, color = Sunlight), size = 1) +
+  facet_wrap("Organ") +
+  theme(plot.title=element_text(size=size.title, hjust=0.5),
+        axis.text=element_text(size=8),
+        axis.title=element_text(size=8),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  scale_y_continuous(limits = c(-20, 140), breaks = seq(-20, 140, 20)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(), x='Day of Year (2022)',y='Allocation %')
+
