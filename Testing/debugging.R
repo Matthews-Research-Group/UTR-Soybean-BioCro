@@ -1,3 +1,14 @@
+# Preliminaries
+library(BioCro)
+library(PhotoGEA) # for pdf_print
+library(lattice)
+
+rm(list=ls())
+
+# Choose settings
+SAVE_TO_PDF <- TRUE
+
+# Define a soybean model for debugging
 soybean_debug <- list(
     direct_modules = c(
         'BioCro:stomata_water_stress_linear',
@@ -180,13 +191,168 @@ soybean_debug <- list(
     )
 )
 
-weather_2002 <- read.csv('2002_drivers.csv')
+# Load all the weather data
+debugging_weather <- list(
+    `2002` = read.csv('2002_drivers.csv'),
+    `2004` = read.csv('2004_drivers.csv'),
+    `2005` = read.csv('2005_drivers.csv'),
+    `2006` = read.csv('2006_drivers.csv')
+)
 
-result_2002 <- with(soybean_debug, {run_biocro(
-    initial_values,
-    parameters,
-    weather_2002,
-    direct_modules,
-    differential_modules,
-    ode_solver
-)})
+# Define helping function for running and plotting a year of results
+run_year <- function(yn) {
+    # Get the drivers
+    drivers <- debugging_weather[[yn]]
+
+    # Run the model
+    biocro_result <- with(soybean_debug, {run_biocro(
+        initial_values,
+        parameters,
+        drivers,
+        direct_modules,
+        differential_modules,
+        ode_solver
+    )})
+
+    # Save results
+    write.csv(biocro_result, file = file.path('debug_outputs', paste0(yn, '_results.csv')), row.names = FALSE)
+
+    # Find the first NA leaf value and time, if it exists
+    na_indx <- which(is.na(biocro_result$Leaf))[1]
+    na_time <- if (!is.na(na_indx)) {
+        biocro_result$time[na_indx]
+    } else {
+        max(biocro_result$time)
+    }
+
+    # Get the time limits from the drivers
+    drivers <- add_time_to_weather_data(drivers)
+
+    # Plot results
+    time_lim <- c(min(drivers$time), max(drivers$time))
+    time_lab <- paste0('Day of year (', yn, ')')
+
+    pdf_print(
+        xyplot(
+            Leaf + Stem + Root + Pod ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Biomass',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_biomass.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_substrate_carbon + Stem_substrate_carbon + Root_substrate_carbon + Pod_substrate_carbon ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Substrate carbon',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_substrate_carbon.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_structural_carbon + Stem_structural_carbon + Root_structural_carbon + Pod_structural_carbon ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Structural carbon',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_structural_carbon.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_utilization_rate + Stem_utilization_rate + Root_utilization_rate + Pod_utilization_rate ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Utilization rate',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_utilization_rate.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_total_C_change_per_m2 + Stem_total_C_change_per_m2 + Root_total_C_change_per_m2 + Pod_total_C_change_per_m2 ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Total C change per m^2',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_total_C_change_per_m2.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            TTc ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Thermal time',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_thermal_time.pdf'))
+    )
+
+    return(biocro_result)
+}
+
+results <- lapply(names(debugging_weather), run_year)
