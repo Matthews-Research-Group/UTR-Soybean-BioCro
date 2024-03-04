@@ -314,6 +314,46 @@ run_year <- function(yn) {
 
     pdf_print(
         xyplot(
+            Leaf_respiration_loss + Stem_respiration_loss + Root_respiration_loss + Pod_respiration_loss ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Respiration loss',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_respiration_loss.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_senescence_loss + Stem_senescence_loss + Root_senescence_loss + Pod_senescence_loss ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Senescence loss',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_senescence_loss.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
             Leaf_total_C_change_per_m2 + Stem_total_C_change_per_m2 + Root_total_C_change_per_m2 + Pod_total_C_change_per_m2 ~ time,
             data = biocro_result,
             type = 'l',
