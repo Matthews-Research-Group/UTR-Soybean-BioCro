@@ -211,11 +211,13 @@ run_year <- function(yn) {
         drivers,
         direct_modules,
         differential_modules,
-        ode_solver
+        ode_solver,
+        verbose = TRUE
     )})
 
     # Save results
     write.csv(biocro_result, file = file.path('debug_outputs', paste0(yn, '_results.csv')), row.names = FALSE)
+
 
     # Find the first NA leaf value and time, if it exists
     na_indx <- which(is.na(biocro_result$Leaf))[1]
@@ -227,6 +229,14 @@ run_year <- function(yn) {
 
     # Get the time limits from the drivers
     drivers <- add_time_to_weather_data(drivers)
+
+    # Find the first time DVI exceeds stop_growth_dvi
+    stop_time_indx <- which(drivers$DVI > soybean_debug$parameters$stop_growth_dvi)[1]
+    stop_time <- if (!is.na(stop_time_indx)) {
+        drivers$time[stop_time_indx]
+    } else {
+        min(drivers$time)
+    }
 
     # Plot results
     time_lim <- c(min(drivers$time), max(drivers$time))
@@ -245,6 +255,7 @@ run_year <- function(yn) {
             panel = function(...) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
             }
         ),
         width = 10,
@@ -265,6 +276,7 @@ run_year <- function(yn) {
             panel = function(...) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
             }
         ),
         width = 10,
@@ -285,6 +297,7 @@ run_year <- function(yn) {
             panel = function(...) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
             }
         ),
         width = 10,
@@ -305,6 +318,7 @@ run_year <- function(yn) {
             panel = function(...) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
             }
         ),
         width = 10,
@@ -325,6 +339,7 @@ run_year <- function(yn) {
             panel = function(...) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
             }
         ),
         width = 10,
@@ -345,6 +360,7 @@ run_year <- function(yn) {
             panel = function(...) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
             }
         ),
         width = 10,
@@ -365,6 +381,7 @@ run_year <- function(yn) {
             panel = function(...) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
             }
         ),
         width = 10,
@@ -385,6 +402,7 @@ run_year <- function(yn) {
             panel = function(...) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
             }
         ),
         width = 10,
