@@ -8,6 +8,8 @@ rm(list=ls())
 # Choose settings
 SAVE_TO_PDF <- TRUE
 
+RUN_FULL_SIMULATIONS <- TRUE
+
 # Define a soybean model for debugging
 soybean_debug <- list(
     direct_modules = c(
@@ -199,6 +201,16 @@ debugging_weather <- list(
     `2006` = read.csv('2006_drivers.csv')
 )
 
+# Check the inputs for one year
+with(soybean_debug, {validate_dynamical_system_inputs(
+    initial_values,
+    parameters,
+    debugging_weather[['2002']],
+    direct_modules,
+    differential_modules,
+    verbose = TRUE
+)})
+
 # Define helping function for running and plotting a year of results
 run_year <- function(yn) {
     # Get the drivers
@@ -218,7 +230,6 @@ run_year <- function(yn) {
     # Save results
     write.csv(biocro_result, file = file.path('debug_outputs', paste0(yn, '_results.csv')), row.names = FALSE)
 
-
     # Find the first NA leaf value and time, if it exists
     na_indx <- which(is.na(biocro_result$Leaf))[1]
     na_time <- if (!is.na(na_indx)) {
@@ -230,6 +241,14 @@ run_year <- function(yn) {
     # Get the time limits from the drivers
     drivers <- add_time_to_weather_data(drivers)
 
+    # Find the first time DVI exceeds Pod_start_dvi
+    pod_start_indx <- which(drivers$DVI > soybean_debug$parameters$Pod_start_dvi)[1]
+    start_time <- if (!is.na(pod_start_indx)) {
+        drivers$time[pod_start_indx]
+    } else {
+        min(drivers$time)
+    }
+
     # Find the first time DVI exceeds stop_growth_dvi
     stop_time_indx <- which(drivers$DVI > soybean_debug$parameters$stop_growth_dvi)[1]
     stop_time <- if (!is.na(stop_time_indx)) {
@@ -238,9 +257,47 @@ run_year <- function(yn) {
         min(drivers$time)
     }
 
+    # Calculate "mass fractions"
+    biocro_result <- within(biocro_result, {
+        Leaf_mass_fraction = Leaf_substrate_carbon / Leaf
+        Stem_mass_fraction = Stem_substrate_carbon / Leaf
+        Root_mass_fraction = Root_substrate_carbon / Leaf
+        Pod_mass_fraction = Pod_substrate_carbon / Leaf
+    })
+
+    # Calculate "proportional masses"
+    biocro_result <- within(biocro_result, {
+        Leaf_proportional_mass = Leaf_structural_carbon * soybean_debug$parameters$Leaf_carbon_to_mass_factor
+        Stem_proportional_mass = Stem_structural_carbon * soybean_debug$parameters$Stem_carbon_to_mass_factor
+        Root_proportional_mass = Root_structural_carbon * soybean_debug$parameters$Root_carbon_to_mass_factor
+        Pod_proportional_mass = Pod_structural_carbon * soybean_debug$parameters$Pod_carbon_to_mass_factor
+    })
+
     # Plot results
     time_lim <- c(min(drivers$time), max(drivers$time))
     time_lab <- paste0('Day of year (', yn, ')')
+
+    pdf_print(
+        xyplot(
+            lai ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'LAI',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_lai.pdf'))
+    )
 
     pdf_print(
         xyplot(
@@ -256,11 +313,34 @@ run_year <- function(yn) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
                 panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
             }
         ),
         width = 10,
         save_to_pdf = SAVE_TO_PDF,
         file = file.path('debug_outputs', paste0(yn, '_biomass.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_mass_fraction + Stem_mass_fraction + Root_mass_fraction + Pod_mass_fraction ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Mass fraction (substrate_carbon / total mass)',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_mass_fraction.pdf'))
     )
 
     pdf_print(
@@ -277,6 +357,7 @@ run_year <- function(yn) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
                 panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
             }
         ),
         width = 10,
@@ -298,6 +379,7 @@ run_year <- function(yn) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
                 panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
             }
         ),
         width = 10,
@@ -319,6 +401,7 @@ run_year <- function(yn) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
                 panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
             }
         ),
         width = 10,
@@ -340,6 +423,7 @@ run_year <- function(yn) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
                 panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
             }
         ),
         width = 10,
@@ -361,11 +445,34 @@ run_year <- function(yn) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
                 panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
             }
         ),
         width = 10,
         save_to_pdf = SAVE_TO_PDF,
         file = file.path('debug_outputs', paste0(yn, '_senescence_loss.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_senescence_rate + Stem_senescence_rate + Root_senescence_rate + Pod_senescence_rate ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Senescence rate',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_senescence_rate.pdf'))
     )
 
     pdf_print(
@@ -382,11 +489,69 @@ run_year <- function(yn) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
                 panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
             }
         ),
         width = 10,
         save_to_pdf = SAVE_TO_PDF,
         file = file.path('debug_outputs', paste0(yn, '_total_C_change_per_m2.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            substrate_transport_Leaf_to_Stem + substrate_transport_Stem_to_Pod + substrate_transport_Stem_to_Root ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Substrate transport',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_substrate_transport.pdf'))
+    )
+
+    DVI_step = 0.25
+
+    pdf_print(
+        xyplot(
+            Leaf_total_C_change_per_m2  ~ Leaf,
+            group = factor(DVI_step * floor(DVI / DVI_step)),
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            grid = TRUE,
+            main = paste0(yn, '\nGrouped by DVI range'),
+            par.settings = list(
+                superpose.line = list(col = multi_curve_colors()),
+                superpose.symbol = list(col = multi_curve_colors(), pch = 16)
+            )
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_leaf_phase_space.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_proportional_mass + Leaf  ~ Leaf_structural_carbon,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            grid = TRUE,
+            main = paste0(yn, '\nLeaf_proportional_mass = Leaf_structural_carbon * Leaf_carbon_to_mass_factor'),
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_leaf_mass_space.pdf'))
     )
 
     pdf_print(
@@ -403,6 +568,7 @@ run_year <- function(yn) {
                 panel.xyplot(...)
                 panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
                 panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
             }
         ),
         width = 10,
@@ -413,4 +579,6 @@ run_year <- function(yn) {
     return(biocro_result)
 }
 
-results <- lapply(names(debugging_weather), run_year)
+if (RUN_FULL_SIMULATIONS) {
+    results <- lapply(names(debugging_weather), run_year)
+}

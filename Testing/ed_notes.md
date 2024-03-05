@@ -432,3 +432,99 @@ This was determined by using a modified version of
 `src/module_library/c3_leaf_photosynthesis.cpp` in the `BioCro` repository.
 A copy of the modified file is included in this directory, which has been
 renamed to `DEBUG_c3_leaf_photosynthesis.cpp`.
+
+## checking BioCro:ten_layer_canopy_properties
+
+Looks like there are several sets of inputs that cause a negative absorbed
+shortwave radiation. The following are three examples, which are the first times
+there is an NaN assimilation rate during 2002, 2004, and 2006, respectively:
+
+```
+multilayer_canopy_properties:
+  par_incident_direct = 1.229206e+02
+  par_incident_diffuse = 7.047403e+00
+  absorptivity_par = 8.000000e-01
+  lai = -2.966837e-04
+  cosine_zenith_angle = 5.146205e-01
+  kd = 7.000000e-01
+  chil = 8.100000e-01
+  heightf = 3.000000e+00
+  windspeed = 5.457125e+00
+  LeafN = 2.000000e+00
+  kpLN = 0.000000e+00
+  lnfun = 0.000000e+00
+  par_energy_content = 2.350000e-01
+  par_energy_fraction = 5.000000e-01
+  leaf_transmittance = 2.000000e-01
+  leaf_reflectance = 2.000000e-01
+
+multilayer_canopy_properties:
+  par_incident_direct = 3.282250e+02
+  par_incident_diffuse = 1.784482e+01
+  absorptivity_par = 8.000000e-01
+  lai = -3.160838e-03
+  cosine_zenith_angle = 7.591590e-01
+  kd = 7.000000e-01
+  chil = 8.100000e-01
+  heightf = 3.000000e+00
+  windspeed = 6.027481e+00
+  LeafN = 2.000000e+00
+  kpLN = 0.000000e+00
+  lnfun = 0.000000e+00
+  par_energy_content = 2.350000e-01
+  par_energy_fraction = 5.000000e-01
+  leaf_transmittance = 2.000000e-01
+  leaf_reflectance = 2.000000e-01
+
+multilayer_canopy_properties:
+  par_incident_direct = 1.229206e+02
+  par_incident_diffuse = 7.047403e+00
+  absorptivity_par = 8.000000e-01
+  lai = -2.966837e-04
+  cosine_zenith_angle = 5.146205e-01
+  kd = 7.000000e-01
+  chil = 8.100000e-01
+  heightf = 3.000000e+00
+  windspeed = 5.457125e+00
+  LeafN = 2.000000e+00
+  kpLN = 0.000000e+00
+  lnfun = 0.000000e+00
+  par_energy_content = 2.350000e-01
+  par_energy_fraction = 5.000000e-01
+  leaf_transmittance = 2.000000e-01
+  leaf_reflectance = 2.000000e-01
+```
+
+These sets of inputs all have a negative value for LAI.
+
+## checking LAI
+
+LAI is calculated by `BioCro:parameter_calculator`, where it is proportional to
+leaf mass: `LAI = Leaf * SLA`. In this model, `Sp_thermal_time_decay = 0` so
+`SLA` is always equal to `iSP = 2.5`. So if LAI is negative, then leaf mass must
+be negative.
+
+## checking leaf mass
+
+Leaf mass is determined by a differential equation, as defined in the
+`UTRSoybeanBML:thornley_biomass` module. The rate of change is given by
+`-U * f_r - S * (1 - f_s) + C - T_ls`, where `U` is the utilization rate, `f_r`
+is a respiration factor, `S` is the senescence rate, and `f_s` is a senescence
+reuse factor, `C` is the net canopy CO2 assimilation rate, and `T_ls` is the
+leaf-to-stem transport. For the leaf, `f_r` is set to 0, so utilization makes no
+contribution to leaf growth. Update: `U * f_r` is the loss due to respiration,
+which is why `f_r` is 0 for leaf. So the rate of change is really
+`C - R - S * (1 - f_s) - T_ls`, where `R` is the loss due to respiration.
+
+This is a very complex equation. It can be tackled analytically, but it is more
+straightforward to take a numerical / graphical approach. To do this, we can
+plot the rate of change of the leaf mass against the leaf mass. This can be
+seen in the plots called `YYYY_leaf_phase_space.pdf`. In these plots,
+`Leaf_total_C_change_per_m2` is the time derivative of `Leaf`.
+
+A key requirement for the leaf mass to remain positive after senescence kicks in
+is that as leaf mass approaches zero, its derivative (which is generally
+negative) must also approach zero. Looking at `2004_leaf_phase_space.pdf`, it is
+clear that this requirement is not met, and in fact, the derivative becomes more
+negative as the leaf mass approaches zero. This ultimately causes the leaf mass
+itself to become negative, which in turn causes problems described above.
