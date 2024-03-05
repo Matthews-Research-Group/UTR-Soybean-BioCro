@@ -273,6 +273,14 @@ run_year <- function(yn) {
         Pod_proportional_mass = Pod_structural_carbon * soybean_debug$parameters$Pod_carbon_to_mass_factor
     })
 
+    # Calculate total carbon
+    biocro_result <- within(biocro_result, {
+        Leaf_total_C = Leaf_structural_carbon + Leaf_substrate_carbon
+        Stem_total_C = Stem_structural_carbon + Stem_substrate_carbon
+        Root_total_C = Root_structural_carbon + Root_substrate_carbon
+        Pod_total_C = Pod_structural_carbon + Pod_substrate_carbon
+    })
+
     # Plot results
     time_lim <- c(min(drivers$time), max(drivers$time))
     time_lab <- paste0('Day of year (', yn, ')')
@@ -547,11 +555,25 @@ run_year <- function(yn) {
             type = 'l',
             auto = TRUE,
             grid = TRUE,
-            main = paste0(yn, '\nLeaf_proportional_mass = Leaf_structural_carbon * Leaf_carbon_to_mass_factor'),
+            main = paste0(yn, '\nLeaf_proportional_mass = Leaf_structural_carbon * Leaf_carbon_to_mass_factor')
         ),
         width = 10,
         save_to_pdf = SAVE_TO_PDF,
         file = file.path('debug_outputs', paste0(yn, '_leaf_mass_space.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_total_C  ~ Leaf,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            grid = TRUE,
+            main = yn
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_leaf_mass_comparison.pdf'))
     )
 
     pdf_print(
