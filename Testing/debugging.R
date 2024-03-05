@@ -260,9 +260,14 @@ run_year <- function(yn) {
     # Calculate "mass fractions"
     biocro_result <- within(biocro_result, {
         Leaf_mass_fraction = Leaf_substrate_carbon / Leaf
-        Stem_mass_fraction = Stem_substrate_carbon / Leaf
-        Root_mass_fraction = Root_substrate_carbon / Leaf
-        Pod_mass_fraction = Pod_substrate_carbon / Leaf
+        Stem_mass_fraction = Stem_substrate_carbon / Stem
+        Root_mass_fraction = Root_substrate_carbon / Root
+        Pod_mass_fraction = Pod_substrate_carbon / Pod
+
+        Leaf_mass_fraction_struct = Leaf_substrate_carbon / Leaf_structural_carbon
+        Stem_mass_fraction_struct = Stem_substrate_carbon / Stem_structural_carbon
+        Root_mass_fraction_struct = Root_substrate_carbon / Root_structural_carbon
+        Pod_mass_fraction_struct = Pod_substrate_carbon / Pod_structural_carbon
     })
 
     # Calculate "proportional masses"
@@ -349,6 +354,28 @@ run_year <- function(yn) {
         width = 10,
         save_to_pdf = SAVE_TO_PDF,
         file = file.path('debug_outputs', paste0(yn, '_mass_fraction.pdf'))
+    )
+
+    pdf_print(
+        xyplot(
+            Leaf_mass_fraction_struct + Stem_mass_fraction_struct + Root_mass_fraction_struct + Pod_mass_fraction_struct ~ time,
+            data = biocro_result,
+            type = 'l',
+            auto = TRUE,
+            xlim = time_lim,
+            xlab = time_lab,
+            ylab = 'Mass fraction (substrate_carbon / structural carbon)',
+            main = yn,
+            panel = function(...) {
+                panel.xyplot(...)
+                panel.lines(c(100, -100) ~ c(na_time, na_time), lty = 2, col = 'darkgray')
+                panel.lines(c(100, -100) ~ c(stop_time, stop_time), lty = 1, col = 'black')
+                panel.lines(c(100, -100) ~ c(start_time, start_time), lty = 4, col = 'red')
+            }
+        ),
+        width = 10,
+        save_to_pdf = SAVE_TO_PDF,
+        file = file.path('debug_outputs', paste0(yn, '_mass_fraction_struct.pdf'))
     )
 
     pdf_print(
