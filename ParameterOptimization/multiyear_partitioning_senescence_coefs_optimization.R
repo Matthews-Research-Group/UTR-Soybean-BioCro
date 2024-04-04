@@ -4,6 +4,7 @@
 # Parameter loading and plotting are put into this R code to check the variables more easily.
 # To be moved to different files once everything works out.
 library(BioCro)
+library(UTRSoybeanBML)
 library(DEoptim)
 library(lattice)
 library(lhs)

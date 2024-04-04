@@ -12,7 +12,7 @@ optim_params_conversion <- function(optim_params_short){
   optim_params[7] = optim_params_short[4] # Root
   optim_params[8] = optim_params_short[5] # Pod
   
-  ## Km [mol / Mg]
+  ## Km [dimensionless]
   optim_params[9] = optim_params_short[6]
   optim_params[10] = optim_params_short[7]
   optim_params[11] = optim_params_short[8]
@@ -23,7 +23,7 @@ optim_params_conversion <- function(optim_params_short){
   optim_params[c(14, 15, 16)] = optim_params_short[10]
   
   # Transport
-  ## substrate conductance [Mg / hr / [Mg / ha]]
+  ## substrate conductance [/hr]
   optim_params[17] = optim_params_short[11]  # 'substrate_conductance_Leaf_to_Stem'
   optim_params[18] = optim_params_short[12] # 'substrate_conductance_Stem_to_Root'
   optim_params[19] = optim_params_short[13] # 'substrate_conductance_Stem_to_Pod'

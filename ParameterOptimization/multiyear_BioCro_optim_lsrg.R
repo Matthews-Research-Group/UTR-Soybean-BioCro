@@ -1,5 +1,6 @@
 ## Optimization problem to solve for partitioning parameters for soybean
 library(BioCro)
+library(UTRSoybeanBML)
 # library(profvis)
 multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_rows, weights, wts2, RootVals){
   # print(optim_params_short)
@@ -81,6 +82,8 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       cost.avg <- cost.avg + cost
     }
   }
+  # print(paste0('Pod_v_max', optim_params_short[5]))
+  # print(paste0('Pod_Km', optim_params_short[9]))
   # print(cost.avg)
   return(cost.avg)
   

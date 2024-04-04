@@ -56,7 +56,7 @@ parameters <- list(
   Pod_senescence_reuse_factor =             0.6,
   
   # Parameters related to the `parameter_calculator` module
-  iSp = 2.5,
+  iSp = 3,
   Sp_thermal_time_decay = 0.0,
   LeafN_0 = 2.0,
   LeafN = 2.0,

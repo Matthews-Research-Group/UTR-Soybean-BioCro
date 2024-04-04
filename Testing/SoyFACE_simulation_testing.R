@@ -19,7 +19,7 @@ source('../ParameterOptimization/soybean_parameter_expansion.R')
 source('../ParameterOptimization/multiyear_BioCro_optim_lsrg.R')
 
 # set year and CO2 level
-co2_opt = '_ambient_' # '_ambient_' or '_co2_'
+co2_opt = '_co2_' # '_ambient_' or '_co2_'
 
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 year <- c('2002', '2004', '2005', '2006')
@@ -100,16 +100,19 @@ cost_func <- function(x){
                          numrows[c(1,3)], weights[c(1,3)], wts2, RootVals[c(1,3)])
 }
 # calculate the cost for references
-optim_params_short <-c(0.244284,    0.022706,    0.040001,    0.037560,    
-                       0.552709,    1.316245,    1.478678,    1.431808,    
-                       0.908055,    0.081352,    0.685889,    0.513119,    
-                       1.887088,    0.069919,    0.099003,    0.012061,   
-                       17.765036,   24.410462,    6.975161,   
-                       -9.151024,   -9.928725,   -2.014179)
-optim_params_short <-c(0.24428360,  0.02270617,  0.04000102,  0.03756000,  0.55270866,  1.31624494,  1.47867831,
-                       1.43180810,  0.90805499,  0.08135216,  0.68588900,  0.51311881,  1.88708826,  0.06991942,
-                       0.09900254,  0.01206099, 17.76503630, 24.41046211,  6.97516144, -9.15102399, -9.92872499,
-                       -2.01417925)
+optim_params_short <-c(0.3,    0.01,    0.02,    0.02,     0.8, # 1-5  # carbon to mass factor and utilization rate constants
+                       0.2,    0.1,    0.05,    0.1,    0.5,     # 6-10 Km s and respiration factor
+                       0.4,    0.2,    5,  # 11-13  substrate conductance
+                       0.01,     0.01,    0.002, # 14-16    senescence max rates [/hr]
+                       5.0,     8.0,     1.0,   # 17-22 alphas and betas
+                       1.7,     1.9,     1.6)
+optim_params_short <-c(0.395667,    0.004489,    0.018746,    0.090290,    0.588019,    
+                       0.419076,    0.177943,    0.466320,    0.211607,    0.200006,    
+                       0.025633,    0.408561,    1.105566,    
+                       0.041240,    0.002908,    0.000173,    
+                       8.783273,    9.921733,    1.711259,    
+                       1.872338,    1.992031,    1.665296)
+
 # testing
 for (i in 1:length(year)) {
   print(paste0('Year ', year[i]))
@@ -117,6 +120,20 @@ for (i in 1:length(year)) {
   print(paste0('1st nan value occurrs at time: ', result$time[is.nan(result$Leaf)][1]))
   print(paste0('1st nan value occurrs at DVI: ', result$DVI[is.nan(result$Leaf)][1]))
   print(paste0('nrow(result):', nrow(result), ' nrow(weather):', nrow(weather.growingseason[[i]])))
-  xyplot(data = result, Leaf+Stem+Root+Pod~time, auto.key = TRUE)
+  print(xyplot(data = result, Leaf+Stem+Root+Pod~time, auto.key = TRUE, main = year[i]))
+  Pod_start_idx <- which.min(abs(result$DVI-1))+1
+  print(paste0("The first transport to Pod was: ", result$substrate_transport_Stem_to_Pod[Pod_start_idx]))
+  print(paste0("The Stem Substrate C concentration was: ", 
+               result$Stem_substrate_carbon[Pod_start_idx]/
+                 result$Stem_structural_carbon[Pod_start_idx]))
+  
+  print(paste0("The Pod Substrate C concentration was: ", 
+               result$Pod_substrate_carbon[Pod_start_idx]/
+                 result$Pod_structural_carbon[Pod_start_idx]))
 }
+
+result <- match.fun(soybean_optsolver[[1]])(optim_params_conversion(optim_params_short))
+xyplot(data=result, 
+       substrate_transport_Stem_to_Pod
+       ~time, auto=TRUE)
 

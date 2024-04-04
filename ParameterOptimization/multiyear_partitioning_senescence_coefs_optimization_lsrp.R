@@ -8,11 +8,9 @@ rm(list=ls())
 library(BioCro)
 library(UTRSoybeanBML)
 library(DEoptim)
-library(ggplot2)
-library(lattice)
 
 # Set working directory to location of this file
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Cost function
 source('soybean_parameter_expansion.R')
@@ -92,68 +90,49 @@ for (i in 1:length(year)) {   # Remember to change back
 }
 
 # Optimization
-wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 1, "Root" = 0.5, "CumLitter" = 0.5)
+wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 2, "Root" = 0.75, "CumLitter" = 0.5)
 
 # cost function
 cost_func <- function(x){
   multiyear_BioCro_optim(x, soybean_optsolver[c(1,3)], ExpBiomass[c(1,3)], 
                          numrows[c(1,3)], weights[c(1,3)], wts2, RootVals[c(1,3)])
 }
-# calculate the cost for references
-optim_params_short <-c(0.244284,    0.022706,    0.040001,    0.037560,    
-                       0.552709,    1.316245,    1.478678,    1.431808,    
-                       0.908055,    0.081352,    0.685889,    0.513119,    
-                       1.887088,    0.069919,    0.099003,    0.012061,   
-                       17.765036,   24.410462,    6.975161,   
-                       -9.151024,   -9.928725,   -2.014179)
-optim_params_short <-c(0.24428360,  0.02270617,  0.04000102,  0.03756000,  0.55270866,  1.31624494,  1.47867831,
-                       1.43180810,  0.90805499,  0.08135216,  0.68588900,  0.51311881,  1.88708826,  0.06991942,
-                       0.09900254,  0.01206099, 17.76503630, 24.41046211,  6.97516144, -9.15102399, -9.92872499,
-                       -2.01417925)
-
-optim_params_short <-c(0.24000000,  0.02000000,  0.04000000,  0.04000000,  0.55000000,  1.32000000,  1.48000000,
-                       1.43000000,  0.90000000,  0.08000000,  0.70000000,  0.50000000,  1.90000000,  0.07000000,
-                       0.01000000,  0.01000000, 17.80000000, 24.40000000,  7.00000000, -9.00000000, -10.00000000, -2.00000000)
-
-# library(lattice)
-print(cost_func(optim_params_short))
-i <- 3
-result <- match.fun(soybean_optsolver[[i]])(optim_params_conversion(optim_params_short))
-result$time[is.nan(result$Leaf)][1]
-result$DVI[is.nan(result$Leaf)][1]
-print(paste0('nrow(result):', nrow(result), ' nrow(weather):', nrow(weather.growingseason[[i]])))
-xyplot(data = result, Leaf+Stem+Root+Pod~time, auto.key = TRUE)
-print(max(result$Root))
 
 # Optimization
 upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.1, 0.1, 0.1, 1, # 2，3，4，5： utilization rate constant [/hr]
-              2, 2, 2, 4, # 6，7, 8, 9： Km [mol / Mg]
-              0.5, # 10: respiration factor [dimensionless]
-              1, 1, 2, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
+              0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
+              0.8, # 10: respiration factor [/]
+              0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
               0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
-              30, 30, 10, # 17,18,19: senescence alpha, LSR [dimensionless]
-              -3, -3, 0)# 20,21,22: senescence beta, LSR [/dvi]
+              10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
+              2.0, 2.0, 2.0)# 20,21,22: senescence beta, LSR [/dvi]
 
 
 lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.01, 0.01, 0.01, 0.1, # 2，3，4，5： utilization rate constant [/hr]
-              0, 0, 0, 0, # 6，7, 8, 9： Km [mol / Mg]
-              0, # 10: respiration factor [dimensionless]
-              0, 0 ,0, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
-              0, 0, 0, # 14,15,16: senescence rate max, LSR
-              5, 5, 1,# 17, 18, 19: senescence alpha, LSR [dimensionless]
-              -10, -10, -4) # 20, 21, 22: senescence beta, LSR [/dvi]
+              0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
+              0.005, 0.005, 0.005, 0.1, # 6，7, 8, 9： Km [mol / Mg]
+              0.1, # 10: respiration factor [dimensionless]
+              0.005, 0.005 ,0.01, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
+              4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
+              1.5, 1.5, 1.5) # 20, 21, 22: senescence beta, LSR [/dvi]
 
 rng.seed <- 1234 # seed for random number generator
 set.seed(rng.seed)
 # maximum number of iterations
 max.iter <- 1000
 # Call DEoptim function to run optimization
+cl <- makeCluster(8)
 parVars <- c('optim_params_conversion', 'multiyear_BioCro_optim','soybean_optsolver','ExpBiomass','numrows','weights','wts2','RootVals')
-sink('Optmization_output.txt')
-optim_result <- DEoptim(fn=cost_func, lower=lowerlim, upper = upperlim, control=list(itermax=max.iter,parallelType=1,packages=c('BioCro'),parVar=parVars))
-optim_params_short = optim_result$optim$bestmemåå
+clusterExport(cl, parVars,envir=environment())
+sink(paste0('Optmization_output_', Sys.Date(), '.txt'))
+optim_result <- DEoptim(fn=cost_func, lower=lowerlim, upper = upperlim, 
+                        control=list(itermax=max.iter,parallelType=1,
+                                     packages=c('BioCro', 'UTRSoybeanBML'),
+                                     parVar=parVars,
+                                     cluster=cl))
+optim_params_short = optim_result$optim$bestmem
 print(optim_params_short)
 sink()
 

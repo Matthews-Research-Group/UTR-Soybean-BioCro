@@ -4,7 +4,7 @@ steady_state_module_names <- c(
   "UTRSoybeanBML:thornley_utilization_calculator_lsrp",
   "UTRSoybeanBML:thornley_transport_calculator_lsrp",
   "UTRSoybeanBML:thornley_biomass_calculator_lsrp",
-  "BioCro:parameter_calculator", 
+  "UTRSoybeanBML:lai_from_structural_carbon", # Originally  "BioCro:parameter_calculator", 
   "BioCro:soil_evaporation",
   "BioCro:solar_position_michalsky",# solar_coordinates = 
   "BioCro:shortwave_atmospheric_scattering",
@@ -18,7 +18,6 @@ steady_state_module_names <- c(
 derivative_module_names <- c(
   "UTRSoybeanBML:thornley_utilization_lsrp",
   "UTRSoybeanBML:thornley_transport_lsrp",
-  "UTRSoybeanBML:thornley_biomass_lsrp",
   "BioCro:two_layer_soil_profile", # soil_profile = 
   "BioCro:thermal_time_linear" # thermal_time =
 )

@@ -45,10 +45,10 @@ initial_state <- list(
   RhizomeLitter =           0.0,               # Mg / ha
   
   # Biomass
-  Leaf = seed_mass * leaf_frac,
-  Stem = seed_mass * stem_frac,
-  Root = seed_mass * root_frac,
-  Pod = 1e-3, 
+  # Leaf = seed_mass * leaf_frac,
+  # Stem = seed_mass * stem_frac,
+  # Root = seed_mass * root_frac,
+  # Pod = 1e-3, 
   
   # Substrate and structural C
   Leaf_substrate_carbon = subs_frac * Leaf / cf,
@@ -58,7 +58,7 @@ initial_state <- list(
   Root_substrate_carbon =  subs_frac * Root / cf,
   Root_structural_carbon = struc_frac * Root / cf,
   
-  Pod_substrate_carbon = 1e-4 / cf ,
+  Pod_substrate_carbon = 0 ,
   Pod_structural_carbon = 9e-4 / cf   
 )
 
