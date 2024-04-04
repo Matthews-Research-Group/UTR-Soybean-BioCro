@@ -264,8 +264,12 @@ cost_func(optim_params_short)
 
 
 # Call DEoptim function to run optimization
+cl <- makeCluster(8)
 parVars <- c('optim_params_conversion', 'thornley_2022_optim','soybean_optsolver','biomass','TNC.data', 'numrows','wts2')
+clusterExport(cl, parVars,envir=environment())
+sink(paste0('Optmization_EF_22_output_', Sys.Date(), '.txt'))
 optim_result <- DEoptim(fn=cost_func, lower=lowerlim, upper = upperlim, control=list(itermax=max.iter,parallelType=1,packages=c('BioCro'),parVar=parVars))
 optim_params_short = optim_result$optim$bestmem
 print(optim_params_short)
+sink()
 
