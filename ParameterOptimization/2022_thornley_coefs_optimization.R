@@ -46,12 +46,14 @@ full_soybean_ld11$parameters$Rd = 1.28
 #                        1.198915,    0.013672,    0.039876,
 #                        10.891061,   14.012313,   -5.537149,   -5.798883,
 #                        0.883654,    1.995483)
-optim_params_short <-c(0.259213,    0.026488,    0.024945,    0.019151,    
-                       0.975028,    1.398679,    0.669727,    0.451311,    
-                       0.866144,    0.045444,    0.502033,    0.921921,    
-                       1.187823,    0.051508,    0.002393,    0.093376,    
-                       9.841671,    9.313787,    7.132125,   
-                       -4.149164,   -5.157004,   -1.808771)
+optim_params_short <-c(0.395667,    
+                       0.004489,    0.018746,    0.090290,    0.588019,    
+                       0.419076,    0.177943,    0.466320,    0.211607,    
+                       0.200006,    
+                       0.025633,    0.408561,    1.105566,    
+                       0.041240,    0.002908,    0.000173,    
+                       8.783273,    9.921733,    1.711259,    
+                       1.872338,    1.992031,    1.665296)
 fitted.thornley.params <- optim_params_conversion(optim_params_short)
 arg_names <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
                'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
@@ -117,10 +119,6 @@ initial_state <- list(
   RhizomeLitter =           0,               # Mg / ha
   # Variables related to the utilization growth model starting from first datapoint
   # Biomass
-  Leaf = seed_mass * leaf_frac,
-  Stem = seed_mass * stem_frac,
-  Root = seed_mass * root_frac,
-  Pod = 1e-3 * cf, 
   Leaf_substrate_carbon = sub_frac * seed_mass * leaf_frac / cf,
   Leaf_structural_carbon = str_frac * seed_mass * leaf_frac / cf,
   Stem_substrate_carbon = sub_frac * seed_mass * stem_frac / cf, 
@@ -183,6 +181,7 @@ if (SLA_AS_DRIVER) {
 }
 
 full_soybean_ld11$parameters$timestep <- 1
+full_soybean_ld11$parameters$time_zone_offset <- NULL
 
 # Run the soybean simulation starting at noon on June 17 (DOY 168)
 soybean_optsolver <- with(full_soybean_ld11, {partial_run_biocro(
@@ -198,23 +197,23 @@ soybean_optsolver <- with(full_soybean_ld11, {partial_run_biocro(
 
 # Optimization
 upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.1, 0.1, 0.1, 1, # 2，3，4，5： utilization rate constant [/hr]
-              2, 2, 2, 4, # 6，7, 8, 9： Km [mol / Mg]
-              0.5, # 10: respiration factor [dimensionless]
-              1, 1, 2, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
+              0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
+              0.8, # 10: respiration factor [/]
+              0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
               0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
-              30, 30, 10, # 17,18,19: senescence alpha, LSR [dimensionless]
-              -3, -3, 0)# 20,21,22: senescence beta, LSR [/dvi]
+              10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
+              2.0, 2.0, 2.0)# 20,21,22: senescence beta, LSR [/dvi]
 
 
 lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.01, 0.01, 0.01, 0.1, # 2，3，4，5： utilization rate constant [/hr]
-              0, 0, 0, 0, # 6，7, 8, 9： Km [mol / Mg]
-              0, # 10: respiration factor [dimensionless]
-              0, 0 ,0, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
-              0, 0, 0, # 14,15,16: senescence rate max, LSR
-              5, 5, 1,# 17, 18, 19: senescence alpha, LSR [dimensionless]
-              -10, -10, -4) # 20, 21, 22: senescence beta, LSR [/dvi]
+              0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
+              0.005, 0.005, 0.005, 0.1, # 6，7, 8, 9： Km [mol / Mg]
+              0.1, # 10: respiration factor [dimensionless]
+              0.005, 0.005 ,0.01, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
+              4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
+              1.5, 1.5, 1.5) # 20, 21, 22: senescence beta, LSR [/dvi]
 
 
 # cost function
@@ -259,6 +258,14 @@ xyplot(data = result,
        auto.key = TRUE)
 cost_func(optim_params_short)
 
+xyplot(data = result[1:2500,],
+       Leaf_substrate_carbon/Leaf_structural_carbon+
+         Stem_substrate_carbon/Stem_structural_carbon+
+         Root_substrate_carbon/Root_structural_carbon+
+         Pod_substrate_carbon/Pod_structural_carbon~
+         time,
+       auto.key = TRUE)
+
 # aggregate(10^4*result$Leaf_total_C_change_per_m2, by=list(Category=result$doy), FUN=sum)
 
 
@@ -268,7 +275,10 @@ cl <- makeCluster(8)
 parVars <- c('optim_params_conversion', 'thornley_2022_optim','soybean_optsolver','biomass','TNC.data', 'numrows','wts2')
 clusterExport(cl, parVars,envir=environment())
 sink(paste0('Optmization_EF_22_output_', Sys.Date(), '.txt'))
-optim_result <- DEoptim(fn=cost_func, lower=lowerlim, upper = upperlim, control=list(itermax=max.iter,parallelType=1,packages=c('BioCro'),parVar=parVars))
+optim_result <- DEoptim(fn=cost_func, lower=lowerlim, upper = upperlim, 
+                        control=list(itermax=max.iter,parallelType=1,
+                                     packages=c('BioCro', 'UTRSoybeanBML'),
+                                     parVar=parVars))
 optim_params_short = optim_result$optim$bestmem
 print(optim_params_short)
 sink()
