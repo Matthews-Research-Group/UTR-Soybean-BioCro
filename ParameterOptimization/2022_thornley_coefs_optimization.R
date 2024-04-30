@@ -17,8 +17,9 @@ source('soybean_parameter_expansion.R')
 source('2022_thornley_optim.R')
 
 # Source files
-co2_opt = 'ambient'
+co2_opt = '_tbd_'
 source('../Data/Soybean-BioCro_Parameters/soybean_parameters.R')
+source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
 
 # Load saved data
@@ -36,38 +37,7 @@ full_soybean_ld11$differential_modules <- derivative_module_names
 
 # Set up basic properties for the solver
 full_soybean_ld11$ode_solver <- solver
-
-
-full_soybean_ld11$parameters$Rd = 1.28
-
-# optim_params_short <-c(0.233784,    0.004728,    0.034942,    0.022596,
-#                        0.962753,    0.164531,    1.840606,    1.357177,
-#                        3.092379,    0.293349,    0.317670,    0.779145,
-#                        1.198915,    0.013672,    0.039876,
-#                        10.891061,   14.012313,   -5.537149,   -5.798883,
-#                        0.883654,    1.995483)
-optim_params_short <-c(0.395667,    
-                       0.004489,    0.018746,    0.090290,    0.588019,    
-                       0.419076,    0.177943,    0.466320,    0.211607,    
-                       0.200006,    
-                       0.025633,    0.408561,    1.105566,    
-                       0.041240,    0.002908,    0.000173,    
-                       8.783273,    9.921733,    1.711259,    
-                       1.872338,    1.992031,    1.665296)
 fitted.thornley.params <- optim_params_conversion(optim_params_short)
-arg_names <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
-               'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
-               'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 5, 6
-               'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 7, 8
-               'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 9,10,11,12
-               'Leaf_respiration_factor', 'Stem_respiration_factor', # 13, 14
-               'Root_respiration_factor', 'Pod_respiration_factor', # 15, 16
-               'substrate_conductance_Leaf_to_Stem', 'substrate_conductance_Stem_to_Root', # 17, 18
-               'substrate_conductance_Stem_to_Pod', #  'transportation_beta_exponent', # 19
-               'Leaf_senescence_rate_max','Stem_senescence_rate_max', 'Root_senescence_rate_max', # 20, 21，22
-               'Leaf_senescence_alpha', 'Stem_senescence_alpha', 'Root_senescence_alpha',# 23，24, 25,
-               'Leaf_senescence_beta', 'Stem_senescence_beta', 'Root_senescence_beta')# 26，27, 28
-
 names(fitted.thornley.params) <- arg_names
 # fitted.thornley.params$Stem_carbon_to_mass_factor = 0.15
 parameters <-c(parameters, fitted.thornley.params)[!duplicated(c(names(parameters), 
@@ -76,7 +46,8 @@ parameters <-c(parameters, fitted.thornley.params)[!duplicated(c(names(parameter
 
 update_parameters = TRUE
 if (update_parameters){
-  updated.params <- full_soybean_ld11$parameters[names(full_soybean_ld11$parameters) %in% names(parameters)]
+  updated.params <- full_soybean_ld11$parameters[names(full_soybean_ld11$parameters) 
+                                                 %in% names(parameters)]
   full_soybean_ld11$parameters <-c(parameters, 
                                    updated.params)[!duplicated(c(names(parameters), 
                                                                  names(updated.params)), 
@@ -148,7 +119,7 @@ VERBOSE_MODEL_VALIDATION <- FALSE
 SLA_AS_DRIVER <- TRUE
 
 sowing_time <- soybean_ld11_biomass_2022$time[1]
-first_data_time <- soybean_ld11_biomass_2022$time[1]
+first_data_time <- soybean_ld11_biomass_2022$time[1] # this is legacy code, first_data_time now = sowing_time
 idx_diff <- which(weather2022_hourly$time == first_data_time) - which(weather2022_hourly$time == sowing_time)
 
 # Add DVI to weather file
@@ -157,7 +128,7 @@ weather2022.aftersowing <- weather2022_hourly[weather2022_hourly$time >= first_d
 weather2022.aftersowing$DVI <- weather2022.supplement$DVI
 
 # start from emergence time
-weather2022.aftersowing <- weather2022.aftersowing[-(1:which.min(abs(weather2022.aftersowing$DVI))),]
+weather2022.afteremergence <- weather2022.aftersowing[-(1:which.min(abs(weather2022.aftersowing$DVI))),]
 
 if (SLA_AS_DRIVER) {
   # The experimental data indicates a non-monotonic dependence of SLA on
@@ -175,19 +146,20 @@ if (SLA_AS_DRIVER) {
     method = 'linear'
   )
   
-  weather2022.aftersowing$iSp <- sla_func(weather2022.aftersowing$time)
+  weather2022.afteremergence$iSp <- sla_func(weather2022.afteremergence$time)
   
   full_soybean_ld11$parameters$iSp <- NULL
 }
 
 full_soybean_ld11$parameters$timestep <- 1
 full_soybean_ld11$parameters$time_zone_offset <- NULL
+full_soybean_ld11$parameters$Rd = 1.28
 
 # Run the soybean simulation starting at noon on June 17 (DOY 168)
 soybean_optsolver <- with(full_soybean_ld11, {partial_run_biocro(
   initial_values,
   parameters,
-  weather2022.aftersowing,
+  weather2022.afteremergence,
   direct_modules,
   differential_modules,
   ode_solver,
@@ -196,30 +168,10 @@ soybean_optsolver <- with(full_soybean_ld11, {partial_run_biocro(
   )})
 
 # Optimization
-upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
-              0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
-              0.8, # 10: respiration factor [/]
-              0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
-              0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
-              10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
-              2.0, 2.0, 2.0)# 20,21,22: senescence beta, LSR [/dvi]
-
-
-lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
-              0.005, 0.005, 0.005, 0.1, # 6，7, 8, 9： Km [mol / Mg]
-              0.1, # 10: respiration factor [dimensionless]
-              0.005, 0.005 ,0.01, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
-              0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
-              4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
-              1.5, 1.5, 1.5) # 20, 21, 22: senescence beta, LSR [/dvi]
-
-
 # cost function
 biomass <- soybean_ld11_biomass_2022[-1, c('doy','leaf', 'stem', 'pod', 'root','leaf_litter','stem_litter')]
 names(biomass) <- c('DOY', 'Leaf', 'Stem', 'Pod', 'Root','LeafLitter','StemLitter')
-numrows <- nrow(weather2022.aftersowing)
+numrows <- nrow(weather2022.afteremergence)
 wts2 <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 1, "Root" = 0.5, "Litter" = 0.5, "TNC" = 0.25)
 cost_func <- function(x){
   thornley_2022_optim(x, soybean_optsolver, 
@@ -228,11 +180,6 @@ cost_func <- function(x){
                       numrows, 
                       wts2)
 }
-
-rng.seed <- 1234 # seed for random number generator
-set.seed(rng.seed)
-# maximum number of iterations
-max.iter <- 1000
 
 ## testing
 result <- soybean_optsolver(optim_params_conversion(optim_params_short))
@@ -268,7 +215,32 @@ xyplot(data = result[1:2500,],
 
 # aggregate(10^4*result$Leaf_total_C_change_per_m2, by=list(Category=result$doy), FUN=sum)
 
+# Parameter ranges
+upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+              0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
+              0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
+              0.8, # 10: respiration factor [/]
+              0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
+              10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
+              2.0, 2.0, 2.0,
+              1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
 
+
+lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+              0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
+              0.005, 0.005, 0.005, 0.1, # 6，7, 8, 9： Km [mol / Mg]
+              0.1, # 10: respiration factor [dimensionless]
+              0.005, 0.005 ,0.01, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
+              4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
+              1.5, 1.5, 1.5,
+              0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
+
+rng.seed <- 1234 # seed for random number generator
+set.seed(rng.seed)
+# maximum number of iterations
+max.iter <- 1000
 
 # Call DEoptim function to run optimization
 cl <- makeCluster(8)

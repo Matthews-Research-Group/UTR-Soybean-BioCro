@@ -19,28 +19,32 @@ optim_params_conversion <- function(optim_params_short){
   optim_params[12] = optim_params_short[9]
   
   ## respiration factor [dimensionless]
-  optim_params[13] = 0 # Leaf respiration is accounted for by the canopy photosynthesis module
-  optim_params[c(14, 15, 16)] = optim_params_short[10]
+  # Leaf respiration is accounted for by the canopy photosynthesis module
+  optim_params[c(13, 14, 15)] = optim_params_short[10] # Stem, Root, Pod
   
   # Transport
   ## substrate conductance [/hr]
-  optim_params[17] = optim_params_short[11]  # 'substrate_conductance_Leaf_to_Stem'
-  optim_params[18] = optim_params_short[12] # 'substrate_conductance_Stem_to_Root'
-  optim_params[19] = optim_params_short[13] # 'substrate_conductance_Stem_to_Pod'
+  optim_params[16] = optim_params_short[11]  # 'substrate_conductance_Leaf_to_Stem'
+  optim_params[17] = optim_params_short[12] # 'substrate_conductance_Stem_to_Root'
+  optim_params[18] = optim_params_short[13] # 'substrate_conductance_Stem_to_Pod'
   
   # Senescence
   ## senescence max rates [/hr]
-  optim_params[20] = optim_params_short[14] # 'Leaf_senescence_rate_max'
-  optim_params[21] = optim_params_short[15] # 'Stem_senescence_rate_max'
-  optim_params[22] = optim_params_short[16] # 'Root_senescence_rate_max'
+  optim_params[19] = optim_params_short[14] # 'Leaf_senescence_rate_max'
+  optim_params[20] = optim_params_short[15] # 'Stem_senescence_rate_max'
+  optim_params[21] = optim_params_short[16] # 'Root_senescence_rate_max'
   ## senescence alphas [dimensionless]
-  optim_params[23] = optim_params_short[17] # 'Leaf_senescence_alpha'
-  optim_params[24] = optim_params_short[18] # 'Stem_senescence_alpha'
-  optim_params[25] = optim_params_short[19] # 'Root_senescence_alpha'
+  optim_params[22] = optim_params_short[17] # 'Leaf_senescence_alpha'
+  optim_params[23] = optim_params_short[18] # 'Stem_senescence_alpha'
+  optim_params[24] = optim_params_short[19] # 'Root_senescence_alpha'
   ## senescence betas [/dvi]
-  optim_params[26] = optim_params_short[20] # 'Leaf_senescence_beta'
-  optim_params[27] = optim_params_short[21] # 'Stem_senescence_beta'
-  optim_params[28] = optim_params_short[22] # 'Root_senescence_beta'
+  optim_params[25] = optim_params_short[20] # 'Leaf_senescence_beta'
+  optim_params[26] = optim_params_short[21] # 'Stem_senescence_beta'
+  optim_params[27] = optim_params_short[22] # 'Root_senescence_beta'
+  
+  # DVI switches
+  optim_params[28] = optim_params_short[23] # 'Pod_start_dvi'
+  optim_params[29] = optim_params_short[24] # 'stop_growth_dvi'
   
   return(optim_params)
 }

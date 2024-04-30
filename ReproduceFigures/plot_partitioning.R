@@ -1,4 +1,5 @@
 # Plot partitioning
+col.palette.muted <- c( "#117733", "#999933",  "#882255", "#332288")
 plot_partitioning <- function(result, year){
   canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), 
                                   FUN=sum) * 0.6 / 180.156e-3
@@ -44,6 +45,7 @@ plot_partitioning <- function(result, year){
   p <- ggplot() + theme_classic() +
     geom_point(data = allocation_percentage_tall, aes(x=DOY, y=Percentage, color=Organ),
                size = 0.8)+
+    scale_color_manual(values = col.palette.muted)+
     theme(plot.title=element_text(size=16, hjust=0.5),
           axis.text=element_text(size=10),
           axis.title=element_text(size=10),
@@ -54,15 +56,15 @@ plot_partitioning <- function(result, year){
     labs(title=element_blank(), 
          x=paste0('Day of Year (', year, ')'), 
          y='Allocation %')
-  print(p)
+  ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in")
   root_reuse_contribution_percentage <- root_reuse_daily$x/root_allocation_daily$x
   root_reuse_contribution_percentage <- root_reuse_contribution_percentage[
     -which(root_reuse_contribution_percentage>400)]
+  
   print(xyplot(root_reuse_daily$x/root_allocation_daily$x*100~
-                 root_reuse_daily$Group.1[
-                   -which(root_reuse_contribution_percentage>400)]),
-        xlab='DOY',
-        ylab='Percentage contribution from reuse')
+                             root_reuse_daily$Group.1[
+                            -which(root_reuse_contribution_percentage>400)],
+                            xlab='DOY', ylab='Percentage contribution from reuse'))
   
   return(allocation_percentage_tall)
 }

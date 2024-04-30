@@ -8,7 +8,7 @@ parameters <- list(
   base_utilization_rate_constant <- 3e-2,
   base_utilization_km <- 1,
   base_conductance <- 0.5,
-  # Parameters related to the Thornley growth model
+  # Parameters related to the UTR model
   Leaf_carbon_to_mass_factor = default_carbon_to_mass_factor,
   Leaf_utilization_rate_constant = 0.4 * base_utilization_rate_constant,
   Leaf_utilization_km = 1.0 * base_utilization_km,

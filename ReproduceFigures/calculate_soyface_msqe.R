@@ -33,3 +33,9 @@ for (i in 1:length(years)){
   calculate_msqe(years[i], results[[i]], ExpBiomass[[i]])
   calculate_msqe(years[i], results.elevCO2[[i]], ExpBiomass.elevCO2[[i]])
 }
+
+
+for (i in 1:length(years)){
+  calculate_msqe(years[i], results[[i]], ExpBiomass[[i]], model = 'partitioning')
+  calculate_msqe(years[i], results.elevCO2[[i]], ExpBiomass.elevCO2[[i]], model = 'partitioning')
+}

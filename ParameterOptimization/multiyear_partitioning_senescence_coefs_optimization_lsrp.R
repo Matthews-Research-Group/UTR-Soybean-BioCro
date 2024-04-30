@@ -25,20 +25,6 @@ sow.date <- c(152, 149, 148, 148)
 harv.date <- c(288, 289, 270, 270)
 weather.growingseason <- list()
 
-# names of fitted parameters
-arg_names <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
-               'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
-               'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 5, 6
-               'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 7, 8
-               'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 9,10,11,12
-               'Leaf_respiration_factor', 'Stem_respiration_factor', # 13, 14
-               'Root_respiration_factor', 'Pod_respiration_factor', # 15, 16
-               'substrate_conductance_Leaf_to_Stem', 'substrate_conductance_Stem_to_Root', # 17, 18
-               'substrate_conductance_Stem_to_Pod', #  'transportation_beta_exponent', # 19
-               'Leaf_senescence_rate_max','Stem_senescence_rate_max', 'Root_senescence_rate_max', # 20, 21，22
-               'Leaf_senescence_alpha', 'Stem_senescence_alpha', 'Root_senescence_alpha',# 23，24, 25,
-               'Leaf_senescence_beta', 'Stem_senescence_beta', 'Root_senescence_beta')# 26，27, 28
-
 # Initialize variables for the cost function
 soybean_optsolver <- list()
 ExpBiomass <- list()
@@ -62,10 +48,10 @@ for (i in 1:length(year)) {   # Remember to change back
   weather.growingseason[[i]] <- weather[emergence.idx:hd.ind,]
   
   ExpBiomass[[i]] <- read.csv(file=paste0('../SoyFACE_data/biomasses/',yr, co2_opt, 'biomass.csv'))
-  colnames(ExpBiomass[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
+  colnames(ExpBiomass[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CummulativeLitter")
   
   ExpBiomass.std[[i]] <- read.csv(file=paste0('../SoyFACE_data/biomasses/',yr, co2_opt, 'biomass_std.csv'))
-  colnames(ExpBiomass.std[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
+  colnames(ExpBiomass.std[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CummulativeLitter")
   
   # RootVals[[i]] <- data.frame("DOY"=ExpBiomass[[i]]$DOY[3], 
   #                             "Root"=0.17*sum(ExpBiomass[[i]][5,2:4])) 
@@ -90,7 +76,7 @@ for (i in 1:length(year)) {   # Remember to change back
 }
 
 # Optimization
-wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 2, "Root" = 0.75, "CumLitter" = 0.5)
+wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 2, "Root" = 0.75, "CummulativeLitter" = 0.5)
 
 # cost function
 cost_func <- function(x){
@@ -106,7 +92,8 @@ upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
               0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
               10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
-              2.0, 2.0, 2.0)# 20,21,22: senescence beta, LSR [/dvi]
+              2.0, 2.0, 2.0,# 20,21,22: senescence beta, LSR [/dvi]
+              1.2, 2.2) # 23, 24, pod start dvi, stop growth dvi
 
 
 lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
@@ -116,7 +103,8 @@ lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.005, 0.005 ,0.01, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
               0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
               4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
-              1.5, 1.5, 1.5) # 20, 21, 22: senescence beta, LSR [/dvi]
+              1.5, 1.5, 1.5, # 20, 21, 22: senescence beta, LSR [/dvi]
+              0.8, 1.8) # 23, 24, pod start dvi, stop growth dvi
 
 rng.seed <- 1234 # seed for random number generator
 set.seed(rng.seed)

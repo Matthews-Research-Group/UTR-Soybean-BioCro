@@ -12,53 +12,21 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Cost function
 source('../ParameterOptimization/soybean_parameter_expansion.R')
+source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 years <- c('2002', '2004', '2005', '2006')
 sow.date <- c(152, 149, 148, 148)
 harv.date <- c(288, 289, 270, 270)
 
-# initialize lists for figures
-figs <- list()
 co2_opt = '_ambient_'
-
-# names of fitted parameters
-arg_names <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
-               'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
-               'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 5, 6
-               'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 7, 8
-               'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 9,10,11,12
-               'Leaf_respiration_factor', 'Stem_respiration_factor', # 13, 14
-               'Root_respiration_factor', 'Pod_respiration_factor', # 15, 16
-               'substrate_conductance_Leaf_to_Stem', 'substrate_conductance_Stem_to_Root', # 17, 18
-               'substrate_conductance_Stem_to_Pod', # 'transportation_beta_exponent', # 19, 20
-               'Leaf_senescence_rate_max','Stem_senescence_rate_max', # 21, 22
-               'Leaf_senescence_alpha', 'Stem_senescence_alpha',# 23, 24
-               'Leaf_senescence_beta', 'Stem_senescence_beta', # 25, 26
-               'Pod_start_dvi', 'stop_growth_dvi') # 27, 28
-arg_names <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
-               'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
-               'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 5, 6
-               'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 7, 8
-               'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 9,10,11,12
-               'Leaf_respiration_factor', 'Stem_respiration_factor', # 13, 14
-               'Root_respiration_factor', 'Pod_respiration_factor', # 15, 16
-               'substrate_conductance_Leaf_to_Stem', 'substrate_conductance_Stem_to_Root', # 17, 18
-               'substrate_conductance_Stem_to_Pod', #  'transportation_beta_exponent', # 19
-               'Leaf_senescence_rate_max','Stem_senescence_rate_max', 'Root_senescence_rate_max', # 20, 21，22
-               'Leaf_senescence_alpha', 'Stem_senescence_alpha', 'Root_senescence_alpha',# 23，24, 25,
-               'Leaf_senescence_beta', 'Stem_senescence_beta', 'Root_senescence_beta')# 26，27, 28
-
-optim_params_short <-c(0.395667,    
-                       0.004489,    0.018746,    0.090290,    0.588019,    
-                       0.419076,    0.177943,    0.466320,    0.211607,    
-                       0.200006,    
-                       0.025633,    0.408561,    1.105566,    
-                       0.041240,    0.002908,    0.000173,    
-                       8.783273,    9.921733,    1.711259,    
-                       1.872338,    1.992031,    1.665296)
-
+# load parameter files
 setwd('../Data/Soybean-BioCro_Parameters')
+
+param_files <- list.files(pattern = "[.]R$", recursive = TRUE)
+
+param_files <- param_files[-c(which(param_files == "soybean_initial_values.R"))]
+lapply(param_files, source)
 
 # Initialize lists
 results <- list()
@@ -70,12 +38,7 @@ ExpBiomass.elevCO2 <- list()
 ExpBiomass.std <- list()
 RootVals <- list()
 numrows <- vector()
-
-# load parameter files
-param_files <- list.files(pattern = "[.]R$", recursive = TRUE)
-
-param_files <- param_files[-c(which(param_files == "soybean_initial_values.R"))]
-lapply(param_files, source)
+figs <- list()
 
 for (i in 1:length(years)) {   
   yr <- years[i]
@@ -107,7 +70,7 @@ for (i in 1:length(years)) {
                                                arg_names,
                                                verbose = FALSE)
   
-  result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short))
+  result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE))
   results[[i]] <- result
   # check when the simulation stops if not running till the end
   if (dim(result)[1] < dim(weather.growingseason[[i]])[1]){
@@ -287,7 +250,7 @@ for (i in 1:length(years)) {
                                                arg_names,
                                                verbose = FALSE)
   
-  result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short))
+  result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE))
   results.elevCO2[[i]] <- result
   # check when the simulation stops if not running till the end
   if (dim(result)[1] < dim(weather.growingseason[[i]])[1]){

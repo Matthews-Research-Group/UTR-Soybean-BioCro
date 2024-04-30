@@ -48,14 +48,14 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       Pred.Root$Vals <- result$Root[doy_inds.Root]
       
       cf <- optim_params_short[1]
-      Pred$CumLitter <- cf * (result$Leaf_senescence_loss[doy_inds] + result$Stem_senescence_loss[doy_inds])
+      Pred$CummulativeLitter <- cf * (result$Leaf_senescence_loss[doy_inds] + result$Stem_senescence_loss[doy_inds])
       
       # factor to scale experimental and simulated results between 0 and ~1 for all components
       scale.leaf <- max(TrueValues$Leaf)
       scale.stem <- max(TrueValues$Stem)
       scale.pod <- max(TrueValues$Pod)
       scale.root <- max(RootValues$Root)
-      scale.CumLitter <- max(TrueValues$CumLitter)
+      scale.CummulativeLitter <- max(TrueValues$CummulativeLitter)
       
       # weights
       wts <- weights[[i]]
@@ -69,9 +69,9 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       cost <- wts2$Leaf*err.leaf + wts2$Stem*err.stem + wts2$Pod*err.pod + wts2$Root*err.root
       
       # add litter to the cost function
-      err.litter <- sum(wts$CumLitter*(((Pred$CumLitter-TrueValues$CumLitter)/scale.CumLitter)^2))/length(Pred$CumLitter)
+      err.litter <- sum(wts$CummulativeLitter*(((Pred$CummulativeLitter-TrueValues$CummulativeLitter)/scale.CummulativeLitter)^2))/length(Pred$CummulativeLitter)
       
-      cost <- cost + wts2$CumLitter * err.litter
+      cost <- cost + wts2$CummulativeLitter * err.litter
       
       if(is.nan(cost)){
         cost.avg <- 1e10

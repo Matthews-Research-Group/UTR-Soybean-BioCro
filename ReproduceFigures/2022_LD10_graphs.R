@@ -6,10 +6,10 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Source files
 source('../ParameterOptimization/soybean_parameter_expansion.R')
-co2_opt = 'ambient'
+co2_opt = '_tbd_'
 source('../Data/Soybean-BioCro_Parameters/soybean_parameters.R')
+source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
-
 # Load packages
 library(BioCro)
 library(lattice)
@@ -33,38 +33,16 @@ full_soybean_ld10$differential_modules <- derivative_module_names
 
 # Set up basic properties for the solver
 full_soybean_ld10$ode_solver <- solver
-# solver$type <- 'boost_rkck54'
-# solver$adaptive_max_steps <- 10000
 
-optim_params_short <-c(0.233784,    0.004728,    0.034942,    0.022596,
-                       0.962753,    0.164531,    1.840606,    1.357177,
-                       3.092379,    0.293349,    0.317670,    0.779145,
-                       1.198915,    0.013672,    0.039876,
-                       10.891061,   14.012313,   -5.537149,   -5.798883,
-                       0.883654,    1.995483)
-
-# optim_params_short[19] = 1.6
-full_soybean_ld10$parameters$Rd = 1.28
-fitted.thornley.params <- optim_params_conversion(optim_params_short)
-names(fitted.thornley.params) <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
-                                   'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
-                                   'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 5, 6
-                                   'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 7, 8
-                                   'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 9,10,11,12
-                                   'Leaf_respiration_factor', 'Stem_respiration_factor', # 13, 14
-                                   'Root_respiration_factor', 'Pod_respiration_factor', # 15, 16
-                                   'substrate_conductance_Leaf_to_Stem', 'substrate_conductance_Stem_to_Root', # 17, 18
-                                   'substrate_conductance_Stem_to_Pod', # 'transportation_beta_exponent', # 19, 20
-                                   'Leaf_senescence_rate_max','Stem_senescence_rate_max', # 21, 22
-                                   'Leaf_senescence_alpha', 'Stem_senescence_alpha',# 23, 24
-                                   'Leaf_senescence_beta', 'Stem_senescence_beta', # 25, 26
-                                   'Pod_start_dvi', 'stop_growth_dvi') # 27, 28
-# fitted.thornley.params$Stem_carbon_to_mass_factor = 0.15
-parameters <-c(parameters, fitted.thornley.params)[!duplicated(c(names(parameters), 
-                                                                 names(fitted.thornley.params)), 
+# Set UTR parameters
+fitted.utr.params <- optim_params_conversion(optim_params_short)
+names(fitted.utr.params) <- arg_names
+parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters), 
+                                                                 names(fitted.utr.params)), 
                                                                fromLast = TRUE)]
 
 update_parameters = TRUE
+# Update LD10 photosynthetic paramters
 if (update_parameters){
   updated.params <- full_soybean_ld10$parameters[names(full_soybean_ld10$parameters) %in% names(parameters)]
   full_soybean_ld10$parameters <-c(parameters, 
@@ -89,7 +67,6 @@ if (update_parameters){
   full_soybean_ld10$parameters <- parameters
 }
 
-# full_soybean_ld10[['2021']]$parameters$Catm <- 414.7 # 2021 value from NOAA
 full_soybean_ld10$parameters$Catm <- 417.2 # 2022 value from NOAA
 
 # update initial values
@@ -121,11 +98,6 @@ initial_state <- list(
   Rhizome =                 0.0000001,     # Mg / ha
   RhizomeLitter =           0,               # Mg / ha
   # Variables related to the utilization growth model starting from first datapoint
-  # Biomass
-  Leaf = seed_mass * leaf_frac,
-  Stem = seed_mass * stem_frac,
-  Root = seed_mass * root_frac,
-  Pod = 1e-3 * cf, 
   Leaf_substrate_carbon = sub_frac * seed_mass * leaf_frac / cf,
   Leaf_structural_carbon = str_frac * seed_mass * leaf_frac / cf,
   Stem_substrate_carbon = sub_frac * seed_mass * stem_frac / cf, 
@@ -163,8 +135,8 @@ weather2022.aftersowing <- weather2022_hourly[weather2022_hourly$time >= first_d
 weather2022.aftersowing$DVI <- weather2022.supplement$DVI
 
 # start from emergence time
-weather2022.aftersowing <- weather2022.aftersowing[-(1:which.min(abs(weather2022.aftersowing$DVI))),]
-# weather2022.aftersowing <- weather2022.aftersowing[-(1:640),]
+weather2022.afteremergence <- weather2022.aftersowing[-(1:which.min(abs(weather2022.aftersowing$DVI))),]
+# weather2022.afteremergence <- weather2022.afteremergence[-(1:640),]
 
 # if (SLA_AS_DRIVER) {
 #   # The experimental data indicates a non-monotonic dependence of SLA on
@@ -201,17 +173,20 @@ if (SLA_AS_DRIVER) {
     method = 'linear'
   )
   
-  weather2022.aftersowing$iSp <- sla_func(weather2022.aftersowing$time)
+  weather2022.afteremergence$iSp <- sla_func(weather2022.afteremergence$time)
   
   full_soybean_ld10$parameters$iSp <- NULL
 }
 
 full_soybean_ld10$parameters$timestep <- 1
+full_soybean_ld10$parameters$time_zone_offset <- NULL
+full_soybean_ld10$parameters$Rd = 1.28
+
 # Run the soybean simulation starting at noon on June 17 (DOY 168)
 biocro_result <- with(full_soybean_ld10, {run_biocro(
     initial_values,
     parameters,
-    weather2022.aftersowing,
+    weather2022.afteremergence,
     direct_modules,
     differential_modules,
     ode_solver
@@ -370,13 +345,13 @@ ggplot() + theme_classic() +
 # dev.new()
 # biocro_senescence_plot+as.layer(experiment_plot)
 # 
-# weather2022.aftersowing$too_cold[which(weather2022.aftersowing$temp<13)]='Blue'
-# weather2022.aftersowing$too_cold[which(weather2022.aftersowing$temp>=13)]='Black'
-# weather2022.aftersowing$too_cold[which(weather2022.aftersowing$temp>=18)]='darkgreen'
-# weather2022.aftersowing$too_cold[which(weather2022.aftersowing$temp>=30)]='Red'
+# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp<13)]='Blue'
+# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=13)]='Black'
+# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=18)]='darkgreen'
+# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=30)]='Red'
 # plot(data = weather2021.aftersowing, temp~doy, col = too_cold, xlim = c(200,280), ylim=c(5,35))
 # 
-# not_really_cold <- unique(weather2022.aftersowing$doy[weather2022.aftersowing$doy == unique(weather2022.aftersowing$doy[weather2022.aftersowing$temp<13]) & weather2022.aftersowing$temp > 18])
+# not_really_cold <- unique(weather2022.afteremergence$doy[weather2022.afteremergence$doy == unique(weather2022.afteremergence$doy[weather2022.afteremergence$temp<13]) & weather2022.afteremergence$temp > 18])
 # night_cold <- unique(weather2021.aftersowing$doy[weather2022_hourly.aftersowing$too_cold=='Blue'])
 # night_cold[!(night_cold %in% not_really_cold)]
 save(biocro_organ_biomass_tall_2022_ld10, field_organ_biomass_tall_2022_ld10, file = 'organ_biomass_plot_2021_ld10.RData')

@@ -6,8 +6,9 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Source files
 source('../ParameterOptimization/soybean_parameter_expansion.R')
-co2_opt = 'ambient'
+co2_opt = '_tbd_'
 source('../Data/Soybean-BioCro_Parameters/soybean_parameters.R')
+source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
 # Load packages
 library(BioCro)
@@ -19,9 +20,7 @@ library(ggplot2)
 load('../../energy-farm-biocro/soybean_ld11_development_2021/soybean_ld11_development_data_2021.RData')
 load('../../energy-farm-biocro/soybean_ld11_biomass_2021/soybean_ld11_biomass_2021.RData')
 load('../Data/Soybean-BioCro_Parameters/full_soybean_ld11.RData')
-#load('../../energy-farm-biocro/weather_2021/weather2021_hourly.RData')
-load('../../energy-farm-biocro/weather_2021/weather2021_processed.RData')
-weather2021_hourly <- weather2021
+load('../../energy-farm-biocro/weather_2021/weather2021_hourly.RData')
 load('../Data/Weather_data/weather2021supplement.RData')
 # Set working directory to location of this file
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -32,70 +31,14 @@ full_soybean_ld11$differential_modules <- derivative_module_names
 
 # Set up basic properties for the solver
 full_soybean_ld11$ode_solver <- solver
-solver$type <- 'boost_rkck54'
-solver$adaptive_max_steps <- 10000
-
-# optim_params_short <-c(0.242485,    0.004276,    0.032644,    0.053587,    
-#                        0.586933,    0.062188,    0.902778,    0.832786,    
-#                        0.485468,    0.357419,    0.352924,    0.373693,   
-#                        1.157740,    0.858463,    0.008441,    0.020550,   
-#                        16.118925,   20.463494,   
-#                        -9.096414,   -9.807364,    0.825496,    1.978349)
-# 
-# optim_params_short <-c(0.262577,   0.005899,   0.029082,   0.023065,   
-#                        0.615758,   0.528243,   1.691939,   0.806444,   
-#                        0.543754,   0.464966,   0.334789,   0.074210,   
-#                        1.595415,   0.011451,   0.014632,  18.167363,  
-#                        14.387266,  -9.704457,  -6.488237,   0.863435,   2.004523)
-
-optim_params_short <-c(0.233784,    0.004728,    0.034942,    0.022596,
-                       0.962753,    0.164531,    1.840606,    1.357177,
-                       3.092379,    0.293349,    0.317670,    0.779145,
-                       1.198915,    0.013672,    0.039876,
-                       10.891061,   14.012313,   -5.537149,   -5.798883,
-                       0.883654,    1.995483)
-# optim_params_short <-c(0.216518,    0.023639,    0.075485,    0.032364,    
-#                        0.941205,    0.832164,    1.222959,    0.463889,    
-#                        0.074706,    0.246176,    0.978312,    0.783531,    
-#                        1.958796,    0.046947,    0.009200,   
-#                        19.958765,   12.725613,   -9.048523,   -5.868483,    
-#                        0.810489,    2.089959)
-
-# optim_params_short <-c(0.280385,    0.013297,    0.025664,    0.030763,    
-#                        0.264599,    0.784713,    1.045214,    1.492283,    
-#                        0.559731,    0.124240,    0.960166,    0.935573,    
-#                        1.138520,    0.021318,    0.010909,    9.443322,    
-#                        8.157651,   -4.506269,   -3.057007,    0.982365,    1.965775) #0.982365
-# optim_params_short <-c(0.206012,    0.031045,    0.088225,    0.058949,    
-#                        0.829010,    1.075231,    1.382857,    0.829888,    
-#                        0.061062,    0.176592,    0.806139,    0.853595,    
-#                        1.954715,    0.010247,    0.029257,   17.337494,   
-#                        20.570165,   -9.282540,   -9.234703,    0.805723,    2.088481)
-# optim_params_short <-c(0.206012,    0.031045,    0.088225,    0.058949,    
-#                        0.840185,    1.075231,    1.382857,    0.829888,    
-#                        0.061062,    0.176592,    0.806139,    0.853595,    
-#                        1.954715,    0.010247,    0.029257,   17.337494,   
-#                        20.570165,   -9.282540,   -9.234703,    0.805723,    2.088481)
 
 # optim_params_short[19] = 1.6
 full_soybean_ld11$parameters$Rd = 1.28
-fitted.thornley.params <- optim_params_conversion(optim_params_short)
-names(fitted.thornley.params) <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
-                                   'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
-                                   'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 5, 6
-                                   'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 7, 8
-                                   'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 9,10,11,12
-                                   'Leaf_respiration_factor', 'Stem_respiration_factor', # 13, 14
-                                   'Root_respiration_factor', 'Pod_respiration_factor', # 15, 16
-                                   'substrate_conductance_Leaf_to_Stem', 'substrate_conductance_Stem_to_Root', # 17, 18
-                                   'substrate_conductance_Stem_to_Pod', # 'transportation_beta_exponent', # 19, 20
-                                   'Leaf_senescence_rate_max','Stem_senescence_rate_max', # 21, 22
-                                   'Leaf_senescence_alpha', 'Stem_senescence_alpha',# 23, 24
-                                   'Leaf_senescence_beta', 'Stem_senescence_beta', # 25, 26
-                                   'Pod_start_dvi', 'stop_growth_dvi') # 27, 28
+fitted.utr.params <- optim_params_conversion(optim_params_short)
+names(fitted.utr.params) <- arg_names
 
-parameters <-c(parameters, fitted.thornley.params)[!duplicated(c(names(parameters), 
-                                                                 names(fitted.thornley.params)), 
+parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters), 
+                                                                 names(fitted.utr.params)), 
                                                                fromLast = TRUE)]
 
 update_parameters = TRUE
@@ -109,6 +52,7 @@ if (update_parameters){
   full_soybean_ld11$parameters <- parameters
 }
 
+full_soybean_ld11$parameters$Catm <- 414.7 # 2021 value from NOAA
 
 # update initial values
 sub_frac <- 0.1           # substrate_fraction
@@ -140,10 +84,10 @@ initial_state <- list(
   RhizomeLitter =           0,               # Mg / ha
   # Variables related to the utilization growth model starting from first datapoint
   # Biomass
-  Leaf = seed_mass * leaf_frac,
-  Stem = seed_mass * stem_frac,
-  Root = seed_mass * root_frac,
-  Pod = 1e-3 * cf, 
+  # Leaf = seed_mass * leaf_frac,
+  # Stem = seed_mass * stem_frac,
+  # Root = seed_mass * root_frac,
+  # Pod = 1e-3 * cf, 
   Leaf_substrate_carbon = sub_frac * seed_mass * leaf_frac / cf,
   Leaf_structural_carbon = str_frac * seed_mass * leaf_frac / cf,
   Stem_substrate_carbon = sub_frac * seed_mass * stem_frac / cf, 
@@ -163,31 +107,29 @@ if (update_init){
   full_soybean_ld11$initial_values <- initial_state
 }
 
-
-
-
 # Make some decisions about what to do
 MAKE_OPTIONAL_PLOTS <- TRUE
 SET_NEW_PARAMETER_VALUES <- TRUE
 VERBOSE_MODEL_VALIDATION <- FALSE
 SLA_AS_DRIVER <- TRUE
 
-sowing_time <- 168.5
+sowing_time <- soybean_ld11_biomass_2021$time[1]
 #first_data_time <- soybean_ld11_biomass_2021$time[2]
 first_data_time <- sowing_time
 idx_diff <- which(weather2021_hourly$time == first_data_time) - which(weather2021_hourly$time == sowing_time)
 
 # Add DVI to weather file
 weather2021.aftersowing <- weather2021_hourly[weather2021_hourly$time >= first_data_time, ]
-weather2021.supplement.dvi.rep <- rep(weather2021.supplement$DVI, each = 6)
-weather2021.supplement.dl.rep <- rep(weather2021.supplement$day_length, each = 6)
-
-idx_diff <- idx_diff+6
-weather2021.aftersowing$DVI <- weather2021.supplement.dvi.rep[-(1:idx_diff)]
-weather2021.aftersowing$day_length <- weather2021.supplement.dl.rep[-(1:idx_diff)]
+# weather2021.supplement.dvi.rep <- rep(weather2021.supplement$DVI, each = 6)
+# weather2021.supplement.dl.rep <- rep(weather2021.supplement$day_length, each = 6)
+# 
+# idx_diff <- idx_diff+6
+weather2021.aftersowing$DVI <- weather2021.supplement$DVI
+# weather2021.aftersowing$DVI <- weather2021.supplement.dvi.rep[-(1:idx_diff)]
+# weather2021.aftersowing$day_length <- weather2021.supplement.dl.rep[-(1:idx_diff)]
 
 # start from emergence time
-weather2021.aftersowing <- weather2021.aftersowing[-(1:which.min(abs(weather2021.aftersowing$DVI))),]
+weather2022.afteremergence <- weather2021.aftersowing[-(1:which.min(abs(weather2021.aftersowing$DVI))),]
 
 if (SLA_AS_DRIVER) {
   # The experimental data indicates a non-monotonic dependence of SLA on
@@ -205,17 +147,21 @@ if (SLA_AS_DRIVER) {
     method = 'linear'
   )
   
-  weather2021.aftersowing$iSp <- sla_func(weather2021.aftersowing$time)
+  weather2022.afteremergence$iSp <- sla_func(weather2022.afteremergence$time)
   
   full_soybean_ld11$parameters$iSp <- NULL
 }
 
+full_soybean_ld11$parameters$timestep <- 1
+full_soybean_ld11$parameters$time_zone_offset <- NULL
+# optim_params_short[19] = 1.6
+full_soybean_ld11$parameters$Rd = 1.28
 
 # Run the soybean simulation starting at noon on June 17 (DOY 168)
 biocro_result <- with(full_soybean_ld11, {run_biocro(
     initial_values,
     parameters,
-    weather2021.aftersowing,
+    weather2022.afteremergence,
     direct_modules,
     differential_modules,
     ode_solver
@@ -263,6 +209,7 @@ xyplot(
         )
     }
 )
+
 
 biocro_organ_biomass <- biocro_result[c('time', 'Leaf', 'Stem', 'Root', 'Pod')]
 biocro_organ_biomass_tall <- melt(biocro_organ_biomass, id.vars = 'time')
@@ -372,15 +319,16 @@ save(biocro_organ_biomass_tall_2021_ld11, field_organ_biomass_tall_2021_ld11, fi
 # dev.new()
 # biocro_senescence_plot+as.layer(experiment_plot)
 # 
-# weather2021.aftersowing$too_cold[which(weather2021.aftersowing$temp<13)]='Blue'
-# weather2021.aftersowing$too_cold[which(weather2021.aftersowing$temp>=13)]='Black'
-# weather2021.aftersowing$too_cold[which(weather2021.aftersowing$temp>=18)]='darkgreen'
-# weather2021.aftersowing$too_cold[which(weather2021.aftersowing$temp>=30)]='Red'
-# plot(data = weather2021.aftersowing, temp~doy, col = too_cold, xlim = c(200,280), ylim=c(5,35))
+# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp<13)]='Blue'
+# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=13)]='Black'
+# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=18)]='darkgreen'
+# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=30)]='Red'
+# plot(data = weather2022.afteremergence, temp~doy, col = too_cold, xlim = c(200,280), ylim=c(5,35))
 # 
-# not_really_cold <- unique(weather2021.aftersowing$doy[weather2021.aftersowing$doy == unique(weather2021.aftersowing$doy[weather2021.aftersowing$temp<13]) & weather2021.aftersowing$temp > 18])
-# night_cold <- unique(weather2021.aftersowing$doy[weather2021.aftersowing$too_cold=='Blue'])
+# not_really_cold <- unique(weather2022.afteremergence$doy[weather2022.afteremergence$doy == unique(weather2022.afteremergence$doy[weather2022.afteremergence$temp<13]) & weather2022.afteremergence$temp > 18])
+# night_cold <- unique(weather2022.afteremergence$doy[weather2022.afteremergence$too_cold=='Blue'])
 # night_cold[!(night_cold %in% not_really_cold)]
 
 source('plot_partitioning.R')
 allocation_percentage_tall <- plot_partitioning(biocro_result, '2021')
+
