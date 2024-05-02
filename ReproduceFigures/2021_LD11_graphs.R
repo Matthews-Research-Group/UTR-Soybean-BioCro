@@ -129,7 +129,7 @@ weather2021.aftersowing$DVI <- weather2021.supplement$DVI
 # weather2021.aftersowing$day_length <- weather2021.supplement.dl.rep[-(1:idx_diff)]
 
 # start from emergence time
-weather2022.afteremergence <- weather2021.aftersowing[-(1:which.min(abs(weather2021.aftersowing$DVI))),]
+weather2021.afteremergence <- weather2021.aftersowing[-(1:which.min(abs(weather2021.aftersowing$DVI))),]
 
 if (SLA_AS_DRIVER) {
   # The experimental data indicates a non-monotonic dependence of SLA on
@@ -147,7 +147,7 @@ if (SLA_AS_DRIVER) {
     method = 'linear'
   )
   
-  weather2022.afteremergence$iSp <- sla_func(weather2022.afteremergence$time)
+  weather2021.afteremergence$iSp <- sla_func(weather2021.afteremergence$time)
   
   full_soybean_ld11$parameters$iSp <- NULL
 }
@@ -161,7 +161,7 @@ full_soybean_ld11$parameters$Rd = 1.28
 biocro_result <- with(full_soybean_ld11, {run_biocro(
     initial_values,
     parameters,
-    weather2022.afteremergence,
+    weather2021.afteremergence,
     direct_modules,
     differential_modules,
     ode_solver
@@ -319,14 +319,14 @@ save(biocro_organ_biomass_tall_2021_ld11, field_organ_biomass_tall_2021_ld11, fi
 # dev.new()
 # biocro_senescence_plot+as.layer(experiment_plot)
 # 
-# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp<13)]='Blue'
-# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=13)]='Black'
-# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=18)]='darkgreen'
-# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=30)]='Red'
-# plot(data = weather2022.afteremergence, temp~doy, col = too_cold, xlim = c(200,280), ylim=c(5,35))
+# weather2021.afteremergence$too_cold[which(weather2021.afteremergence$temp<13)]='Blue'
+# weather2021.afteremergence$too_cold[which(weather2021.afteremergence$temp>=13)]='Black'
+# weather2021.afteremergence$too_cold[which(weather2021.afteremergence$temp>=18)]='darkgreen'
+# weather2021.afteremergence$too_cold[which(weather2021.afteremergence$temp>=30)]='Red'
+# plot(data = weather2021.afteremergence, temp~doy, col = too_cold, xlim = c(200,280), ylim=c(5,35))
 # 
-# not_really_cold <- unique(weather2022.afteremergence$doy[weather2022.afteremergence$doy == unique(weather2022.afteremergence$doy[weather2022.afteremergence$temp<13]) & weather2022.afteremergence$temp > 18])
-# night_cold <- unique(weather2022.afteremergence$doy[weather2022.afteremergence$too_cold=='Blue'])
+# not_really_cold <- unique(weather2021.afteremergence$doy[weather2021.afteremergence$doy == unique(weather2021.afteremergence$doy[weather2021.afteremergence$temp<13]) & weather2021.afteremergence$temp > 18])
+# night_cold <- unique(weather2021.afteremergence$doy[weather2021.afteremergence$too_cold=='Blue'])
 # night_cold[!(night_cold %in% not_really_cold)]
 
 source('plot_partitioning.R')
