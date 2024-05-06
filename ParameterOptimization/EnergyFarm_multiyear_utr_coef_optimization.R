@@ -73,7 +73,7 @@ for (i in 1:length(years)){
   str_frac <- 1 - sub_frac  # structural_fraction
   seed_mass <- ExpBiomass[[i]]$initial_seed[1]
   j <- 2
-  mass_t <- sum(ExpBiomass[[i]][i, c('leaf', 'stem', 'root')])
+  mass_t <- sum(ExpBiomass[[i]][j, c('leaf', 'stem', 'root')])
   leaf_frac <- ExpBiomass[[i]]$leaf[j]/mass_t
   stem_frac <- ExpBiomass[[i]]$stem[j]/mass_t
   root_frac <- ExpBiomass[[i]]$root[j]/mass_t

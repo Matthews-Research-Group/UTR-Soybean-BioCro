@@ -7,12 +7,11 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # Source files
 source('../ParameterOptimization/soybean_parameter_expansion.R')
 co2_opt = '_tbd_'
-years <- c('2021', '2022')
-Catms <- c(414.7, 417.2) # from NOAA
+years <- c('2021', '2022', '2023')
+Catms <- c(414.7, 417.2, 419.3) # from NOAA
 source('../Data/Soybean-BioCro_Parameters/soybean_parameters.R')
 source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
-source('plot_partitioning.R')
 # Load packages
 library(BioCro)
 library(lattice)
@@ -49,6 +48,8 @@ if (update_parameters){
 
 ExpBiomass <- list()
 weather.afteremergence <- list()
+results <- list()
+figs <- list()
 
 loadRData <- function(fileName){
   #loads an RData file, and returns it
@@ -57,9 +58,8 @@ loadRData <- function(fileName){
 }
 
 for (i in 1:length(years)){
-  ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld11_biomass_', years[i],'/soybean_ld11_biomass_', years[i], '.RData')) 
+  ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld11_biomass_', years[i],'/soybean_ld11_biomass_', years[i], '.RData'))
   weather <- loadRData(paste0('../../energy-farm-biocro/weather_', years[i], '/weather', years[i], '_hourly.RData'))
-  weather.supplement <- loadRData(paste0('../Data/Weather_data/weather', years[i], 'supplement.RData'))
   full_soybean_ld11$parameters$Catm <- Catms[i]
   
   # update initial values
@@ -67,7 +67,7 @@ for (i in 1:length(years)){
   str_frac <- 1 - sub_frac  # structural_fraction
   seed_mass <- ExpBiomass[[i]]$initial_seed[1]
   j <- 2
-  mass_t <- sum(ExpBiomass[[i]][i, c('leaf', 'stem', 'root')])
+  mass_t <- sum(ExpBiomass[[i]][j, c('leaf', 'stem', 'root')])
   leaf_frac <- ExpBiomass[[i]]$leaf[j]/mass_t
   stem_frac <- ExpBiomass[[i]]$stem[j]/mass_t
   root_frac <- ExpBiomass[[i]]$root[j]/mass_t
@@ -92,33 +92,39 @@ for (i in 1:length(years)){
     RhizomeLitter =           0,               # Mg / ha
     Leaf_substrate_carbon = sub_frac * seed_mass * leaf_frac / cf,
     Leaf_structural_carbon = str_frac * seed_mass * leaf_frac / cf,
-    Stem_substrate_carbon = sub_frac * seed_mass * stem_frac / cf, 
+    Stem_substrate_carbon = sub_frac * seed_mass * stem_frac / cf,
     Stem_structural_carbon = str_frac * seed_mass * stem_frac / cf,
     Root_substrate_carbon =  sub_frac * seed_mass * root_frac / cf,
     Root_structural_carbon = str_frac * seed_mass * root_frac / cf,
-    Pod_substrate_carbon = 1e-4,  
+    Pod_substrate_carbon = 1e-4,
     Pod_structural_carbon = 9e-4)
   
   update_init = TRUE
   if (update_init){
     updated.init <- full_soybean_ld11$initial_values[names(full_soybean_ld11$initial_values) %in% names(initial_state)]
-    full_soybean_ld11$initial_values <-c(initial_state, 
-                                         updated.init)[!duplicated(c(names(initial_state), 
-                                                                     names(updated.init)), 
+    full_soybean_ld11$initial_values <-c(initial_state,
+                                         updated.init)[!duplicated(c(names(initial_state),
+                                                                     names(updated.init)),
                                                                    fromLast = TRUE)]
   }else{
     full_soybean_ld11$initial_values <- initial_state
   }
   
   # Make some decisions about what to do
-  MAKE_OPTIONAL_PLOTS <- TRUE
-  SET_NEW_PARAMETER_VALUES <- TRUE
-  VERBOSE_MODEL_VALIDATION <- FALSE
   SLA_AS_DRIVER <- TRUE
   
   first_data_time <- ExpBiomass[[i]]$time[1]
   weather.aftersowing <- weather[weather$time >= first_data_time, ]
-  weather.aftersowing$DVI <- weather.supplement$DVI
+  
+  # Obtain DVI from the original Soybean-BioCro
+  soybean_biocro_result <- run_biocro(soybean$initial_values,
+                                      soybean$parameters,
+                                      weather.aftersowing,
+                                      soybean$direct_modules,
+                                      soybean$differential_modules,
+                                      soybean$ode_solver)
+  
+  weather.aftersowing$DVI <- soybean_biocro_result$DVI
   # start from emergence time
   weather.afteremergence[[i]] <- weather.aftersowing[-(1:which.min(abs(weather.aftersowing$DVI))),]
   
@@ -127,7 +133,7 @@ for (i in 1:length(years)){
     # time. As a test, try including it as a driver instead of a parameter,
     # where the values are interpolated from the experimental ones.
     ExpBiomass[[i]]$SLA[1] <- ExpBiomass[[i]]$SLA[2]-
-      (ExpBiomass[[i]]$time[2]-ExpBiomass[[i]]$time[1])* 
+      (ExpBiomass[[i]]$time[2]-ExpBiomass[[i]]$time[1])*
       (ExpBiomass[[i]]$SLA[3]-ExpBiomass[[i]]$SLA[2])/
       (ExpBiomass[[i]]$time[3]-ExpBiomass[[i]]$time[2])
     sla_func <- approxfun(
@@ -138,7 +144,7 @@ for (i in 1:length(years)){
       method = 'linear'
     )
     weather.afteremergence[[i]]$iSp <- sla_func(weather.afteremergence[[i]]$time)
-    
+  
     full_soybean_ld11$parameters$iSp <- NULL
   }
   
@@ -154,51 +160,64 @@ for (i in 1:length(years)){
     differential_modules,
     ode_solver
   )})
-  # Plot the biomass along with the measured values
-  print(xyplot(
-    Leaf + Stem + Root + Pod ~ time,
-    data = result,
-    type = 'l',
-    auto = TRUE,
-    grid = TRUE,
-    xlab = paste0('Day of year (', years[i], ')'),
-    ylab = 'Soybean biomass (Mg / ha)',
-    ylim = c(-1, 6),
-    panel = function(...) {
-      panel.xyplot(...)
-      panel.points(
-        ExpBiomass[[i]]$leaf ~ ExpBiomass[[i]]$time,
-        type = 'b',
-        col = 'darkblue',
-        pch = 16,
-        lty = 2
-      )
-      panel.points(
-        ExpBiomass[[i]]$root ~ ExpBiomass[[i]]$time,
-        type = 'b',
-        col = 'darkgreen',
-        pch = 16,
-        lty = 2
-      )
-      panel.points(
-        ExpBiomass[[i]]$stem ~ ExpBiomass[[i]]$time,
-        type = 'b',
-        col = 'darkmagenta',
-        pch = 16,
-        lty = 2
-      )
-      panel.points(
-        ExpBiomass[[i]]$pod ~ ExpBiomass[[i]]$time,
-        type = 'b',
-        col = 'darkred',
-        pch = 16,
-        lty = 2
-      )
-    }
-  ))
-  allocation_percentage_tall <- plot_partitioning(result, years[i])
+  results[[i]] <- result
+  
+  # Save plot into the list
+  biocro_organ_biomass <- result[c('time', 'Leaf', 'Stem', 'Root', 'Pod')]
+  biocro_organ_biomass_tall <- melt(biocro_organ_biomass, id.vars = 'time')
+  names(biocro_organ_biomass_tall) <- c('time','Organ', 'biomass')
+  
+  field_organ_biomass <- ExpBiomass[[i]][c('time', 'leaf', 'stem', 'root', 'pod')]
+  names(field_organ_biomass)[names(field_organ_biomass) %in% c('leaf', 'stem', 'root', 'pod')] <- c('Leaf', 'Stem', 'Root', 'Pod')
+  field_organ_biomass_tall <- melt(field_organ_biomass, id.vars = 'time')
+  names(field_organ_biomass_tall) <- c('time','Organ', 'biomass')
+  
+  size.title <- 16
+  size.axislabel <-14
+  size.axis <- 16
+  size.legend <- 14
+  
+  col.palette.muted <- c( "#117733", "#999933",  "#882255", "#332288")
+  
+  figs[[i]] <- ggplot() + theme_classic() +
+    geom_line(data = biocro_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), size = 1) +
+    geom_point(data = field_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), shape = 15, size = 3)+
+    theme(plot.title=element_text(size=size.title, hjust=0.5),
+          axis.text=element_text(size=size.axis),
+          axis.title=element_text(size=size.axislabel),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), 
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
+    scale_x_continuous(breaks = seq(180,280,30))+
+    labs(title=element_blank(), 
+         x=paste0('Day of Year (', years[i], ')'), 
+         y='Biomass (Mg/ha)')+
+    scale_color_manual(values = col.palette.muted)
+  
+  print(figs[[i]])
+  
+# allocation_percentage_tall <- plot_partitioning(result, years[i])
 }
+library(grid)
+library(gridExtra)
+g_legend <-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
 
+common_legend <- g_legend(figs[[1]])
+
+combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90, gp=gpar(fontsize=12))),
+                               arrangeGrob(arrangeGrob(figs[[1]] + theme(legend.position="none"),
+                                                       figs[[2]] + theme(legend.position="none"),
+                                                       figs[[3]] + theme(legend.position="none"),
+                                                       ncol = 3),
+                                           ncol = 1),
+                               common_legend, 
+                               ncol=3, widths=c(0.3, 5, 1.1))
 
 
 

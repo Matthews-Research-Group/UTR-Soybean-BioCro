@@ -19,13 +19,11 @@ library(ggplot2)
 
 
 # Load saved data
-# load('../../energy-farm-biocro/soybean_development_2022/soybean_development_data_2022.RData') # no development stage data yet
-load('../../energy-farm-biocro/soybean_ld11_biomass_2022/soybean_ld11_biomass_2022.RData') 
-load('../../energy-farm-biocro/ball_berry_curves_2021/soybean_ld11_ball_berry_parameters_2021.RData')
-load('../../energy-farm-biocro/aci_curves_2021/soybean_ld11_fvcb_parameters_2021.RData')
+load('../../energy-farm-biocro/soybean_ld11_biomass_2022/soybean_ld11_biomass_2022.RData')
 load('../../energy-farm-biocro/weather_2022/weather2022_hourly.RData')
-load('../Data/Soybean-BioCro_Parameters/full_soybean_ld11.RData') 
 load('../Data/Weather_data/weather2022supplement.RData')
+
+load('../Data/Soybean-BioCro_Parameters/full_soybean_ld11.RData') 
 carb.data <- read.csv('../Data/2022_Carb_data/LD11_Leaf_Carbs.csv')
 TNC.data <- read.csv('../Data/2022_Carb_data/2022_LD11_TNC.csv')
 # Modify the modules
@@ -49,13 +47,10 @@ if (update_parameters){
                                    updated.params)[!duplicated(c(names(parameters), 
                                                                  names(updated.params)), 
                                                                fromLast = TRUE)]
+  full_soybean_ld11$parameters$Catm <- 417.2 # 2022 value from NOAA
 }else{
   full_soybean_ld11$parameters <- parameters
 }
-
-# full_soybean_ld11[['2021']]$parameters$Catm <- 414.7 # 2021 value from NOAA
-full_soybean_ld11$parameters$Catm <- 417.2 # 2022 value from NOAA
-
 
 # update initial values
 sub_frac <- 0.1           # substrate_fraction
@@ -334,458 +329,462 @@ ggplot() + theme_classic() +
 #   ylab = 'Specific Leaf Area (ha / Mg)'
 # )
 # 
-# Plot the nonstructural C 
-xyplot(
-  Leaf_substrate_carbon + Stem_substrate_carbon + Root_substrate_carbon + Pod_substrate_carbon ~ time,
-  data = biocro_result[1:which.max(biocro_result$Pod),],
-  type = 'l',
-  auto = TRUE,
-  auto.key = list(space = "top"),
-  grid = TRUE,
-  xlab = 'DOY (2022)',
-  ylab = 'Substrate C (mol/m^2)'
-)
-
-# Plot the structural C 
-xyplot(
-  Leaf_structural_carbon + Stem_structural_carbon + Root_structural_carbon + Pod_structural_carbon ~ time,
-  data = biocro_result[1:which.max(biocro_result$Pod),],
-  type = 'l',
-  auto = TRUE,
-  auto.key = list(space = "top"),
-  grid = TRUE,
-  xlab = 'DOY (2022)',
-  ylab = 'Structural C (mol/m^2)'
-)
-
-# 
-# Plot senescence
-# s_key <- list(text = c('Leaf Litter',
-#                        'Stem Litter'),
-#               x = .05, y = .95)
-# cf <- optim_params_short[1]
-# biocro_senescence_plot <- xyplot(data = biocro_result,
-#                                  Leaf_senescence_loss * cf
-#                                  +Stem_senescence_loss * cf
-#                                  ~time,
-#                                  main = '2022 Senescence Litter', 
-#                                  xlab = 'DOY', 
-#                                  ylab='Litter (Mg/ha)',
-#                                  ylim = c(0,2), auto.key=s_key)
-# 
-# experiment_plot <- xyplot(data = soybean_ld11_biomass_2022,
-#                           stem_litter + leaf_litter ~time,
-#                           cex = 2)
-# 
-# dev.new()
-# biocro_senescence_plot+as.layer(experiment_plot)
-# 
-# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp<13)]='Blue'
-# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=13)]='Black'
-# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=18)]='darkgreen'
-# weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=30)]='Red'
-# plot(data = weather2021.aftersowing, temp~doy, col = too_cold, xlim = c(200,280), ylim=c(5,35))
-# 
-# not_really_cold <- unique(weather2022.afteremergence$doy[weather2022.afteremergence$doy == unique(weather2022.afteremergence$doy[weather2022.afteremergence$temp<13]) & weather2022.afteremergence$temp > 18])
-# night_cold <- unique(weather2021.aftersowing$doy[weather2022_hourly.aftersowing$too_cold=='Blue'])
-# night_cold[!(night_cold %in% not_really_cold)]
-
-# plot the Carbohydrates
-carb.data$carbs_total <- carb.data$Starch + carb.data$GFS_total
-# unit conversion from x carb data unit [nmol C/mg leaf] to y simulated unit [mol C/m^2 land]
-# 1 nmol/mg = 1E-9 mol/1E-9 x Mg leaf = 1 mol C/leaf Mg
-# 1 Mg leaf / 1 ha land = 1E-04 Mg leaf / 1 m^2 land
-for (i in 1:length(carb.data$time)){
-  carb.data$Leaf[i] <- biocro_result$Leaf[which.min(abs(biocro_result$time - carb.data$time[i]))]
-}
-carb.data$Leaf_substrate_carbon <- carb.data$carbs_total * carb.data$Leaf * 10^(-4) # SU stands for Simulation Unit
-plot(data=carb.data, Leaf_substrate_carbon~time)
-
-# plot the measured data
-dodge_pos <- position_dodge(width = 0.8)
-ggplot(carb.data, aes(x = factor(Time))) +
-  geom_bar(aes(y = Starch, fill = "Starch", group = Date), 
-           stat = "identity", position = dodge_pos, width = 0.4) +
-  geom_bar(aes(y = GFS_total, fill = "GFS", group = Date), 
-           stat = "identity", position = dodge_pos, width = 0.4) +
-  geom_errorbar(aes(ymin = Starch - Starch_std, ymax = Starch + Starch_std, group = Date), 
-                position = dodge_pos, width = 0.2) +
-  geom_errorbar(aes(ymin = GFS_total - GFS_std, ymax = GFS_total + GFS_std, group = Date), 
-                position = dodge_pos, width = 0.2) +
-  labs(title = "Starch and GFS Averages and Standard Deviation by Time",
-       fill = 'Type',
-       x = "Time",
-       y = "Average Value") +
-  scale_fill_manual(values = c("Starch" = "#88CCEE", "GFS" = "#CC6677")) +
-  theme_minimal()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
-
-
-# Create the ggplot object with facets for each date
-carb.data$Date <- factor(carb.data$Date, levels = unique(carb.data$Date))
-
-ggplot(carb.data, aes(x = hour, y = Starch, fill = "Starch")) +
-  geom_bar(stat = "identity", position = "dodge", width = 2) +
-  geom_errorbar(aes(ymin = Starch - Starch_std, 
-                    ymax = Starch + Starch_std)) +
-  geom_bar(aes(y = GFS_total, fill = "GFS"), stat = "identity", width = 2) +
-  geom_errorbar(aes(ymin = GFS_total - GFS_std, 
-                    ymax = GFS_total + GFS_std)) +
-  facet_wrap(~ Date, ncol = 2) +
-  labs(fill = 'Type', x = "Hour", y = "Leaf Carbohydrate Concentration (nmol/mg)") +
-  theme_minimal() +
-  theme(legend.position = 'bottom',
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  scale_x_continuous(breaks = seq(0, 24, 4), limits = c(0, 24))
-
-# Aug 3rd update
-library(tidyverse)
-# Reshape your data to be long
-df_long <- carb.data %>% 
-  pivot_longer(cols = c("Starch", "GFS_total"), 
-               names_to = "Measurement", 
-               values_to = "Value")
-
-df_std <- carb.data %>% 
-  pivot_longer(cols = c("Starch_std", "GFS_std"), 
-               names_to = "Measurement", 
-               values_to = "Std")
-
-# Join the two reshaped data frames
-df_joined <- data.frame(df_long$Time, df_long$Date, df_long$hour, 
-                        df_long$Measurement, df_long$Value, df_long$carbs_total,
-                        df_std$Std)
-
-# Create the plot
-p <- ggplot(df_joined, aes(x = df_long.hour, y = df_long.Value, fill = df_long.Measurement)) + 
-  geom_bar(stat = "identity", position = "stack", width = 2) +
-  geom_errorbar(aes(ymin = ifelse(df_long.Measurement=='Starch', # since GFS is stacked on starch
-                                  df_long.Value, df_long.carbs_total) - df_std.Std, 
-                    ymax = ifelse(df_long.Measurement=='Starch', # since GFS is stacked on starch
-                                  df_long.Value, df_long.carbs_total) + df_std.Std)) +  # To align the error bars correctly
-  facet_wrap(~ df_long.Date) +         # Creates a subplot for each date
-  theme_minimal() +
-  labs(fill ='Type', x = "Hour", y = "Leaf Carbohydrate Concentration (nmol/mg)",
-       labels=c('GFS total', 'Starch')) +
-  scale_fill_brewer(palette = "Set2") + # Choose the color palette
-  scale_x_continuous(breaks = seq(0, 24, 4), limits = c(0, 24))+
-  scale_y_continuous(breaks = seq(0, 1500, 300), limits = c(0, 1500))+
-  theme(legend.position = 'right',
-        legend.text = element_text(size = 8),  # Adjust text size
-        legend.key.size = unit(0.4, "cm"))
-
-# Display the plot
-print(p)
-
-
-
-# Compare Land-based TNC
-TNC.data$Source <- 'Measured'
-TNC.data$time <- TNC.data$DOY + TNC.data$hour/24
-
-data_long <- tidyr::gather(TNC.data[,c('time', 'Leaf', 'Stem')], key="Type", value="Value", -time)
-
-# Create line plot
-ggplot(data_long, aes(x=time, y=Value, color=Type)) +
-  theme_classic() +
-  scale_color_discrete(labels = c("Leaf", "Stem"))+
-  theme(legend.position = c(0.8, 0.8), 
-        panel.background = element_rect(fill = "transparent",colour = NA))+
-  geom_line()+
-  labs(x='Day of Year (2022)',
-       y='Substrate C (mol C / Mg Dry Mass)')
-
-# Plot measured vs simulated TNC per m2 
-# Measured alone
-for (i in 1:dim(TNC.data)[1]){
-  TNC.data[i, 'Leaf_substrate_carbon'] <- 
-    TNC.data[i, 'Leaf'] * 10^(-4) *
-    soybean_ld11_biomass_2022[which(soybean_ld11_biomass_2022$doy==TNC.data[i, 'Biomass_DOY']), 'leaf']
+PLOT_TNC <- FALSE
+if (PLOT_TNC){
+  # Plot the nonstructural C 
+  xyplot(
+    Leaf_substrate_carbon + Stem_substrate_carbon + Root_substrate_carbon + Pod_substrate_carbon ~ time,
+    data = biocro_result[1:which.max(biocro_result$Pod),],
+    type = 'l',
+    auto = TRUE,
+    auto.key = list(space = "top"),
+    grid = TRUE,
+    xlab = 'DOY (2022)',
+    ylab = 'Substrate C (mol/m^2)'
+  )
   
-  TNC.data[i, 'Stem_substrate_carbon'] <- 
-    TNC.data[i, 'Stem'] * 10^(-4) *
-    soybean_ld11_biomass_2022[which(soybean_ld11_biomass_2022$doy==TNC.data[i, 'Biomass_DOY']), 'stem']
+  # Plot the structural C 
+  xyplot(
+    Leaf_structural_carbon + Stem_structural_carbon + Root_structural_carbon + Pod_structural_carbon ~ time,
+    data = biocro_result[1:which.max(biocro_result$Pod),],
+    type = 'l',
+    auto = TRUE,
+    auto.key = list(space = "top"),
+    grid = TRUE,
+    xlab = 'DOY (2022)',
+    ylab = 'Structural C (mol/m^2)'
+  )
+  
+  # 
+  # Plot senescence
+  # s_key <- list(text = c('Leaf Litter',
+  #                        'Stem Litter'),
+  #               x = .05, y = .95)
+  # cf <- optim_params_short[1]
+  # biocro_senescence_plot <- xyplot(data = biocro_result,
+  #                                  Leaf_senescence_loss * cf
+  #                                  +Stem_senescence_loss * cf
+  #                                  ~time,
+  #                                  main = '2022 Senescence Litter', 
+  #                                  xlab = 'DOY', 
+  #                                  ylab='Litter (Mg/ha)',
+  #                                  ylim = c(0,2), auto.key=s_key)
+  # 
+  # experiment_plot <- xyplot(data = soybean_ld11_biomass_2022,
+  #                           stem_litter + leaf_litter ~time,
+  #                           cex = 2)
+  # 
+  # dev.new()
+  # biocro_senescence_plot+as.layer(experiment_plot)
+  # 
+  # weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp<13)]='Blue'
+  # weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=13)]='Black'
+  # weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=18)]='darkgreen'
+  # weather2022.afteremergence$too_cold[which(weather2022.afteremergence$temp>=30)]='Red'
+  # plot(data = weather2021.aftersowing, temp~doy, col = too_cold, xlim = c(200,280), ylim=c(5,35))
+  # 
+  # not_really_cold <- unique(weather2022.afteremergence$doy[weather2022.afteremergence$doy == unique(weather2022.afteremergence$doy[weather2022.afteremergence$temp<13]) & weather2022.afteremergence$temp > 18])
+  # night_cold <- unique(weather2021.aftersowing$doy[weather2022_hourly.aftersowing$too_cold=='Blue'])
+  # night_cold[!(night_cold %in% not_really_cold)]
+  
+  # plot the Carbohydrates
+  carb.data$carbs_total <- carb.data$Starch + carb.data$GFS_total
+  # unit conversion from x carb data unit [nmol C/mg leaf] to y simulated unit [mol C/m^2 land]
+  # 1 nmol/mg = 1E-9 mol/1E-9 x Mg leaf = 1 mol C/leaf Mg
+  # 1 Mg leaf / 1 ha land = 1E-04 Mg leaf / 1 m^2 land
+  for (i in 1:length(carb.data$time)){
+    carb.data$Leaf[i] <- biocro_result$Leaf[which.min(abs(biocro_result$time - carb.data$time[i]))]
+  }
+  carb.data$Leaf_substrate_carbon <- carb.data$carbs_total * carb.data$Leaf * 10^(-4) # SU stands for Simulation Unit
+  plot(data=carb.data, Leaf_substrate_carbon~time)
+  
+  # plot the measured data
+  dodge_pos <- position_dodge(width = 0.8)
+  ggplot(carb.data, aes(x = factor(Time))) +
+    geom_bar(aes(y = Starch, fill = "Starch", group = Date), 
+             stat = "identity", position = dodge_pos, width = 0.4) +
+    geom_bar(aes(y = GFS_total, fill = "GFS", group = Date), 
+             stat = "identity", position = dodge_pos, width = 0.4) +
+    geom_errorbar(aes(ymin = Starch - Starch_std, ymax = Starch + Starch_std, group = Date), 
+                  position = dodge_pos, width = 0.2) +
+    geom_errorbar(aes(ymin = GFS_total - GFS_std, ymax = GFS_total + GFS_std, group = Date), 
+                  position = dodge_pos, width = 0.2) +
+    labs(title = "Starch and GFS Averages and Standard Deviation by Time",
+         fill = 'Type',
+         x = "Time",
+         y = "Average Value") +
+    scale_fill_manual(values = c("Starch" = "#88CCEE", "GFS" = "#CC6677")) +
+    theme_minimal()+
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+  
+  
+  # Create the ggplot object with facets for each date
+  carb.data$Date <- factor(carb.data$Date, levels = unique(carb.data$Date))
+  
+  ggplot(carb.data, aes(x = hour, y = Starch, fill = "Starch")) +
+    geom_bar(stat = "identity", position = "dodge", width = 2) +
+    geom_errorbar(aes(ymin = Starch - Starch_std, 
+                      ymax = Starch + Starch_std)) +
+    geom_bar(aes(y = GFS_total, fill = "GFS"), stat = "identity", width = 2) +
+    geom_errorbar(aes(ymin = GFS_total - GFS_std, 
+                      ymax = GFS_total + GFS_std)) +
+    facet_wrap(~ Date, ncol = 2) +
+    labs(fill = 'Type', x = "Hour", y = "Leaf Carbohydrate Concentration (nmol/mg)") +
+    theme_minimal() +
+    theme(legend.position = 'bottom',
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    scale_x_continuous(breaks = seq(0, 24, 4), limits = c(0, 24))
+  
+  # Aug 3rd update
+  library(tidyverse)
+  # Reshape your data to be long
+  df_long <- carb.data %>% 
+    pivot_longer(cols = c("Starch", "GFS_total"), 
+                 names_to = "Measurement", 
+                 values_to = "Value")
+  
+  df_std <- carb.data %>% 
+    pivot_longer(cols = c("Starch_std", "GFS_std"), 
+                 names_to = "Measurement", 
+                 values_to = "Std")
+  
+  # Join the two reshaped data frames
+  df_joined <- data.frame(df_long$Time, df_long$Date, df_long$hour, 
+                          df_long$Measurement, df_long$Value, df_long$carbs_total,
+                          df_std$Std)
+  
+  # Create the plot
+  p <- ggplot(df_joined, aes(x = df_long.hour, y = df_long.Value, fill = df_long.Measurement)) + 
+    geom_bar(stat = "identity", position = "stack", width = 2) +
+    geom_errorbar(aes(ymin = ifelse(df_long.Measurement=='Starch', # since GFS is stacked on starch
+                                    df_long.Value, df_long.carbs_total) - df_std.Std, 
+                      ymax = ifelse(df_long.Measurement=='Starch', # since GFS is stacked on starch
+                                    df_long.Value, df_long.carbs_total) + df_std.Std)) +  # To align the error bars correctly
+    facet_wrap(~ df_long.Date) +         # Creates a subplot for each date
+    theme_minimal() +
+    labs(fill ='Type', x = "Hour", y = "Leaf Carbohydrate Concentration (nmol/mg)",
+         labels=c('GFS total', 'Starch')) +
+    scale_fill_brewer(palette = "Set2") + # Choose the color palette
+    scale_x_continuous(breaks = seq(0, 24, 4), limits = c(0, 24))+
+    scale_y_continuous(breaks = seq(0, 1500, 300), limits = c(0, 1500))+
+    theme(legend.position = 'right',
+          legend.text = element_text(size = 8),  # Adjust text size
+          legend.key.size = unit(0.4, "cm"))
+  
+  # Display the plot
+  print(p)
+  
+  
+  
+  # Compare Land-based TNC
+  TNC.data$Source <- 'Measured'
+  TNC.data$time <- TNC.data$DOY + TNC.data$hour/24
+  
+  data_long <- tidyr::gather(TNC.data[,c('time', 'Leaf', 'Stem')], key="Type", value="Value", -time)
+  
+  # Create line plot
+  ggplot(data_long, aes(x=time, y=Value, color=Type)) +
+    theme_classic() +
+    scale_color_discrete(labels = c("Leaf", "Stem"))+
+    theme(legend.position = c(0.8, 0.8), 
+          panel.background = element_rect(fill = "transparent",colour = NA))+
+    geom_line()+
+    labs(x='Day of Year (2022)',
+         y='Substrate C (mol C / Mg Dry Mass)')
+  
+  # Plot measured vs simulated TNC per m2 
+  # Measured alone
+  for (i in 1:dim(TNC.data)[1]){
+    TNC.data[i, 'Leaf_substrate_carbon'] <- 
+      TNC.data[i, 'Leaf'] * 10^(-4) *
+      soybean_ld11_biomass_2022[which(soybean_ld11_biomass_2022$doy==TNC.data[i, 'Biomass_DOY']), 'leaf']
+    
+    TNC.data[i, 'Stem_substrate_carbon'] <- 
+      TNC.data[i, 'Stem'] * 10^(-4) *
+      soybean_ld11_biomass_2022[which(soybean_ld11_biomass_2022$doy==TNC.data[i, 'Biomass_DOY']), 'stem']
+  }
+  
+  data_long_per_m2 <- tidyr::gather(TNC.data[,c('time', 'Leaf_substrate_carbon', 'Stem_substrate_carbon')], key="Type", value="Value", -time)
+  
+  # Create line plot
+  ggplot(data_long_per_m2, aes(x=time, y=Value, color=Type)) +
+    theme_classic() +
+    scale_color_discrete(labels = c("Leaf", "Stem"))+
+    theme(legend.position = "bottom", 
+          panel.background = element_rect(fill = "transparent",colour = NA))+
+    geom_line()+
+    labs(title = 'Substrate C per land area', 
+         x='Day of Year (2022)',
+         y='Substrate C (mol C/m^2)')
+  
+  # Simulated + Measured
+  # Leaf
+  inds <- which(biocro_result$time %in% TNC.data$time)
+  # TNC.data$Leaf_substrate_carbon <- biocro_result$Leaf[inds] * TNC.data$Leaf * 10^(-4)
+  # TNC.data$Stem_substrate_carbon <- biocro_result$Stem[inds] * TNC.data$Stem * 10^(-4)
+  
+  biocro_result$Source <- 'Simulated'
+  Leaf.carb.data <- rbind(biocro_result[,c('time','Leaf_substrate_carbon','Source')], 
+                          TNC.data[, c('time','Leaf_substrate_carbon','Source')])
+  
+  ggplot(Leaf.carb.data, aes(time, Leaf_substrate_carbon, group = Source)) + 
+    geom_point(aes(shape=Source, color=Source, size=Source))+
+    scale_shape_manual(values=c(18, 16)) +
+    scale_size_manual(values=c(2, 0.5)) +
+    theme_classic() +
+    theme(legend.position = c(0.85, 0.85),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    scale_y_continuous(limits = c(0, 0.4), breaks = seq(0, 0.6, 0.1)) +
+    scale_x_continuous(breaks = seq(180,280,30))+
+    labs(title=element_blank(), 
+         x='Day of Year (2022)',
+         y='Leaf Substrate C (mol C/m^2)')
+  
+  # Stem
+  biocro_result$Source <- 'Simulated'
+  Stem.carb.data <- rbind(biocro_result[,c('time','Stem_substrate_carbon','Source')], 
+                          TNC.data[, c('time','Stem_substrate_carbon','Source')])
+  
+  ggplot(Stem.carb.data, aes(time, Stem_substrate_carbon, group = Source)) + 
+    geom_point(aes(shape=Source, color=Source, size=Source))+
+    scale_shape_manual(values=c(18, 16)) +
+    scale_size_manual(values=c(2, 0.5)) +
+    theme_classic() +
+    theme(legend.position = c(0.85, 0.85),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), 
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    scale_y_continuous(limits = c(0, 0.3), breaks = seq(0, 0.6, 0.1)) +
+    scale_x_continuous(breaks = seq(180,280,30))+
+    labs(title=element_blank(), 
+         x='Day of Year (2022)',
+         y='Stem Substrate C (mol C/m^2)')
+  
+  # Plot measured vs simulated TNC per mass 
+  # Simulated alone
+  sim_substrate_C_by_mass <- data.frame(
+    time = biocro_result$time,
+    hour = biocro_result$hour,
+    Leaf = 10^4 * biocro_result$Leaf_substrate_carbon / biocro_result$Leaf,
+    Stem = 10^4 * biocro_result$Stem_substrate_carbon / biocro_result$Stem
+  )
+  
+  data_long_per_mass <- tidyr::gather(sim_substrate_C_by_mass[1:2600,c('time', 'Leaf', 
+                                                                       'Stem')], 
+                                      key="Type", value="Value", -time)
+  
+  # Create line plot
+  ggplot(data_long_per_mass, aes(x=time, y=Value/1000, color=Type)) +
+    theme_classic() +
+    scale_color_discrete(labels = c("Leaf", "Stem"))+
+    theme(legend.position = "bottom", 
+          panel.background = element_rect(fill = "transparent",colour = NA))+
+    geom_line()+
+    labs(title = 'Substrate C per mass', 
+         x='Day of Year (2022)',
+         y='Substrate C (mol C/ kg)')
+  
+  # Simulated + Measured
+  # Leaf
+  sim_substrate_C_by_mass$Source <- 'Simulated'
+  
+  Leaf.carb.data <- rbind(sim_substrate_C_by_mass[,c('time','Leaf','Source')], 
+                          TNC.data[, c('time','Leaf','Source')])
+  
+  ggplot(Leaf.carb.data, aes(time, Leaf, group = Source)) + 
+    geom_point(aes(shape=Source, color=Source, size=Source))+
+    scale_shape_manual(values=c(18, 16)) +
+    scale_size_manual(values=c(2, 0.5)) +
+    theme_classic() +
+    theme(legend.position = c(0.85, 0.85),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    #scale_y_continuous(limits = c(0, 6), breaks = seq(0, 6, 1)) +
+    scale_x_continuous(breaks = seq(180,280,30))+
+    labs(title=element_blank(), 
+         x='Day of Year (2022)',
+         y='Leaf Substrate C (mol C/Mg)')
+  
+  # Stem
+  Stem.carb.data <- rbind(sim_substrate_C_by_mass[,c('time','Stem','Source')], 
+                          TNC.data[, c('time','Stem','Source')])
+  
+  ggplot(Stem.carb.data, aes(time, Stem, group = Source)) + 
+    geom_point(aes(shape=Source, color=Source, size=Source))+
+    scale_shape_manual(values=c(18, 16)) +
+    scale_size_manual(values=c(2, 0.5)) +
+    theme_classic() +
+    theme(legend.position = c(0.85, 0.85),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+    scale_x_continuous(breaks = seq(180,280,30))+
+    labs(title=element_blank(), 
+         x='Day of Year (2022)',
+         y='Stem Substrate C (mol C/Mg)')
+  
+  # diurnal changes of substrate C
+  # take out the last TNC data because in simulation the crop has stopped growing
+  TNC.data <- TNC.data[-length(TNC.data$time),]
+  TNC.data$Source <- 'Measured'
+  sim_substrate_C_by_mass$DOY <- as.integer(sim_substrate_C_by_mass$time)
+  ind.sampling.days <- which(sim_substrate_C_by_mass$DOY %in% TNC.data$DOY)
+  leaf.subCbymass.sampling.days <- rbind(sim_substrate_C_by_mass[ind.sampling.days,
+                                                                 c('DOY','hour','Leaf', 'Source')],
+                                         TNC.data[,c('DOY', 'hour', 'Leaf', 'Source')])
+  date.list <- data.frame(
+    DOY = c(186, 187, 209, 236, 258),
+    date = c('186: Jul 5', '187: Jul 6', '209: Jul 28', '236: Aug 24', '258: Sep 15'))
+  
+  leaf.subCbymass.sampling.days <- left_join(leaf.subCbymass.sampling.days, date.list, by = 'DOY')
+  View(leaf.subCbymass.sampling.days)
+  ggplot(leaf.subCbymass.sampling.days, aes(hour, Leaf, group = Source)) + 
+    geom_point(aes(shape=Source, color=Source, size=Source))+
+    facet_wrap("date") +
+    scale_shape_manual(values=c(18, 16)) +
+    scale_size_manual(values=c(2, 0.5)) +
+    theme_classic() +
+    theme(legend.position = c(0.85, 0.2),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+    scale_x_continuous(breaks = seq(0,24,6))+
+    labs(title=element_blank(), 
+         x='Hour of the Day',
+         y='Leaf Substrate C (mol C/Mg)')
+  
+  stem.subCbymass.sampling.days <- rbind(sim_substrate_C_by_mass[ind.sampling.days,
+                                                                 c('DOY','hour','Stem', 'Source')],
+                                         TNC.data[,c('DOY', 'hour', 'Stem', 'Source')])
+  stem.subCbymass.sampling.days <- left_join(stem.subCbymass.sampling.days, date.list, by = 'DOY')
+  ggplot(stem.subCbymass.sampling.days, aes(hour, Stem, group = Source)) + 
+    geom_point(aes(shape=Source, color=Source, size=Source))+
+    facet_wrap("date") +
+    scale_shape_manual(values=c(18, 16)) +
+    scale_size_manual(values=c(2, 0.5)) +
+    theme_classic() +
+    theme(legend.position = c(0.85, 0.2),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+    scale_x_continuous(breaks = seq(0,24,6))+
+    labs(title=element_blank(), 
+         x='Hour',
+         y='Stem Substrate C (mol C/Mg)')
+  
+  leaf.subCbymass.sampling.days$Organ <- 'Leaf'
+  stem.subCbymass.sampling.days$Organ <- 'Stem'
+  colnames(leaf.subCbymass.sampling.days)[which(colnames(leaf.subCbymass.sampling.days)=='Leaf')]='Mass'
+  colnames(stem.subCbymass.sampling.days)[which(colnames(stem.subCbymass.sampling.days)=='Stem')]='Mass'
+  subCbymass.sampling.days <- rbind(leaf.subCbymass.sampling.days, stem.subCbymass.sampling.days)
+  ggplot(subCbymass.sampling.days, aes(hour, Mass, group = Source)) + 
+    geom_point(aes(shape=Source, color=Organ, size=Source))+
+    facet_wrap("date") +
+    scale_shape_manual(values=c(18, 16)) +
+    scale_size_manual(values=c(2, 0.5)) +
+    scale_color_manual(values = col.palette.muted)+
+    theme_classic() +
+    theme(legend.position = c(0.85, 0.2),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+    scale_x_continuous(breaks = seq(0,24,6))+
+    labs(title=element_blank(), 
+         x='Hour',
+         y='Substrate C (mol C/Mg)')
+  
+  source('plot_partitioning.R')
+  allocation_percentage_tall <- plot_partitioning(biocro_result, '2022')
+  allocation_percentage_tall$Sunlight <- 'Measured'
+  allocation_percentage_lowlight_tall <- plot_partitioning(biocro_result_lowlight, '2022')
+  allocation_percentage_lowlight_tall$Sunlight <- 'Measured -20%'
+  allocation_percentage_tall_combined <- rbind(allocation_percentage_tall, allocation_percentage_lowlight_tall)
+  
+  ggplot() + theme_classic() +
+    geom_point(data = allocation_percentage_tall_combined, aes(x = DOY, y = Percentage, color = Sunlight), size = 1) +
+    facet_wrap("Organ") +
+    theme(plot.title=element_text(size=size.title, hjust=0.5),
+          axis.text=element_text(size=8),
+          axis.title=element_text(size=8),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    scale_y_continuous(limits = c(-20, 140), breaks = seq(-20, 140, 20)) +
+    scale_x_continuous(breaks = seq(180,280,30))+
+    labs(title=element_blank(), x='Day of Year (2022)',y='Allocation %')
+  
+  # copied
+  result <- biocro_result
+  year <- '2022'
+  canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), 
+                                  FUN=sum) * 0.6 / 180.156e-3
+  leaf_reuse_daily <- aggregate(result$Leaf_senescence_rate * 
+                                  parameters$Leaf_senescence_reuse_factor,
+                                list(result$doy), FUN=sum)
+  stem_reuse_daily <- aggregate(result$Stem_senescence_rate * 
+                                  parameters$Stem_senescence_reuse_factor,
+                                list(result$doy), FUN=sum)
+  root_reuse_daily <- aggregate(result$Root_senescence_rate * 
+                                  parameters$Root_senescence_reuse_factor,
+                                list(result$doy), FUN=sum)
+  net_subC_input <- data.frame(Group.1 = canopy_assim_daily$Group.1,
+                               x = canopy_assim_daily$x + 
+                                 leaf_reuse_daily$x + 
+                                 stem_reuse_daily$x + 
+                                 root_reuse_daily$x)
+  leaf_export_daily <- aggregate(result$substrate_transport_Leaf_to_Stem,
+                                 list(result$doy), FUN=sum)
+  pod_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Pod,
+                                    list(result$doy), FUN=sum) 
+  root_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Root,
+                                     list(result$doy), FUN=sum) + root_reuse_daily
+  stem_allocation_daily <- leaf_export_daily + stem_reuse_daily - 
+    pod_allocation_daily - root_allocation_daily
+  leaf_allocation_daily <- canopy_assim_daily + leaf_reuse_daily - leaf_export_daily
+  
+  allocation_percentage <- data.frame(DOY = leaf_export_daily$Group.1, 
+                                      Leaf = 100 * leaf_allocation_daily$x / net_subC_input$x,
+                                      Stem = 100 * stem_allocation_daily$x / net_subC_input$x,
+                                      Root = 100 * root_allocation_daily$x / net_subC_input$x,
+                                      Pod = 100 * pod_allocation_daily$x / net_subC_input$x)
+  # To check if the sum is 100%
+  # allocation_percentage$tot_percentage <- allocation_percentage$Leaf+
+  #                                         allocation_percentage$Stem+
+  #                                         allocation_percentage$Root+
+  #                                         allocation_percentage$Pod
+  allocation_percentage <- allocation_percentage[1:which(allocation_percentage$DOY==result$doy
+                                                         [which.min(abs(result$DVI-parameters$stop_growth_dvi))])-1,]
+  
+  allocation_percentage_tall <- melt(allocation_percentage, id.vars = 'DOY')
+  names(allocation_percentage_tall) <- c('DOY','Organ', 'Percentage')
+  p <- ggplot() + theme_classic() +
+    geom_point(data = allocation_percentage_tall, aes(x=DOY, y=Percentage, color=Organ),
+               size = 0.8)+
+    scale_color_manual(values = col.palette.muted)+
+    theme(plot.title=element_text(size=16, hjust=0.5),
+          axis.text=element_text(size=10),
+          axis.title=element_text(size=10),
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    scale_y_continuous(limits = c(-20, 120), breaks = seq(-20, 120, 20)) +
+    scale_x_continuous(breaks = seq(180,280,30))+
+    labs(title=element_blank(), 
+         x=paste0('Day of Year (', year, ')'), 
+         y='Allocation %')
+  ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in")
+  
+  xyplot(100 * root_reuse_daily$x / root_allocation_daily$x ~
+           root_reuse_daily$Group.1,
+         xlab='DOY', ylab='Percentage contribution from reuse')
+  (sum(root_reuse_daily$x)+sum(stem_reuse_daily$x)+sum(leaf_reuse_daily$x))/sum(canopy_assim_daily$x)
+  
+  
 }
-
-data_long_per_m2 <- tidyr::gather(TNC.data[,c('time', 'Leaf_substrate_carbon', 'Stem_substrate_carbon')], key="Type", value="Value", -time)
-
-# Create line plot
-ggplot(data_long_per_m2, aes(x=time, y=Value, color=Type)) +
-  theme_classic() +
-  scale_color_discrete(labels = c("Leaf", "Stem"))+
-  theme(legend.position = "bottom", 
-    panel.background = element_rect(fill = "transparent",colour = NA))+
-  geom_line()+
-  labs(title = 'Substrate C per land area', 
-       x='Day of Year (2022)',
-       y='Substrate C (mol C/m^2)')
-
-# Simulated + Measured
-# Leaf
-inds <- which(biocro_result$time %in% TNC.data$time)
-# TNC.data$Leaf_substrate_carbon <- biocro_result$Leaf[inds] * TNC.data$Leaf * 10^(-4)
-# TNC.data$Stem_substrate_carbon <- biocro_result$Stem[inds] * TNC.data$Stem * 10^(-4)
-
-biocro_result$Source <- 'Simulated'
-Leaf.carb.data <- rbind(biocro_result[,c('time','Leaf_substrate_carbon','Source')], 
-                        TNC.data[, c('time','Leaf_substrate_carbon','Source')])
-
-ggplot(Leaf.carb.data, aes(time, Leaf_substrate_carbon, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  scale_shape_manual(values=c(18, 16)) +
-  scale_size_manual(values=c(2, 0.5)) +
-  theme_classic() +
-  theme(legend.position = c(0.85, 0.85),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  scale_y_continuous(limits = c(0, 0.4), breaks = seq(0, 0.6, 0.1)) +
-  scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), 
-       x='Day of Year (2022)',
-       y='Leaf Substrate C (mol C/m^2)')
-
-# Stem
-biocro_result$Source <- 'Simulated'
-Stem.carb.data <- rbind(biocro_result[,c('time','Stem_substrate_carbon','Source')], 
-                        TNC.data[, c('time','Stem_substrate_carbon','Source')])
-
-ggplot(Stem.carb.data, aes(time, Stem_substrate_carbon, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  scale_shape_manual(values=c(18, 16)) +
-  scale_size_manual(values=c(2, 0.5)) +
-  theme_classic() +
-  theme(legend.position = c(0.85, 0.85),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), 
-        panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  scale_y_continuous(limits = c(0, 0.3), breaks = seq(0, 0.6, 0.1)) +
-  scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), 
-       x='Day of Year (2022)',
-       y='Stem Substrate C (mol C/m^2)')
-
-# Plot measured vs simulated TNC per mass 
-# Simulated alone
-sim_substrate_C_by_mass <- data.frame(
-  time = biocro_result$time,
-  hour = biocro_result$hour,
-  Leaf = 10^4 * biocro_result$Leaf_substrate_carbon / biocro_result$Leaf,
-  Stem = 10^4 * biocro_result$Stem_substrate_carbon / biocro_result$Stem
-)
-
-data_long_per_mass <- tidyr::gather(sim_substrate_C_by_mass[1:2600,c('time', 'Leaf', 
-                                                     'Stem')], 
-                                    key="Type", value="Value", -time)
-
-# Create line plot
-ggplot(data_long_per_mass, aes(x=time, y=Value/1000, color=Type)) +
-  theme_classic() +
-  scale_color_discrete(labels = c("Leaf", "Stem"))+
-  theme(legend.position = "bottom", 
-        panel.background = element_rect(fill = "transparent",colour = NA))+
-  geom_line()+
-  labs(title = 'Substrate C per mass', 
-       x='Day of Year (2022)',
-       y='Substrate C (mol C/ kg)')
-
-# Simulated + Measured
-# Leaf
-sim_substrate_C_by_mass$Source <- 'Simulated'
-
-Leaf.carb.data <- rbind(sim_substrate_C_by_mass[,c('time','Leaf','Source')], 
-                        TNC.data[, c('time','Leaf','Source')])
-
-ggplot(Leaf.carb.data, aes(time, Leaf, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  scale_shape_manual(values=c(18, 16)) +
-  scale_size_manual(values=c(2, 0.5)) +
-  theme_classic() +
-  theme(legend.position = c(0.85, 0.85),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  #scale_y_continuous(limits = c(0, 6), breaks = seq(0, 6, 1)) +
-  scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), 
-       x='Day of Year (2022)',
-       y='Leaf Substrate C (mol C/Mg)')
-
-# Stem
-Stem.carb.data <- rbind(sim_substrate_C_by_mass[,c('time','Stem','Source')], 
-                        TNC.data[, c('time','Stem','Source')])
-
-ggplot(Stem.carb.data, aes(time, Stem, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  scale_shape_manual(values=c(18, 16)) +
-  scale_size_manual(values=c(2, 0.5)) +
-  theme_classic() +
-  theme(legend.position = c(0.85, 0.85),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
-  scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), 
-       x='Day of Year (2022)',
-       y='Stem Substrate C (mol C/Mg)')
-
-# diurnal changes of substrate C
-# take out the last TNC data because in simulation the crop has stopped growing
-TNC.data <- TNC.data[-length(TNC.data$time),]
-TNC.data$Source <- 'Measured'
-sim_substrate_C_by_mass$DOY <- as.integer(sim_substrate_C_by_mass$time)
-ind.sampling.days <- which(sim_substrate_C_by_mass$DOY %in% TNC.data$DOY)
-leaf.subCbymass.sampling.days <- rbind(sim_substrate_C_by_mass[ind.sampling.days,
-                                                               c('DOY','hour','Leaf', 'Source')],
-                                        TNC.data[,c('DOY', 'hour', 'Leaf', 'Source')])
-date.list <- data.frame(
-  DOY = c(186, 187, 209, 236, 258),
-  date = c('186: Jul 5', '187: Jul 6', '209: Jul 28', '236: Aug 24', '258: Sep 15'))
-
-leaf.subCbymass.sampling.days <- left_join(leaf.subCbymass.sampling.days, date.list, by = 'DOY')
-View(leaf.subCbymass.sampling.days)
-ggplot(leaf.subCbymass.sampling.days, aes(hour, Leaf, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  facet_wrap("date") +
-  scale_shape_manual(values=c(18, 16)) +
-  scale_size_manual(values=c(2, 0.5)) +
-  theme_classic() +
-  theme(legend.position = c(0.85, 0.2),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
-  scale_x_continuous(breaks = seq(0,24,6))+
-  labs(title=element_blank(), 
-       x='Hour of the Day',
-       y='Leaf Substrate C (mol C/Mg)')
-
-stem.subCbymass.sampling.days <- rbind(sim_substrate_C_by_mass[ind.sampling.days,
-                                                               c('DOY','hour','Stem', 'Source')],
-                                       TNC.data[,c('DOY', 'hour', 'Stem', 'Source')])
-stem.subCbymass.sampling.days <- left_join(stem.subCbymass.sampling.days, date.list, by = 'DOY')
-ggplot(stem.subCbymass.sampling.days, aes(hour, Stem, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  facet_wrap("date") +
-  scale_shape_manual(values=c(18, 16)) +
-  scale_size_manual(values=c(2, 0.5)) +
-  theme_classic() +
-  theme(legend.position = c(0.85, 0.2),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
-  scale_x_continuous(breaks = seq(0,24,6))+
-  labs(title=element_blank(), 
-       x='Hour',
-       y='Stem Substrate C (mol C/Mg)')
-
-leaf.subCbymass.sampling.days$Organ <- 'Leaf'
-stem.subCbymass.sampling.days$Organ <- 'Stem'
-colnames(leaf.subCbymass.sampling.days)[which(colnames(leaf.subCbymass.sampling.days)=='Leaf')]='Mass'
-colnames(stem.subCbymass.sampling.days)[which(colnames(stem.subCbymass.sampling.days)=='Stem')]='Mass'
-subCbymass.sampling.days <- rbind(leaf.subCbymass.sampling.days, stem.subCbymass.sampling.days)
-ggplot(subCbymass.sampling.days, aes(hour, Mass, group = Source)) + 
-  geom_point(aes(shape=Source, color=Organ, size=Source))+
-  facet_wrap("date") +
-  scale_shape_manual(values=c(18, 16)) +
-  scale_size_manual(values=c(2, 0.5)) +
-  scale_color_manual(values = col.palette.muted)+
-  theme_classic() +
-  theme(legend.position = c(0.85, 0.2),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
-  scale_x_continuous(breaks = seq(0,24,6))+
-  labs(title=element_blank(), 
-       x='Hour',
-       y='Substrate C (mol C/Mg)')
-
-source('plot_partitioning.R')
-allocation_percentage_tall <- plot_partitioning(biocro_result, '2022')
-allocation_percentage_tall$Sunlight <- 'Measured'
-allocation_percentage_lowlight_tall <- plot_partitioning(biocro_result_lowlight, '2022')
-allocation_percentage_lowlight_tall$Sunlight <- 'Measured -20%'
-allocation_percentage_tall_combined <- rbind(allocation_percentage_tall, allocation_percentage_lowlight_tall)
-
-ggplot() + theme_classic() +
-  geom_point(data = allocation_percentage_tall_combined, aes(x = DOY, y = Percentage, color = Sunlight), size = 1) +
-  facet_wrap("Organ") +
-  theme(plot.title=element_text(size=size.title, hjust=0.5),
-        axis.text=element_text(size=8),
-        axis.title=element_text(size=8),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  scale_y_continuous(limits = c(-20, 140), breaks = seq(-20, 140, 20)) +
-  scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), x='Day of Year (2022)',y='Allocation %')
-
-# copied
-result <- biocro_result
-year <- '2022'
-canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), 
-                                FUN=sum) * 0.6 / 180.156e-3
-leaf_reuse_daily <- aggregate(result$Leaf_senescence_rate * 
-                                parameters$Leaf_senescence_reuse_factor,
-                              list(result$doy), FUN=sum)
-stem_reuse_daily <- aggregate(result$Stem_senescence_rate * 
-                                parameters$Stem_senescence_reuse_factor,
-                              list(result$doy), FUN=sum)
-root_reuse_daily <- aggregate(result$Root_senescence_rate * 
-                                parameters$Root_senescence_reuse_factor,
-                              list(result$doy), FUN=sum)
-net_subC_input <- data.frame(Group.1 = canopy_assim_daily$Group.1,
-                             x = canopy_assim_daily$x + 
-                               leaf_reuse_daily$x + 
-                               stem_reuse_daily$x + 
-                               root_reuse_daily$x)
-leaf_export_daily <- aggregate(result$substrate_transport_Leaf_to_Stem,
-                               list(result$doy), FUN=sum)
-pod_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Pod,
-                                  list(result$doy), FUN=sum) 
-root_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Root,
-                                   list(result$doy), FUN=sum) + root_reuse_daily
-stem_allocation_daily <- leaf_export_daily + stem_reuse_daily - 
-  pod_allocation_daily - root_allocation_daily
-leaf_allocation_daily <- canopy_assim_daily + leaf_reuse_daily - leaf_export_daily
-
-allocation_percentage <- data.frame(DOY = leaf_export_daily$Group.1, 
-                                    Leaf = 100 * leaf_allocation_daily$x / net_subC_input$x,
-                                    Stem = 100 * stem_allocation_daily$x / net_subC_input$x,
-                                    Root = 100 * root_allocation_daily$x / net_subC_input$x,
-                                    Pod = 100 * pod_allocation_daily$x / net_subC_input$x)
-# To check if the sum is 100%
-# allocation_percentage$tot_percentage <- allocation_percentage$Leaf+
-#                                         allocation_percentage$Stem+
-#                                         allocation_percentage$Root+
-#                                         allocation_percentage$Pod
-allocation_percentage <- allocation_percentage[1:which(allocation_percentage$DOY==result$doy
-                                                       [which.min(abs(result$DVI-parameters$stop_growth_dvi))])-1,]
-
-allocation_percentage_tall <- melt(allocation_percentage, id.vars = 'DOY')
-names(allocation_percentage_tall) <- c('DOY','Organ', 'Percentage')
-p <- ggplot() + theme_classic() +
-  geom_point(data = allocation_percentage_tall, aes(x=DOY, y=Percentage, color=Organ),
-             size = 0.8)+
-  scale_color_manual(values = col.palette.muted)+
-  theme(plot.title=element_text(size=16, hjust=0.5),
-        axis.text=element_text(size=10),
-        axis.title=element_text(size=10),
-        panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  scale_y_continuous(limits = c(-20, 120), breaks = seq(-20, 120, 20)) +
-  scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), 
-       x=paste0('Day of Year (', year, ')'), 
-       y='Allocation %')
-ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in")
-
-xyplot(100 * root_reuse_daily$x / root_allocation_daily$x ~
-               root_reuse_daily$Group.1,
-       xlab='DOY', ylab='Percentage contribution from reuse')
-(sum(root_reuse_daily$x)+sum(stem_reuse_daily$x)+sum(leaf_reuse_daily$x))/sum(canopy_assim_daily$x)
-

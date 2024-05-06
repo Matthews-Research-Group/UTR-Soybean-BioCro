@@ -39,7 +39,7 @@ initial_state <- list(
   
   cws1                  = 0.32,          # dimensionless, current water status, soil layer 1
   cws2                  = 0.32,          # dimensionless, current water status, soil layer 2
-  # DVI =                     -1,             # Sowing date: DVI=-1
+  DVI =                     -1,             # Sowing date: DVI=-1
   # Soybean does not have a rhizome, so these variables will not be used but must be defined
   Rhizome               = 0.0000001,     # Mg / ha
   RhizomeLitter =           0.0,               # Mg / ha

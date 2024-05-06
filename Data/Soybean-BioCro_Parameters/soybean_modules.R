@@ -19,6 +19,7 @@ derivative_module_names <- c(
   "UTRSoybeanBML:thornley_utilization_lsrp",
   "UTRSoybeanBML:thornley_transport_lsrp",
   "BioCro:two_layer_soil_profile", # soil_profile = 
+  # "BioCro:development_index",
   "BioCro:thermal_time_linear" # thermal_time =
 )
 
