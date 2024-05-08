@@ -69,12 +69,7 @@ EF_utr_optim <- function(optim_params_short,
                                                pod_start_closest_true_value_ind+1)
       }
       
-      pod_start_closest_pred_value_inds <- c()
-      for (k in 1:length(pod_start_closest_true_value_inds)){
-        pod_start_closest_pred_value_inds[k] <- which(result$time == 
-                                                        (TrueValues.BM$DOY[pod_start_closest_true_value_inds[k]]+0.5))
-      }
-      err.around.pod.start <- sum(((result$Pod[pod_start_closest_pred_value_inds]-
+      err.around.pod.start <- sum(((Pred.BM$Pod[pod_start_closest_true_value_inds]-
                                       TrueValues.BM$Pod[pod_start_closest_true_value_inds])/scale.pod)^2)/3
       
       cost <- cost + wts$Pod_start * err.around.pod.start
