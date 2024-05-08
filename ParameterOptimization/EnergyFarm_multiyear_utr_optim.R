@@ -6,7 +6,7 @@ EF_utr_optim <- function(optim_params_short,
                                 ExpData.BM, 
                                 ExpData.TNC, 
                                 num_rows, 
-                                wts2){
+                                wts){
   # print(optim_params_short)
   cost.avg <- 0
   optim_params <- optim_params_conversion(optim_params_short)
@@ -54,13 +54,39 @@ EF_utr_optim <- function(optim_params_short,
       # print(paste0('err.stem:', err.stem))
       # print(paste0('err.pod:', err.pod))
       # print(paste0('err.root:', err.root))
-      cost <- wts2$Leaf*err.leaf + wts2$Stem*err.stem + wts2$Pod*err.pod + wts2$Root*err.root
+      cost <- wts$Leaf*err.leaf + wts$Stem*err.stem + wts$Pod*err.pod + wts$Root*err.root
+      
+      # add additional weight to the 3 measurements closest to the pod_start_dvi
+      pod_start_dvi <- optim_params_short[length(optim_params_short)-1]
+      pod_start_time <- result$time[which.min(abs(result$DVI-pod_start_dvi))]
+      pod_start_closest_true_value_ind <- which.min(abs(TrueValues.BM$DOY - pod_start_time))
+      if(pod_start_closest_true_value_ind>1){
+        pod_start_closest_true_value_inds <- c(pod_start_closest_true_value_ind-1,
+                                               pod_start_closest_true_value_ind,
+                                               pod_start_closest_true_value_ind+1)
+      }else{
+        pod_start_closest_true_value_inds <- c(pod_start_closest_true_value_ind,
+                                               pod_start_closest_true_value_ind+1)
+      }
+      
+      pod_start_closest_pred_value_inds <- c()
+      for (k in 1:length(pod_start_closest_true_value_inds)){
+        pod_start_closest_pred_value_inds[k] <- which(result$time == 
+                                                        (TrueValues.BM$DOY[pod_start_closest_true_value_inds[k]]+0.5))
+        print(pod_start_closest_pred_value_inds[k])
+      }
+      print(result$Pod[pod_start_closest_pred_value_inds])
+      print(TrueValues.BM$Pod[pod_start_closest_true_value_inds])
+      err.around.pod.start <- sum(((result$Pod[pod_start_closest_pred_value_inds]-
+                                      TrueValues.BM$Pod[pod_start_closest_true_value_inds])/scale.pod)^2)/3
+      
+      cost <- cost + wts$Pod_start * err.around.pod.start
       
       # add litter to the cost function
       err.LeafLitter <- sum(((Pred.BM$LeafLitter-TrueValues.BM$LeafLitter)/scale.LeafLitter)^2)/length(Pred.BM$LeafLitter)
       err.StemLitter <- sum(((Pred.BM$StemLitter-TrueValues.BM$StemLitter)/scale.StemLitter)^2)/length(Pred.BM$StemLitter)
       
-      cost <- cost + wts2$Litter * (err.LeafLitter + err.StemLitter)
+      cost <- cost + wts$Litter * (err.LeafLitter + err.StemLitter)
       
       # 2022 TNC (hard coded i to 2 for now)
       # 1 mol C/m^2 * ha/Mg 
@@ -93,7 +119,7 @@ EF_utr_optim <- function(optim_params_short,
         # print(paste0('err.Leaf.TNC:', err.Leaf.TNC))
         # print(paste0('err.Stem.TNC:', err.Stem.TNC))
         
-        cost <- cost + wts2$TNC * (err.Leaf.TNC + err.Stem.TNC)
+        cost <- cost + wts$TNC * (err.Leaf.TNC + err.Stem.TNC)
       }
       if(is.nan(cost)){
         cost.avg <- 1e10

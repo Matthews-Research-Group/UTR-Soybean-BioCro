@@ -163,13 +163,13 @@ for (i in 1:length(years)){
 
 # Optimization
 # cost function
-wts2 <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 1, "Root" = 0.5, "Litter" = 0.5, "TNC" = 1)
+wts <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 1, "Root" = 0.5, "Litter" = 0.5, "TNC" = 1, "Pod_start" = 100)
 cost_func <- function(x){
-  EF_utr_optim(x, soybean_optsolver, ExpBiomass, TNC.data, numrows, wts2)
+  EF_utr_optim(x, soybean_optsolver, ExpBiomass, TNC.data, numrows, wts)
 }
 
 ## testing
-i <- 1
+i <- 2
 result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short))
 
 library(lattice)
@@ -221,7 +221,7 @@ lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
               4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
               1.5, 1.5, 1.5,
-              0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
+              0.6, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
 
 rng.seed <- 1234 # seed for random number generator
 set.seed(rng.seed)
@@ -229,7 +229,7 @@ set.seed(rng.seed)
 max.iter <- 1000
 
 # Call DEoptim function to run optimization
-parVars <- c('optim_params_conversion', 'EF_utr_optim','soybean_optsolver','ExpBiomass','TNC.data', 'numrows','wts2')
+parVars <- c('optim_params_conversion', 'EF_utr_optim','soybean_optsolver','ExpBiomass','TNC.data', 'numrows','wts')
 cl <- makeCluster(8)
 clusterExport(cl, parVars,envir=environment())
 sink(paste0('Optmization_EF_multiyear_output_', Sys.Date(), '.txt'))

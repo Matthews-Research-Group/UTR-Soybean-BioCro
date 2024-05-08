@@ -42,6 +42,7 @@ if (update_parameters){
                                    updated.params)[!duplicated(c(names(parameters), 
                                                                  names(updated.params)), 
                                                                fromLast = TRUE)]
+  full_soybean_ld11$parameters$Pod_start_dvi <- 0.66
 }else{
   full_soybean_ld11$parameters <- parameters
 }
