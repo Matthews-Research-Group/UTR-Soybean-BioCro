@@ -156,6 +156,7 @@ for (i in 1:length(years)){
     arg_names,
     verbose = FALSE
   )})
+  # delete the first data point since it is not included in the simulation.
   ExpBiomass[[i]] <- ExpBiomass[[i]][-1, c('doy','leaf', 'stem', 'pod', 'root','leaf_litter','stem_litter')]
   names(ExpBiomass[[i]]) <- c('DOY', 'Leaf', 'Stem', 'Pod', 'Root','LeafLitter','StemLitter')
   numrows[i] <- nrow(weather.afteremergence[[i]])

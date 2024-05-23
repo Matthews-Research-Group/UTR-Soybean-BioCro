@@ -49,6 +49,7 @@ plot_partitioning <- function(result, year){
     theme(plot.title=element_text(size=16, hjust=0.5),
           axis.text=element_text(size=10),
           axis.title=element_text(size=10),
+          axis.title.y = element_blank(),
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
     scale_y_continuous(limits = c(-20, 120), breaks = seq(-20, 120, 20)) +
@@ -66,5 +67,28 @@ plot_partitioning <- function(result, year){
                             -which(root_reuse_contribution_percentage>400)],
                             xlab='DOY', ylab='Percentage contribution from reuse'))
   
-  return(allocation_percentage_tall)
+  # reuse percentage of all C source
+  reuse_percentage <- data.frame(DOY = leaf_reuse_daily$Group.1, 
+                                Remobilization_rate = 100*(leaf_reuse_daily$x+
+                                                          stem_reuse_daily$x+
+                                                          root_reuse_daily$x)/net_subC_input$x)
+  reuse_percentage <- reuse_percentage[1:which(reuse_percentage$DOY==result$doy
+                                               [which.min(abs(result$DVI-parameters$stop_growth_dvi))])-1,]
+  reuse.p <- ggplot() + theme_classic() +
+    geom_point(data = reuse_percentage, aes(x=DOY, y=Remobilization_rate),
+               size = 0.8)+
+    scale_color_manual(values = col.palette.muted)+
+    theme(plot.title=element_text(size=16, hjust=0.5),
+          axis.text=element_text(size=10),
+          axis.title=element_text(size=10),
+          axis.title.y = element_blank(),
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    scale_y_continuous(limits = c(-20, 120), breaks = seq(-20, 120, 20)) +
+    scale_x_continuous(breaks = seq(180,280,30))+
+    labs(title=element_blank(), 
+         x=paste0('Day of Year (', year, ')'), 
+         y='Remobolization %')
+  ggsave(paste0("reuse__percentage_", year, '.png'), width = 4, height = 3, units = "in")
+  return(allocation_percentage_tall) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
 }

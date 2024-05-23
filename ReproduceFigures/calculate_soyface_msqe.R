@@ -25,8 +25,9 @@ calculate_msqe <- function(year, bio, mea, model = 'Thornley'){ # bio: biocro re
   }
   bio <- bio[which(bio$time %in% mea$time), c('time', 'Leaf', 'Stem', 'Pod')]
   diff <- mea[,-1] - bio[,-1]
-  rmse <- sum(diff^2) / (dim(diff)[1] * (dim(diff)[2]))
-  print(paste0(year ,': ' , specify_decimal(rmse,2)))
+  msqe <- sum(diff^2) / (dim(diff)[1] * (dim(diff)[2]))
+  # print(paste0(year ,' msqe: ' , specify_decimal(msqe, 2)))
+  print(paste0(year ,' rmse: ' , specify_decimal(sqrt(msqe),2)))
 }
 
 for (i in 1:length(years)){

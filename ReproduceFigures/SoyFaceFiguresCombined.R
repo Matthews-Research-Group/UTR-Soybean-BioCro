@@ -10,7 +10,7 @@ rm(list=ls())
 # Set working directory to location of this file
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
-# Cost function
+# Parameters
 source('../ParameterOptimization/soybean_parameter_expansion.R')
 source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 
@@ -61,6 +61,7 @@ for (i in 1:length(years)) {
   invwts <- ExpBiomass.std[[i]]
   # load parameter files
   source('soybean_initial_values.R')
+  initial_state$DVI <- NULL
   soybean_optsolver[[i]] <- partial_run_biocro(initial_state,
                                                parameters,
                                                weather.growingseason[[i]],
@@ -70,7 +71,7 @@ for (i in 1:length(years)) {
                                                arg_names,
                                                verbose = FALSE)
   
-  result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE))
+  result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE)) 
   results[[i]] <- result
   # check when the simulation stops if not running till the end
   if (dim(result)[1] < dim(weather.growingseason[[i]])[1]){
@@ -241,6 +242,7 @@ for (i in 1:length(years)) {
   invwts <- ExpBiomass.std[[i]]
   # load parameter files
   source('soybean_initial_values.R')
+  initial_state$DVI <- NULL
   soybean_optsolver[[i]] <- partial_run_biocro(initial_state,
                                                parameters,
                                                weather.growingseason[[i]],
@@ -250,7 +252,7 @@ for (i in 1:length(years)) {
                                                arg_names,
                                                verbose = FALSE)
   
-  result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE))
+  result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE)) 
   results.elevCO2[[i]] <- result
   # check when the simulation stops if not running till the end
   if (dim(result)[1] < dim(weather.growingseason[[i]])[1]){

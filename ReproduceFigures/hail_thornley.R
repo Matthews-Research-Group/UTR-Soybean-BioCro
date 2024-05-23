@@ -14,33 +14,10 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 source('../ParameterOptimization/soybean_parameter_expansion.R')
 
 # initialize lists for figures
-co2_opt = '_ambient_'
+co2_opt = '_co2_'
 
 # names of fitted parameters
-arg_names <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
-               'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
-               'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 5, 6
-               'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 7, 8
-               'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 9,10,11,12
-               'Leaf_respiration_factor', 'Stem_respiration_factor', # 13, 14
-               'Root_respiration_factor', 'Pod_respiration_factor', # 15, 16
-               'substrate_conductance_Leaf_to_Stem', 'substrate_conductance_Stem_to_Root', # 17, 18
-               'substrate_conductance_Stem_to_Pod', # 'transportation_beta_exponent', # 19, 20
-               'Leaf_senescence_rate_max','Stem_senescence_rate_max', # 21, 22
-               'Leaf_senescence_alpha', 'Stem_senescence_alpha',# 23, 24
-               'Leaf_senescence_beta', 'Stem_senescence_beta', # 25, 26
-               'Pod_start_dvi', 'stop_growth_dvi') # 27, 28
-
-optim_params_short <-c(0.273470,    0.028917,    0.067696,    0.048373,
-                       0.715883,    1.511239,    1.799835,    1.165064,
-                       0.564379,    0.130939,    0.548013,    0.746798,
-                       1.673044,    0.049328,    0.002033,   16.316789,
-                       17.809283,   -8.156955,   -9.435581,   0.993601,    1.895145) #
-
-
-
 setwd('../Data/Soybean-BioCro_Parameters')
-
 # load parameter files
 param_files <- list.files(pattern = "[.]R$", recursive = TRUE)
 
@@ -54,6 +31,7 @@ weather <- read.csv(file = paste0('../Weather_data/', yr,'_Bondville_IL_daylengt
 emergence.ind <- which(weather$DVI>0)[1]
 hd.ind <- which(weather$doy == 289)[24]
 defoliation.ind <- which(weather$doy == 198 )[14]
+initial_state$DVI <- NULL
 
 weather.growingseason <- weather[emergence.ind:hd.ind,]
 weather.growingseason_1 <- weather[emergence.ind:defoliation.ind,]
@@ -69,9 +47,6 @@ RootVals <- data.frame("DOY"=ExpBiomass$DOY[3], "Root"=0.17*sum(ExpBiomass[5,2:4
 
 numrows <- nrow(weather.growingseason)
 invwts <- ExpBiomass.std
-
-solver$type <- 'boost_rkck54'
-solver$adaptive_max_steps <- 10000
 
 soybean_optsolver_no_hail <- partial_run_biocro(initial_state,
                                                 parameters,
@@ -95,7 +70,7 @@ soybean_optsolver_1 <- partial_run_biocro(initial_state,
                                           verbose = FALSE)
 
 result_1 <- soybean_optsolver_1(updated_params)
-xyplot(data=result_1, Leaf+Stem+Root+Pod~time, auto=TRUE)
+# xyplot(data=result_1, Leaf+Stem+Root+Pod~time, auto=TRUE)
 # Get the final values of the differential quantities; these will be the
 # values just before defoliation
 differential_quantities_just_before_defoliation <-
@@ -104,9 +79,9 @@ differential_quantities_just_before_defoliation <-
 differential_quantities_just_after_defoliation <-
   differential_quantities_just_before_defoliation
 # # Now reduce the leaf mass
-leaf_reduction_percent <- 0.4
-differential_quantities_just_after_defoliation$Leaf <-
-  differential_quantities_just_before_defoliation$Leaf * leaf_reduction_percent
+leaf_reduction_percent <- 0.6
+# differential_quantities_just_after_defoliation$Leaf <-
+#   differential_quantities_just_before_defoliation$Leaf * leaf_reduction_percent
 
 differential_quantities_just_after_defoliation$Leaf_substrate_carbon <-
   differential_quantities_just_before_defoliation$Leaf_substrate_carbon * leaf_reduction_percent
@@ -130,8 +105,8 @@ stem_new_percentage <- 0.6
 
 # If there is stem loss, then also reduce stem biomass.
 if (stem_new_percentage < 1){
-  differential_quantities_just_after_defoliation$Stem <-
-    differential_quantities_just_before_defoliation$Stem * stem_new_percentage
+  # differential_quantities_just_after_defoliation$Stem <-
+  #   differential_quantities_just_before_defoliation$Stem * stem_new_percentage
   differential_quantities_just_after_defoliation$Stem_substrate_carbon <-
     differential_quantities_just_before_defoliation$Stem_substrate_carbon * stem_new_percentage
   differential_quantities_just_after_defoliation$Stem_structural_carbon <-
@@ -149,7 +124,7 @@ soybean_optsolver_2 <- partial_run_biocro(differential_quantities_just_after_def
 
 
 result_2 <- soybean_optsolver_2(updated_params)
-xyplot(data=result_2, Leaf+Stem+Root+Pod~time, auto=TRUE)
+# xyplot(data=result_2, Leaf+Stem+Root+Pod~time, auto=TRUE)
 
 # steady_state_module_names_2 <-c(
 #   "soil_type_selector",
@@ -239,10 +214,10 @@ r.all$Organ <- factor(r.all$variable, levels = rev(levels(r.all$variable)))
 # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
 col.palette.muted <- c("#332288", "#117733", "#999933", "#882255")
 
-size.title <- 12
-size.axislabel <- 10
-size.axis <- 10
-size.legend <- 12
+size.title <- 14
+size.axislabel <- 12
+size.axis <- 12
+size.legend <- 14
 
 f <- ggplot() + theme_classic()
 
@@ -251,7 +226,7 @@ f <- f + geom_point(data=r.all, aes(x=time, y=value,
                                     size = Source, shape = Source),
                     show.legend = TRUE, stroke=0.5) +
   scale_shape_manual(values = c(15, 16)) +
-  scale_size_manual(values = c(2, 0.25)) +
+  scale_size_manual(values = c(2, 0.5)) +
   scale_color_manual(values = col.palette.muted)
 
 # for leaf
@@ -277,6 +252,10 @@ f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
 
 f <- f + scale_x_continuous(breaks = seq(150,280,30))
 f
+
+xyplot(result_no_hail$substrate_transport_Leaf_to_Stem+
+         result$substrate_transport_Leaf_to_Stem~result$time,
+       auto.key = list(space = 'top'))
 # xyplot(data = result[954:1024,], substrate_transport_Leaf_to_Stem~time)
 # xyplot(data=result[954:1024,], Leaf_mass_fraction+Stem_mass_fraction~time, auto=TRUE)
 # 

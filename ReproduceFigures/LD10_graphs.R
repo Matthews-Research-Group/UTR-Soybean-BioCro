@@ -7,12 +7,16 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # Source files
 source('../ParameterOptimization/soybean_parameter_expansion.R')
 co2_opt = '_tbd_'
-years <- c('2021', '2022', '2023')
-Catms <- c(414.7, 417.2, 419.3) # from NOAA
+years <- c('2022', '2023')
+Catms <- c(417.2, 419.3) # from NOAA
 source('../Data/Soybean-BioCro_Parameters/soybean_parameters.R')
 source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
-source('../ReproduceFigures/plot_partitioning.R')
+
+ball_berry.params <- read.csv('../../energy-farm-biocro/ball_berry_curves_2022/ball_berry_parameters_by_species.csv')
+aci.params <- read.csv('../../energy-farm-biocro/aci_curves_2022/soybean_ld10ld11_fvcb_parameters_2022.csv')
+
+
 # Load packages
 library(BioCro)
 library(lattice)
@@ -21,13 +25,13 @@ library(ggplot2)
 
 # Load shared data
 load('../Data/Soybean-BioCro_Parameters/full_soybean_ld11.RData')
-
+full_soybean_ld10 <- full_soybean_ld11
 # Modify the modules
-full_soybean_ld11$direct_modules <- steady_state_module_names
-full_soybean_ld11$differential_modules <- derivative_module_names
+full_soybean_ld10$direct_modules <- steady_state_module_names
+full_soybean_ld10$differential_modules <- derivative_module_names
 
 # Set up basic properties for the solver
-full_soybean_ld11$ode_solver <- solver
+full_soybean_ld10$ode_solver <- solver
 
 # Update UTR parameters
 fitted.utr.params <- optim_params_conversion(optim_params_short)
@@ -38,20 +42,28 @@ parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters),
 
 update_parameters = TRUE
 if (update_parameters){
-  updated.params <- full_soybean_ld11$parameters[names(full_soybean_ld11$parameters) %in% names(parameters)]
-  full_soybean_ld11$parameters <-c(parameters, 
+  updated.params <- full_soybean_ld10$parameters[names(full_soybean_ld10$parameters) %in% names(parameters)]
+  full_soybean_ld10$parameters <-c(parameters, 
                                    updated.params)[!duplicated(c(names(parameters), 
                                                                  names(updated.params)), 
                                                                fromLast = TRUE)]
+  # update ball-berry parameters
+  full_soybean_ld10$parameters$b0 <- as.numeric(ball_berry.params$bb_intercept_avg[ball_berry.params$species=='ld10'][2])
+  full_soybean_ld10$parameters$b1 <- as.numeric(ball_berry.params$bb_slope_avg[ball_berry.params$species=='ld10'][2])
+  # update A-Ci parameters
+  full_soybean_ld10$parameters[c('electrons_per_carboxylation', 'electrons_per_oxygenation',
+                                 'vmax1', 'Rd', 'tpu_rate_max','jmax')] <- 
+    aci.params[aci.params$cultivar=='ld10', c('electrons_per_carboxylation', 'electrons_per_oxygenation',
+                                              'Vcmax', 'Rd', 'TPU','Jmax')]
+  full_soybean_ld10$parameters$Pod_start_dvi <- 0.88
 }else{
-  full_soybean_ld11$parameters <- parameters
+  full_soybean_ld10$parameters <- parameters
 }
 
 ExpBiomass <- list()
 weather.afteremergence <- list()
 results <- list()
 figs <- list()
-allocation.figs <- list()
 
 loadRData <- function(fileName){
   #loads an RData file, and returns it
@@ -60,9 +72,9 @@ loadRData <- function(fileName){
 }
 
 for (i in 1:length(years)){
-  ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld11_biomass_', years[i],'/soybean_ld11_biomass_', years[i], '.RData'))
+  ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld10_biomass_', years[i],'/soybean_ld10_biomass_', years[i], '.RData'))
   weather <- loadRData(paste0('../../energy-farm-biocro/weather_', years[i], '/weather', years[i], '_hourly.RData'))
-  full_soybean_ld11$parameters$Catm <- Catms[i]
+  full_soybean_ld10$parameters$Catm <- Catms[i]
   
   # update initial values
   sub_frac <- 0.1           # substrate_fraction
@@ -103,13 +115,13 @@ for (i in 1:length(years)){
   
   update_init = TRUE
   if (update_init){
-    updated.init <- full_soybean_ld11$initial_values[names(full_soybean_ld11$initial_values) %in% names(initial_state)]
-    full_soybean_ld11$initial_values <-c(initial_state,
+    updated.init <- full_soybean_ld10$initial_values[names(full_soybean_ld10$initial_values) %in% names(initial_state)]
+    full_soybean_ld10$initial_values <-c(initial_state,
                                          updated.init)[!duplicated(c(names(initial_state),
                                                                      names(updated.init)),
                                                                    fromLast = TRUE)]
   }else{
-    full_soybean_ld11$initial_values <- initial_state
+    full_soybean_ld10$initial_values <- initial_state
   }
   
   # Make some decisions about what to do
@@ -147,14 +159,14 @@ for (i in 1:length(years)){
     )
     weather.afteremergence[[i]]$iSp <- sla_func(weather.afteremergence[[i]]$time)
   
-    full_soybean_ld11$parameters$iSp <- NULL
+    full_soybean_ld10$parameters$iSp <- NULL
   }
   
-  full_soybean_ld11$parameters$timestep <- 1
-  full_soybean_ld11$parameters$time_zone_offset <- NULL
-  full_soybean_ld11$parameters$Rd = 1.28
+  full_soybean_ld10$parameters$timestep <- 1
+  full_soybean_ld10$parameters$time_zone_offset <- NULL
+  full_soybean_ld10$parameters$Rd = 1.28
   
-  result <- with(full_soybean_ld11, {run_biocro(
+  result <- with(full_soybean_ld10, {run_biocro(
     initial_values,
     parameters,
     weather.afteremergence[[i]],
@@ -192,7 +204,7 @@ for (i in 1:length(years)){
           panel.grid.minor = element_blank(), 
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
-    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
+    scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
     scale_x_continuous(breaks = seq(180,280,30))+
     labs(title=element_blank(), 
          x=paste0('Day of Year (', years[i], ')'), 
@@ -200,10 +212,8 @@ for (i in 1:length(years)){
     scale_color_manual(values = col.palette.muted)
   
   print(figs[[i]])
-  save(biocro_organ_biomass_tall, file = paste0('organ_biomass_sim_', years[i],'_ld11.RData'))
-  save(field_organ_biomass_tall, file = paste0('organ_biomass_mea_', years[i],'_ld11.RData'))
   
-  allocation.figs[[i]] <- plot_partitioning(result, years[i])
+# allocation_percentage_tall <- plot_partitioning(result, years[i])
 }
 library(grid)
 library(gridExtra)
@@ -218,19 +228,10 @@ common_legend <- g_legend(figs[[1]])
 combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90, gp=gpar(fontsize=12))),
                                arrangeGrob(arrangeGrob(figs[[1]] + theme(legend.position="none"),
                                                        figs[[2]] + theme(legend.position="none"),
-                                                       figs[[3]] + theme(legend.position="none"),
-                                                       ncol = 3),
+                                                       ncol = 2),
                                            ncol = 1),
                                common_legend, 
                                ncol=3, widths=c(0.3, 5, 1.1))
-
-# combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remobilized C %', rot = 90, gp=gpar(fontsize=12))),
-#                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
-#                                                                   allocation.figs[[2]] + theme(legend.position="none"),
-#                                                                   allocation.figs[[3]] + theme(legend.position="none"),
-#                                                                   ncol = 3),
-#                                                       ncol = 1),
-#                                           ncol=2, widths=c(0.3, 5))
 
 
 
