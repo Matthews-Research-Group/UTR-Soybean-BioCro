@@ -14,7 +14,7 @@ library(DEoptim)
 
 # Cost function
 source('soybean_parameter_expansion.R')
-source('SoyFACE_multiyear_utr_optim.R')
+source('SoyFACE_multiyear_utr_optim_tnc_constraints.R')
 
 # set year and CO2 level
 co2_opt = '_ambient_' # '_ambient_' or '_co2_'

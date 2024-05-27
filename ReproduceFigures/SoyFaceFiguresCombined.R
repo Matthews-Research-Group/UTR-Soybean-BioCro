@@ -420,11 +420,11 @@ xyplot(results.elevCO2[[i]]$Leaf_substrate_carbon[which(results.elevCO2[[i]]$DVI
        ~results[[i]]$time[which(results.elevCO2[[i]]$DVI<sDVI)])
 
 for (i in 1:4){
-  print(xyplot(data = results[[i]][1:which.min(abs(results[[i]]$DVI-2)),], 
-         Leaf_substrate_carbon/Leaf_structural_carbon+
-           Stem_substrate_carbon/Stem_structural_carbon~
-           time,
-         auto=TRUE,
-         ylim = c(0,1),
-         main = years[i]))
+  print(xyplot(data = results[[i]],
+               Leaf_substrate_carbon/Leaf+
+                 Stem_substrate_carbon/Stem~
+                 time,
+               auto=TRUE,
+               ylim = c(0,1),
+               main = years[i]))
 }

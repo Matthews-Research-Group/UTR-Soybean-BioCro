@@ -23,7 +23,7 @@ source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
 # Load LD11 data
 load('../Data/Soybean-BioCro_Parameters/full_soybean_ld11.RData')
 # Load 2022 TNC data
-TNC.data <- read.csv('../Data/2022_Carb_data/2022_LD11_TNC.csv')
+TNC.data <- read.csv('../Data/2022_Carb_data/2022_LD11_TNC_new.csv')
 
 # Modify the modules
 full_soybean_ld11$direct_modules <- steady_state_module_names
@@ -164,7 +164,7 @@ for (i in 1:length(years)){
 
 # Optimization
 # cost function
-wts <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 1, "Root" = 0.5, "Litter" = 0.5, "TNC" = 1, "Pod_start" = 100)
+wts <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 2, "Root" = 0.5, "Litter" = 0.5, "TNC" = 1, "Pod_start" = 100)
 cost_func <- function(x){
   EF_utr_optim(x, soybean_optsolver, ExpBiomass, TNC.data, numrows, wts)
 }
@@ -195,10 +195,10 @@ xyplot(data = result,
 cost_func(optim_params_short)
 
 xyplot(data = result,
-       Leaf_substrate_carbon/Leaf_structural_carbon+
-         Stem_substrate_carbon/Stem_structural_carbon+
-         Root_substrate_carbon/Root_structural_carbon+
-         Pod_substrate_carbon/Pod_structural_carbon~
+       Leaf_substrate_carbon/Leaf+
+         Stem_substrate_carbon/Stem+
+         Root_substrate_carbon/Root+
+         Pod_substrate_carbon/Pod~
          time,
        auto.key = TRUE)
 

@@ -70,8 +70,9 @@ EF_utr_optim <- function(optim_params_short,
       }
       
       err.around.pod.start <- sum(((Pred.BM$Pod[pod_start_closest_true_value_inds]-
-                                      TrueValues.BM$Pod[pod_start_closest_true_value_inds])/scale.pod)^2)/3
+                                      TrueValues.BM$Pod[pod_start_closest_true_value_inds]))^2)/3
       
+      # print(paste0('wts$Pod_start * err.around.pod.start: ', wts$Pod_start * err.around.pod.start))
       cost <- cost + wts$Pod_start * err.around.pod.start
       
       # add litter to the cost function
