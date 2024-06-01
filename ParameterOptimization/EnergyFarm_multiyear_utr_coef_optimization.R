@@ -15,8 +15,8 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 source('soybean_parameter_expansion.R')
 source('EnergyFarm_multiyear_utr_optim.R')
 co2_opt = '_tbd_'
-years <- c('2021', '2022')
-Catms <- c(414.7, 417.2) # from NOAA
+years <- c('2022')
+Catms <- c(417.2) # from NOAA
 source('../Data/Soybean-BioCro_Parameters/soybean_parameters.R')
 source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
@@ -170,7 +170,7 @@ cost_func <- function(x){
 }
 
 ## testing
-i <- 2
+i <- 1
 result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short))
 
 library(lattice)

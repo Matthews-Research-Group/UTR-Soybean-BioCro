@@ -85,7 +85,7 @@ EF_utr_optim <- function(optim_params_short,
       # 1 mol C/m^2 * ha/Mg 
       # = (10^9 nmol C) / (m^2) * (10^4 m^2) / (10^9 mg Leaf)
       # = 10^4 nmol/ mg Leaf
-      if (i == 2){
+      if (i == 1){
         TrueValues.TNC <-ExpData.TNC
         
         # Calculate the time from DOY and hour
