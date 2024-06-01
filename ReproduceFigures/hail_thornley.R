@@ -56,10 +56,12 @@ soybean_optsolver_no_hail <- partial_run_biocro(initial_state,
                                                 solver,
                                                 arg_names,
                                                 verbose = FALSE)
-updated_params <- optim_params_conversion(optim_params_short)
+updated_params <- optim_params_conversion(optim_params_short_SoyFACE)
 result_no_hail <- soybean_optsolver_no_hail(updated_params)
 
 xyplot(data=result_no_hail, Leaf+Stem+Root+Pod~time, auto=TRUE)
+
+
 soybean_optsolver_1 <- partial_run_biocro(initial_state,
                                           parameters,
                                           weather.growingseason_1,
@@ -68,7 +70,7 @@ soybean_optsolver_1 <- partial_run_biocro(initial_state,
                                           solver,
                                           arg_names,
                                           verbose = FALSE)
-
+updated_params[28] <- 1.15
 result_1 <- soybean_optsolver_1(updated_params)
 # xyplot(data=result_1, Leaf+Stem+Root+Pod~time, auto=TRUE)
 # Get the final values of the differential quantities; these will be the
@@ -79,7 +81,7 @@ differential_quantities_just_before_defoliation <-
 differential_quantities_just_after_defoliation <-
   differential_quantities_just_before_defoliation
 # # Now reduce the leaf mass
-leaf_reduction_percent <- 0.6
+leaf_reduction_percent <- 0.4
 # differential_quantities_just_after_defoliation$Leaf <-
 #   differential_quantities_just_before_defoliation$Leaf * leaf_reduction_percent
 
@@ -101,7 +103,7 @@ stem_new_percentage <- (abg_C_before_defoliation*(1-0.21) -
                           leaf_C_after_defoliation)/
                           stem_C_before_defoliation
 
-stem_new_percentage <- 0.6
+stem_new_percentage <- 0.5
 
 # If there is stem loss, then also reduce stem biomass.
 if (stem_new_percentage < 1){
@@ -253,9 +255,9 @@ f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
 f <- f + scale_x_continuous(breaks = seq(150,280,30))
 f
 
-xyplot(result_no_hail$substrate_transport_Leaf_to_Stem+
-         result$substrate_transport_Leaf_to_Stem~result$time,
-       auto.key = list(space = 'top'))
+# xyplot(result_no_hail$substrate_transport_Leaf_to_Stem+
+#          result$substrate_transport_Leaf_to_Stem~result$time,
+#        auto.key = list(space = 'top'))
 # xyplot(data = result[954:1024,], substrate_transport_Leaf_to_Stem~time)
 # xyplot(data=result[954:1024,], Leaf_mass_fraction+Stem_mass_fraction~time, auto=TRUE)
 # 

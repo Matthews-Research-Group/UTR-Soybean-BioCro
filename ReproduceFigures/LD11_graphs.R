@@ -60,6 +60,7 @@ loadRData <- function(fileName){
 }
 
 for (i in 1:length(years)){
+# for (i in 1:1){
   ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld11_biomass_', years[i],'/soybean_ld11_biomass_', years[i], '.RData'))
   weather <- loadRData(paste0('../../energy-farm-biocro/weather_', years[i], '/weather', years[i], '_hourly.RData'))
   full_soybean_ld11$parameters$Catm <- Catms[i]
@@ -153,6 +154,7 @@ for (i in 1:length(years)){
   full_soybean_ld11$parameters$timestep <- 1
   full_soybean_ld11$parameters$time_zone_offset <- NULL
   full_soybean_ld11$parameters$Rd = 1.28
+  # full_soybean_ld11$parameters$Stem_senescence_beta <- 2.1
   
   result <- with(full_soybean_ld11, {run_biocro(
     initial_values,
@@ -232,6 +234,20 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
 #                                                       ncol = 1),
 #                                           ncol=2, widths=c(0.3, 5))
 
-
-
+# for(i in 1:3){
+#   print(xyplot(data=weather.afteremergence[[i]], temp~time, 
+#                scales = list(x = list(at = seq(150, 300, by = 20))),
+#                ylim = c(-5,40),
+#                main = years[i],
+#                pch = 16,
+#                cex = 0.5,
+#                xlab = 'DOY',
+#                ylab = 'Temperature (degree Celcius)',
+#                panel = function(...) {
+#                   panel.xyplot(...) # Default xyplot panel
+#                   panel.abline(h = 15, col = "orange", lty = 2)
+#                   panel.abline(h = 8, col = "red", lty = 2)
+#                }))
+# }
+# 
 
