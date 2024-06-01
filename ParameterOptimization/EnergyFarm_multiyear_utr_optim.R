@@ -42,42 +42,21 @@ EF_utr_optim <- function(optim_params_short,
       scale.Root <- max(TrueValues.BM$Root)
       scale.LeafLitter <- max(TrueValues.BM$LeafLitter)
       scale.StemLitter <- max(TrueValues.BM$StemLitter)
-      
       # weighted rmses
-      err.leaf <- sum(((Pred.BM$Leaf-TrueValues.BM$Leaf)/scale.leaf)^2)/length(Pred.BM$Leaf)
-      err.stem <- sum(((Pred.BM$Stem-TrueValues.BM$Stem)/scale.stem)^2)/length(Pred.BM$Stem)
-      err.pod <- sum(((Pred.BM$Pod-TrueValues.BM$Pod)/scale.pod)^2)/length(Pred.BM$Pod)
-      err.root <- sum(((Pred.BM$Root-TrueValues.BM$Root)/scale.Root)^2)/length(Pred.BM$Root)
+      err.leaf <- sum(((Pred.BM$Leaf-TrueValues.BM$Leaf)/(TrueValues.BM$Leaf + 0.1))^2)/length(Pred.BM$Leaf)
+      err.stem <- sum(((Pred.BM$Stem-TrueValues.BM$Stem)/(TrueValues.BM$Stem + 0.1))^2)/length(Pred.BM$Stem)
+      err.pod <- sum(((Pred.BM$Pod-TrueValues.BM$Pod)/(TrueValues.BM$Pod + 0.1))^2)/length(Pred.BM$Pod)
+      err.root <- sum(((Pred.BM$Root-TrueValues.BM$Root)/(TrueValues.BM$Root+ 0.1))^2)/length(Pred.BM$Root)
       
       # print(paste0('err.leaf:', err.leaf))
-      # print(paste0('Pred.BM$Leaf:', Pred.BM$Leaf))
       # print(paste0('err.stem:', err.stem))
       # print(paste0('err.pod:', err.pod))
       # print(paste0('err.root:', err.root))
       cost <- wts$Leaf*err.leaf + wts$Stem*err.stem + wts$Pod*err.pod + wts$Root*err.root
       
-      # add additional weight to the 3 measurements closest to the pod_start_dvi
-      pod_start_dvi <- optim_params_short[length(optim_params_short)-1]
-      pod_start_time <- result$time[which.min(abs(result$DVI-pod_start_dvi))]
-      pod_start_closest_true_value_ind <- which.min(abs(TrueValues.BM$DOY - pod_start_time))
-      if(pod_start_closest_true_value_ind>1){
-        pod_start_closest_true_value_inds <- c(pod_start_closest_true_value_ind-1,
-                                               pod_start_closest_true_value_ind,
-                                               pod_start_closest_true_value_ind+1)
-      }else{
-        pod_start_closest_true_value_inds <- c(pod_start_closest_true_value_ind,
-                                               pod_start_closest_true_value_ind+1)
-      }
-      
-      err.around.pod.start <- sum(((Pred.BM$Pod[pod_start_closest_true_value_inds]-
-                                      TrueValues.BM$Pod[pod_start_closest_true_value_inds]))^2)/3
-      
-      # print(paste0('wts$Pod_start * err.around.pod.start: ', wts$Pod_start * err.around.pod.start))
-      cost <- cost + wts$Pod_start * err.around.pod.start
-      
       # add litter to the cost function
-      err.LeafLitter <- sum(((Pred.BM$LeafLitter-TrueValues.BM$LeafLitter)/scale.LeafLitter)^2)/length(Pred.BM$LeafLitter)
-      err.StemLitter <- sum(((Pred.BM$StemLitter-TrueValues.BM$StemLitter)/scale.StemLitter)^2)/length(Pred.BM$StemLitter)
+      err.LeafLitter <- sum(((Pred.BM$LeafLitter-TrueValues.BM$LeafLitter)/(TrueValues.BM$LeafLitter + 1))^2)/length(Pred.BM$LeafLitter)
+      err.StemLitter <- sum(((Pred.BM$StemLitter-TrueValues.BM$StemLitter)/(TrueValues.BM$StemLitter + 1))^2)/length(Pred.BM$StemLitter)
       
       cost <- cost + wts$Litter * (err.LeafLitter + err.StemLitter)
       
@@ -106,11 +85,10 @@ EF_utr_optim <- function(optim_params_short,
         scale.stem.TNC <- max(TrueValues.TNC$Stem)
         
         # add substrate C data to the cost function
-        err.Leaf.TNC <- sum(((Pred.TNC$Leaf-TrueValues.TNC$Leaf)/scale.leaf.TNC)^2)/length(Pred.TNC$Leaf)
-        err.Stem.TNC <- sum(((Pred.TNC$Stem-TrueValues.TNC$Stem)/scale.stem.TNC)^2)/length(Pred.TNC$Stem)
-        
-        # print(paste0('err.Leaf.TNC:', err.Leaf.TNC))
-        # print(paste0('err.Stem.TNC:', err.Stem.TNC))
+        err.Leaf.TNC <- sum(((Pred.TNC$Leaf-TrueValues.TNC$Leaf)/(TrueValues.TNC$Leaf + 10))^2)/length(Pred.TNC$Leaf)
+        err.Stem.TNC <- sum(((Pred.TNC$Stem-TrueValues.TNC$Stem)/(TrueValues.TNC$Stem + 10))^2)/length(Pred.TNC$Stem)
+        # print(paste0('err.Leaf.TNC: ', err.Leaf.TNC))
+        # print(paste0('err.Stem.TNC: ', err.Stem.TNC))
         
         cost <- cost + wts$TNC * (err.Leaf.TNC + err.Stem.TNC)
       }
@@ -118,7 +96,7 @@ EF_utr_optim <- function(optim_params_short,
         cost.avg <- 1e10
         break
       }
-      cost <- round(100 * cost,2) / length(biocro.fun)
+      cost <- round(cost,2) / length(biocro.fun)
       cost.avg <- cost.avg + cost
     }
   }
