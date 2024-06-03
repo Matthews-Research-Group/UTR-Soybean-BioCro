@@ -35,18 +35,27 @@ EF_utr_optim <- function(optim_params_short,
       Pred.BM$LeafLitter <- cf * result$Leaf_senescence_loss[time_inds.BM]
       Pred.BM$StemLitter <- cf * result$Stem_senescence_loss[time_inds.BM]
       
-      # factor to scale experimental and simulated results between 0 and ~1 for all components
-      scale.leaf <- max(TrueValues.BM$Leaf)
-      scale.stem <- max(TrueValues.BM$Stem)
-      scale.pod <- max(TrueValues.BM$Pod)
-      scale.Root <- max(TrueValues.BM$Root)
+      # factor to give heavier weights to max values
+      weights.leaf <- c(rep(1, length(TrueValues.BM$Leaf)))
+      weights.leaf[which.max(TrueValues.BM$Leaf)] <- 5
+      weights.stem <- c(rep(1, length(TrueValues.BM$Stem)))
+      weights.stem[which.max(TrueValues.BM$Stem)] <- 5
+      weights.pod <- c(rep(1, length(TrueValues.BM$Pod)))
+      weights.pod[which.max(TrueValues.BM$Pod)] <- 5
+      weights.root <- c(rep(1, length(TrueValues.BM$Root)))
+      weights.root[which.max(TrueValues.BM$Root)] <- 5
       scale.LeafLitter <- max(TrueValues.BM$LeafLitter)
       scale.StemLitter <- max(TrueValues.BM$StemLitter)
+      weights.leaf.litter <- c(rep(1, length(TrueValues.BM$LeafLitter)))
+      weights.leaf.litter[which.max(TrueValues.BM$LeafLitter)] <- 5
+      weights.stem.litter <- c(rep(1, length(TrueValues.BM$StemLitter)))
+      weights.stem.litter[which.max(TrueValues.BM$StemLitter)] <- 5
+      
       # weighted rmses
-      err.leaf <- sum(((Pred.BM$Leaf-TrueValues.BM$Leaf)/(TrueValues.BM$Leaf + 0.1))^2)/length(Pred.BM$Leaf)
-      err.stem <- sum(((Pred.BM$Stem-TrueValues.BM$Stem)/(TrueValues.BM$Stem + 0.1))^2)/length(Pred.BM$Stem)
-      err.pod <- sum(((Pred.BM$Pod-TrueValues.BM$Pod)/(TrueValues.BM$Pod + 0.1))^2)/length(Pred.BM$Pod)
-      err.root <- sum(((Pred.BM$Root-TrueValues.BM$Root)/(TrueValues.BM$Root+ 0.1))^2)/length(Pred.BM$Root)
+      err.leaf <- sum((weights.leaf*(Pred.BM$Leaf-TrueValues.BM$Leaf)/(TrueValues.BM$Leaf + 0.1))^2)/length(Pred.BM$Leaf)
+      err.stem <- sum((weights.stem*(Pred.BM$Stem-TrueValues.BM$Stem)/(TrueValues.BM$Stem + 0.1))^2)/length(Pred.BM$Stem)
+      err.pod <- sum((weights.pod*(Pred.BM$Pod-TrueValues.BM$Pod)/(TrueValues.BM$Pod + 0.1))^2)/length(Pred.BM$Pod)
+      err.root <- sum((weights.root*(Pred.BM$Root-TrueValues.BM$Root)/(TrueValues.BM$Root+ 0.1))^2)/length(Pred.BM$Root)
       
       # print(paste0('err.leaf:', err.leaf))
       # print(paste0('err.stem:', err.stem))
@@ -55,8 +64,8 @@ EF_utr_optim <- function(optim_params_short,
       cost <- wts$Leaf*err.leaf + wts$Stem*err.stem + wts$Pod*err.pod + wts$Root*err.root
       
       # add litter to the cost function
-      err.LeafLitter <- sum(((Pred.BM$LeafLitter-TrueValues.BM$LeafLitter)/(TrueValues.BM$LeafLitter + 1))^2)/length(Pred.BM$LeafLitter)
-      err.StemLitter <- sum(((Pred.BM$StemLitter-TrueValues.BM$StemLitter)/(TrueValues.BM$StemLitter + 1))^2)/length(Pred.BM$StemLitter)
+      err.LeafLitter <- sum((weights.leaf.litter*(Pred.BM$LeafLitter-TrueValues.BM$LeafLitter)/(TrueValues.BM$LeafLitter + 1))^2)/length(Pred.BM$LeafLitter)
+      err.StemLitter <- sum((weights.stem.litter*(Pred.BM$StemLitter-TrueValues.BM$StemLitter)/(TrueValues.BM$StemLitter + 1))^2)/length(Pred.BM$StemLitter)
       
       cost <- cost + wts$Litter * (err.LeafLitter + err.StemLitter)
       

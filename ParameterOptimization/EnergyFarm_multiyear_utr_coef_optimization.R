@@ -164,7 +164,7 @@ for (i in 1:length(years)){
 
 # Optimization
 # cost function
-wts <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 2, "Root" = 0.5, "Litter" = 0.5, "TNC" = 1e-3, "Pod_start" = 100)
+wts <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 2, "Root" = 0.5, "Litter" = 0.5, "TNC" = 0.01)
 cost_func <- function(x){
   EF_utr_optim(x, soybean_optsolver, ExpBiomass, TNC.data, numrows, wts)
 }
