@@ -13,6 +13,7 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
     result <- biocro.fun[[i]](optim_params)
     if (nrow(result) < num_rows[i]) {
       cost.avg <- 1e10
+      # print('simulation did not finish')
       break
       
     } else{
@@ -33,30 +34,29 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       cf <- optim_params_short[1]
       Pred$CummulativeLitter <- cf * (result$Leaf_senescence_loss[doy_inds] + result$Stem_senescence_loss[doy_inds])
       
-      # factor to scale experimental and simulated results between 0 and ~1 for all components
-      scale.leaf <- max(TrueValues$Leaf)
-      scale.stem <- max(TrueValues$Stem)
-      scale.pod <- max(TrueValues$Pod)
-      scale.root <- max(RootValues$Root)
-      scale.CummulativeLitter <- max(TrueValues$CummulativeLitter)
-      
       # weights
       wts <- weights[[i]]
       
       # weighted rmses
-      err.leaf <- sum(wts$Leaf*(((Pred$Leaf-TrueValues$Leaf)/scale.leaf)^2))/length(Pred$Leaf)
-      err.stem <- sum(wts$Stem*(((Pred$Stem-TrueValues$Stem)/scale.stem)^2))/length(Pred$Stem)
-      err.pod <- sum(wts$Pod*(((Pred$Pod-TrueValues$Pod)/scale.pod)^2))/length(Pred$Pod)
-      err.root <- sum(((Pred.Root$Vals-RootValues$Root)/scale.root)^2)/length(Pred.Root$Vals)
-      
+      err.leaf <- sum(wts$Leaf*((Pred$Leaf-TrueValues$Leaf)^2)/(TrueValues$Leaf+0.1))/length(Pred$Leaf)
+      err.stem <- sum(wts$Stem*((Pred$Stem-TrueValues$Stem)^2)/(TrueValues$Stem+0.1))/length(Pred$Stem)
+      err.pod <- sum(wts$Pod*((Pred$Pod-TrueValues$Pod)^2)/(TrueValues$Pods+0.1))/length(Pred$Pod)
+      err.root <- sum(((Pred.Root$Vals-RootValues$Root)^2)/(RootValues$Root+0.1))/length(Pred.Root$Vals)
+     
       cost <- wts2$Leaf*err.leaf + wts2$Stem*err.stem + wts2$Pod*err.pod + wts2$Root*err.root
       
       # add litter to the cost function
-      err.litter <- sum(wts$CummulativeLitter*(((Pred$CummulativeLitter-TrueValues$CummulativeLitter)/scale.CummulativeLitter)^2))/length(Pred$CummulativeLitter)
+      err.litter <- sum(wts$CummulativeLitter*(((Pred$CummulativeLitter-TrueValues$CummulativeLitter)^2))/(TrueValues$CummulativeLitter+0.1))/length(Pred$CummulativeLitter)
       
       cost <- cost + wts2$CummulativeLitter * err.litter
       
-      if(is.nan(cost) || max(result$Leaf_substrate_carbon/result$Leaf > 0.3)){
+      if(is.nan(cost)){
+        cost.avg <- 1e10
+        # print('is nan')
+        break
+      }
+      else if(max(result$Leaf_substrate_carbon/result$Leaf > 0.8)){
+        # print(paste0('high substrate, cost: ', cost))
         cost.avg <- 1e10
         break
       }
