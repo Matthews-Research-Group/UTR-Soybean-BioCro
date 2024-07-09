@@ -15,6 +15,7 @@ library(DEoptim)
 # Cost function
 source('soybean_parameter_expansion.R')
 source('SoyFACE_multiyear_utr_optim_tnc_constraints.R')
+source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 
 # set year and CO2 level
 co2_opt = '_ambient_' # '_ambient_' or '_co2_'
@@ -77,15 +78,17 @@ for (i in 1:length(year)) {   # Remember to change back
 }
 
 # Optimization
-wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 2, "Root" = 0.75, "CummulativeLitter" = 0.5)
+wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 1, "Root" = 0.75, "CummulativeLitter" = 0.5)
 
 # cost function
 cost_func <- function(x){
-  multiyear_BioCro_optim(x, soybean_optsolver[c(1,3)], ExpBiomass[c(1,3)], 
-                         numrows[c(1,3)], weights[c(1,3)], wts2, RootVals[c(1,3)])
+  multiyear_BioCro_optim(x, soybean_optsolver[c(1,2)], ExpBiomass[c(1,2)], 
+                         numrows[c(1,2)], weights[c(1,2)], wts2, RootVals[c(1,2)])
 }
 
-# Optimization
+cost_func(optim_params_short_SoyFACE)
+
+# Parameter ranges
 upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
               0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
@@ -93,19 +96,20 @@ upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
               0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
               10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
-              2.0, 2.0, 2.0,# 20,21,22: senescence beta, LSR [/dvi]
-              1.2, 2.2) # 23, 24, pod start dvi, stop growth dvi
+              2.0, 2.0, 2.0,
+              1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
 
 
 lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
-              0.005, 0.005, 0.005, 0.1, # 6，7, 8, 9： Km [mol / Mg]
+              0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
               0.1, # 10: respiration factor [dimensionless]
               0.005, 0.005 ,0.01, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
               0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
               4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
-              1.5, 1.5, 1.5, # 20, 21, 22: senescence beta, LSR [/dvi]
-              0.8, 1.8) # 23, 24, pod start dvi, stop growth dvi
+              1.5, 1.5, 1.5,
+              0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
+
 
 rng.seed <- 1234 # seed for random number generator
 set.seed(rng.seed)
@@ -125,3 +129,4 @@ optim_params_short = optim_result$optim$bestmem
 print(optim_params_short)
 sink()
 sink()
+

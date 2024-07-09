@@ -164,7 +164,7 @@ for (i in 1:length(years)){
 
 # Optimization
 # cost function
-wts <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 2, "Root" = 0.5, "Litter" = 0.5, "TNC" = 0.01)
+wts <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 1, "Root" = 1, "Litter" = 0.5, "TNC" = 1e-4)
 cost_func <- function(x){
   EF_utr_optim(x, soybean_optsolver, ExpBiomass, TNC.data, numrows, wts)
 }
@@ -174,13 +174,6 @@ i <- 1
 result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short))
 
 library(lattice)
-
-xyplot(data = result,
-       substrate_transport_Leaf_to_Stem+
-         Leaf_utilization_rate~
-         time,
-       auto.key = TRUE,
-       main = as.character(i))
 
 print(xyplot(data = result,
              Leaf_utilization_rate/Leaf_structural_carbon
@@ -222,7 +215,7 @@ lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
               4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
               1.5, 1.5, 1.5,
-              0.6, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
+              0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
 
 rng.seed <- 1234 # seed for random number generator
 set.seed(rng.seed)
@@ -241,4 +234,9 @@ optim_result <- DEoptim(fn=cost_func, lower=lowerlim, upper = upperlim,
 optim_params_short = optim_result$optim$bestmem
 print(optim_params_short)
 sink()
+
+result <- soybean_optsolver[[1]](optim_params_conversion(optim_params_short))
+xyplot(data = result,
+       Leaf+Stem+Root+Pod~time,
+       auto.key = TRUE) 
 
