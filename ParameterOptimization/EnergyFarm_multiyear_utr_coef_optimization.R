@@ -216,7 +216,7 @@ upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
 
 lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
-              0.005, 0.005, 0.005, 0.1, # 6，7, 8, 9： Km [mol / Mg]
+              0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
               0.1, # 10: respiration factor [dimensionless]
               0.005, 0.005 ,0.01, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
               0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR

@@ -699,29 +699,3 @@ allocation_percentage <- data.frame(DOY = leaf_export_daily$Group.1,
 #                                         allocation_percentage$Stem+
 #                                         allocation_percentage$Root+
 #                                         allocation_percentage$Pod
-allocation_percentage <- allocation_percentage[1:which(allocation_percentage$DOY==result$doy
-                                                       [which.min(abs(result$DVI-parameters$stop_growth_dvi))])-1,]
-
-allocation_percentage_tall <- melt(allocation_percentage, id.vars = 'DOY')
-names(allocation_percentage_tall) <- c('DOY','Organ', 'Percentage')
-p <- ggplot() + theme_classic() +
-  geom_point(data = allocation_percentage_tall, aes(x=DOY, y=Percentage, color=Organ),
-             size = 0.8)+
-  scale_color_manual(values = col.palette.muted)+
-  theme(plot.title=element_text(size=16, hjust=0.5),
-        axis.text=element_text(size=10),
-        axis.title=element_text(size=10),
-        panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  scale_y_continuous(limits = c(-20, 120), breaks = seq(-20, 120, 20)) +
-  scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), 
-       x=paste0('Day of Year (', year, ')'), 
-       y='Allocation %')
-ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in")
-
-xyplot(100 * root_reuse_daily$x / root_allocation_daily$x ~
-         root_reuse_daily$Group.1,
-       xlab='DOY', ylab='Percentage contribution from reuse')
-(sum(root_reuse_daily$x)+sum(stem_reuse_daily$x)+sum(leaf_reuse_daily$x))/sum(canopy_assim_daily$x)
-

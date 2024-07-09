@@ -47,6 +47,7 @@ if (update_parameters){
   full_soybean_ld11$parameters <- parameters
 }
 
+full_soybean_ld11$parameters$Pod_start_dvi <- 0.7
 ExpBiomass <- list()
 weather.afteremergence <- list()
 results <- list()
@@ -176,10 +177,10 @@ for (i in 1:length(years)){
   field_organ_biomass_tall <- melt(field_organ_biomass, id.vars = 'time')
   names(field_organ_biomass_tall) <- c('time','Organ', 'biomass')
   
-  size.title <- 12
-  size.axislabel <-12
-  size.axis <- 12
-  size.legend <- 8
+  size.title <- 10
+  size.axislabel <-10
+  size.axis <- 10
+  size.legend <- 10
   
   col.palette.muted <- c( "#117733", "#999933",  "#882255", "#332288")
   
@@ -194,7 +195,7 @@ for (i in 1:length(years)){
           panel.grid.minor = element_blank(), 
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
-    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
+    scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
     scale_x_continuous(breaks = seq(180,280,30))+
     labs(title=element_blank(), 
          x=paste0('Day of Year (', years[i], ')'), 
@@ -226,13 +227,25 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
                                common_legend, 
                                ncol=3, widths=c(0.3, 5, 1.1))
 
-# combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remobilized C %', rot = 90, gp=gpar(fontsize=12))),
+# common_legend <- g_legend(allocation.figs[[1]])
+# 
+# combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
 #                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
 #                                                                   allocation.figs[[2]] + theme(legend.position="none"),
 #                                                                   allocation.figs[[3]] + theme(legend.position="none"),
 #                                                                   ncol = 3),
 #                                                       ncol = 1),
-#                                           ncol=2, widths=c(0.3, 5))
+#                                           common_legend, 
+#                                           ncol=3, widths=c(0.3, 5, 1.1))
+
+
+combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remobilized C %', rot = 90, gp=gpar(fontsize=12))),
+                                          arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
+                                                                  allocation.figs[[2]] + theme(legend.position="none"),
+                                                                  allocation.figs[[3]] + theme(legend.position="none"),
+                                                                  ncol = 3),
+                                                      ncol = 1),
+                                          ncol=2, widths=c(0.3, 5))
 
 # for(i in 1:3){
 #   print(xyplot(data=weather.afteremergence[[i]], temp~time, 

@@ -12,7 +12,9 @@ plot_partitioning <- function(result, year){
   root_reuse_daily <- aggregate(result$Root_senescence_rate * 
                                   parameters$Root_senescence_reuse_factor,
                                 list(result$doy), FUN=sum)
-  net_subC_input <- data.frame(Group.1 = canopy_assim_daily$Group.1,
+  avg_dvi_daily <- aggregate(result$DVI, list(result$doy), FUN=mean)
+  
+  net_subC_input <- data.frame(Group.1 = avg_dvi_daily$x, # canopy_assim_daily$Group.1
                                x = canopy_assim_daily$x + 
                                  leaf_reuse_daily$x + 
                                  stem_reuse_daily$x + 
@@ -27,7 +29,7 @@ plot_partitioning <- function(result, year){
     pod_allocation_daily - root_allocation_daily
   leaf_allocation_daily <- canopy_assim_daily + leaf_reuse_daily - leaf_export_daily
   
-  allocation_percentage <- data.frame(DOY = leaf_export_daily$Group.1, 
+  allocation_percentage <- data.frame(DVI = avg_dvi_daily$x, # DOY = leaf_export_daily$Group.1, 
                                       Leaf = 100 * leaf_allocation_daily$x / net_subC_input$x,
                                       Stem = 100 * stem_allocation_daily$x / net_subC_input$x,
                                       Root = 100 * root_allocation_daily$x / net_subC_input$x,
@@ -37,13 +39,12 @@ plot_partitioning <- function(result, year){
   #                                         allocation_percentage$Stem+
   #                                         allocation_percentage$Root+
   #                                         allocation_percentage$Pod
-  allocation_percentage <- allocation_percentage[1:which(allocation_percentage$DOY==result$doy
-                                                         [which.min(abs(result$DVI-parameters$stop_growth_dvi))])-1,]
+  allocation_percentage <- allocation_percentage[1:which.min(abs(allocation_percentage$DVI-parameters$stop_growth_dvi)),]
   
-  allocation_percentage_tall <- melt(allocation_percentage, id.vars = 'DOY')
-  names(allocation_percentage_tall) <- c('DOY','Organ', 'Percentage')
+  allocation_percentage_tall <- melt(allocation_percentage, id.vars = 'DVI') # 'DOY')
+  names(allocation_percentage_tall) <- c('DVI','Organ', 'Percentage') # DOY
   p <- ggplot() + theme_classic() +
-    geom_point(data = allocation_percentage_tall, aes(x=DOY, y=Percentage, color=Organ),
+    geom_point(data = allocation_percentage_tall, aes(x=DVI, y=Percentage, color=Organ), # x=DOY
                size = 0.8)+
     scale_color_manual(values = col.palette.muted)+
     theme(plot.title=element_text(size=16, hjust=0.5),
@@ -53,9 +54,9 @@ plot_partitioning <- function(result, year){
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
     scale_y_continuous(limits = c(-20, 120), breaks = seq(-20, 120, 20)) +
-    scale_x_continuous(breaks = seq(180,280,30))+
+    scale_x_continuous(breaks = seq(0,2,0.5))+
     labs(title=element_blank(), 
-         x=paste0('Day of Year (', year, ')'), 
+         x= paste0('DVI (', year, ')'), # paste0('Day of Year (', year, ')'), 
          y='Allocation %')
   ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in")
   root_reuse_contribution_percentage <- root_reuse_daily$x/root_allocation_daily$x
@@ -68,14 +69,13 @@ plot_partitioning <- function(result, year){
                             xlab='DOY', ylab='Percentage contribution from reuse'))
   
   # reuse percentage of all C source
-  reuse_percentage <- data.frame(DOY = leaf_reuse_daily$Group.1, 
+  reuse_percentage <- data.frame(DVI = avg_dvi_daily$x, # DOY = leaf_reuse_daily$Group.1, 
                                 Remobilization_rate = 100*(leaf_reuse_daily$x+
                                                           stem_reuse_daily$x+
                                                           root_reuse_daily$x)/net_subC_input$x)
-  reuse_percentage <- reuse_percentage[1:which(reuse_percentage$DOY==result$doy
-                                               [which.min(abs(result$DVI-parameters$stop_growth_dvi))])-1,]
+  reuse_percentage <- reuse_percentage[1:which.min(abs(reuse_percentage$DVI-parameters$stop_growth_dvi)),]
   reuse.p <- ggplot() + theme_classic() +
-    geom_point(data = reuse_percentage, aes(x=DOY, y=Remobilization_rate),
+    geom_point(data = reuse_percentage, aes(x=DVI, y=Remobilization_rate), # DOY
                size = 0.8)+
     scale_color_manual(values = col.palette.muted)+
     theme(plot.title=element_text(size=16, hjust=0.5),
@@ -85,10 +85,10 @@ plot_partitioning <- function(result, year){
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
     scale_y_continuous(limits = c(-20, 120), breaks = seq(-20, 120, 20)) +
-    scale_x_continuous(breaks = seq(180,280,30))+
+    scale_x_continuous(breaks = seq(0,2,0.5))+
     labs(title=element_blank(), 
-         x=paste0('Day of Year (', year, ')'), 
+         x=paste0('DVI (', year, ')'),# paste0('Day of Year (', year, ')'), 
          y='Remobolization %')
   ggsave(paste0("reuse__percentage_", year, '.png'), width = 4, height = 3, units = "in")
-  return(allocation_percentage_tall) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
+  return(p) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
 }

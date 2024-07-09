@@ -413,18 +413,18 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 save(results, results.elevCO2, ExpBiomass, ExpBiomass.elevCO2, file = 'SoyFACE_results_and_measurements.RData')
 
-i <- 2
-sDVI <- parameters$stop_growth_dvi
-xyplot(results.elevCO2[[i]]$Leaf_substrate_carbon[which(results.elevCO2[[i]]$DVI<sDVI)]+
-         results[[i]]$Leaf_substrate_carbon[which(results[[1]]$DVI<sDVI)]
-       ~results[[i]]$time[which(results.elevCO2[[i]]$DVI<sDVI)])
-
-for (i in 1:4){
-  print(xyplot(data = results[[i]],
-               Leaf_substrate_carbon/Leaf+
-                 Stem_substrate_carbon/Stem~
-                 time,
-               auto=TRUE,
-               ylim = c(0,1),
-               main = years[i]))
-}
+# i <- 2
+# sDVI <- parameters$stop_growth_dvi
+# xyplot(results.elevCO2[[i]]$Leaf_substrate_carbon[which(results.elevCO2[[i]]$DVI<sDVI)]+
+#          results[[i]]$Leaf_substrate_carbon[which(results[[1]]$DVI<sDVI)]
+#        ~results[[i]]$time[which(results.elevCO2[[i]]$DVI<sDVI)])
+# 
+# for (i in 1:4){
+#   print(xyplot(data = results[[i]],
+#                Leaf_substrate_carbon/Leaf+
+#                  Stem_substrate_carbon/Stem~
+#                  time,
+#                auto=TRUE,
+#                ylim = c(0,1),
+#                main = years[i]))
+# }
