@@ -47,7 +47,6 @@ if (update_parameters){
   full_soybean_ld11$parameters <- parameters
 }
 
-full_soybean_ld11$parameters$Pod_start_dvi <- 0.7
 ExpBiomass <- list()
 weather.afteremergence <- list()
 results <- list()
@@ -75,6 +74,7 @@ for (i in 1:length(years)){
   leaf_frac <- ExpBiomass[[i]]$leaf[j]/mass_t
   stem_frac <- ExpBiomass[[i]]$stem[j]/mass_t
   root_frac <- ExpBiomass[[i]]$root[j]/mass_t
+  print(paste0("fractions - leaf: ", leaf_frac, " stem: ", stem_frac, " root: ",root_frac))
   cf <- optim_params_short[1]
   
   initial_state <- list(
@@ -177,10 +177,10 @@ for (i in 1:length(years)){
   field_organ_biomass_tall <- melt(field_organ_biomass, id.vars = 'time')
   names(field_organ_biomass_tall) <- c('time','Organ', 'biomass')
   
-  size.title <- 10
-  size.axislabel <-10
-  size.axis <- 10
-  size.legend <- 10
+  size.title <- 12
+  size.axislabel <-12
+  size.axis <- 12
+  size.legend <- 8
   
   col.palette.muted <- c( "#117733", "#999933",  "#882255", "#332288")
   
@@ -195,7 +195,7 @@ for (i in 1:length(years)){
           panel.grid.minor = element_blank(), 
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
-    scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
+    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
     scale_x_continuous(breaks = seq(180,280,30))+
     labs(title=element_blank(), 
          x=paste0('Day of Year (', years[i], ')'), 
@@ -227,19 +227,17 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
                                common_legend, 
                                ncol=3, widths=c(0.3, 5, 1.1))
 
-# common_legend <- g_legend(allocation.figs[[1]])
-# 
-# combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
-#                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
-#                                                                   allocation.figs[[2]] + theme(legend.position="none"),
-#                                                                   allocation.figs[[3]] + theme(legend.position="none"),
-#                                                                   ncol = 3),
-#                                                       ncol = 1),
-#                                           common_legend, 
-#                                           ncol=3, widths=c(0.3, 5, 1.1))
+combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
+                                          arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
+                                                                  allocation.figs[[2]] + theme(legend.position="none"),
+                                                                  allocation.figs[[3]] + theme(legend.position="none"),
+                                                                  ncol = 3),ß
+                                                      ncol = 1),
+                                          common_legend, 
+                                          ncol=3, widths=c(0.3, 5, 1.1))
 
 
-combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remobilized C %', rot = 90, gp=gpar(fontsize=12))),
+combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remoblized C %', rot = 90, gp=gpar(fontsize=12))),
                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
                                                                   allocation.figs[[2]] + theme(legend.position="none"),
                                                                   allocation.figs[[3]] + theme(legend.position="none"),
@@ -263,4 +261,48 @@ combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remobilized C %'
 #                }))
 # }
 # 
+r <- results[[2]]
+times <- c(186.5, 209.5, 236.5, 258.5)
+doys <- c(186, 209, 236, 258)
+layer_assim <- data.frame(DOY=numeric(),
+                          layer_number=numeric(),
+                          layer_assimilation=numeric())
+for (t in 1:length(times)){
+  time <- times[t]
+  doy <- doys[t]
+  idx <- which(r$time==time)
+  for (i in 1:9){
+    assim <- (r[idx, paste0('sunlit_Assim_layer_', i)]*
+              r[idx, paste0('sunlit_fraction_layer_', i)] +
+              r[idx, paste0('shaded_Assim_layer_', i)]*
+              r[idx, paste0('shaded_fraction_layer_', i)])*
+      r[idx, 'lai']/10
+    new_row <- data.frame(
+      DOY = doy,
+      layer_number = i,
+      layer_assimilation = assim)
+    layer_assim <- rbind(layer_assim, new_row)
+  }
+}
+
+plot <- ggplot(layer_assim, aes(x = layer_number, y = layer_assimilation)) +
+  geom_point() +
+  geom_line() +
+  facet_wrap(~ DOY, nrow = 1, scales = "fixed") +
+  labs(# title = "Layer Assimilation by Layer Number on Different DOYs",
+       x = "Layer Number",
+       y = "Layer Assimilation (micromol / m^2 /s)") +
+  theme_minimal() +
+  theme(
+    strip.background = element_rect(fill = "lightgrey"),
+    strip.text = element_text(face = "bold"),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.x = element_line(color = "grey90")
+  ) +
+  scale_x_continuous(breaks = unique(layer_assim$layer_number), 
+                     labels = as.integer(unique(layer_assim$layer_number)))
+
+# Display the plot
+print(plot)
+
 

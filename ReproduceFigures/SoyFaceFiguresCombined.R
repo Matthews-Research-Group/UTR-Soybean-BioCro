@@ -87,6 +87,7 @@ for (i in 1:length(years)) {
     
     print(result$Pod[which.max(result$DVI)])
   }
+  
   # organize simulated data
   r.lsrp.doy <- reshape2::melt(result[,c("time","Root","Leaf","Stem","Pod")],id.vars="time")
   r.lsrp.doy$value<-r.lsrp.doy$value
