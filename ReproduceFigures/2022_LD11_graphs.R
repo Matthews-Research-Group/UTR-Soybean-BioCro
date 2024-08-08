@@ -173,6 +173,14 @@ soybean_optsolver <- with(full_soybean_ld11, {partial_run_biocro(
 )})
 
 biocro_result <- soybean_optsolver(optim_params_conversion(optim_params_short))
+biocro_result$Leaf_substrate_carbon <- biocro_result$Leaf_substrate_carbon / 6
+biocro_result$Leaf_structural_carbon <- biocro_result$Leaf_structural_carbon / 6
+biocro_result$Stem_substrate_carbon <- biocro_result$Stem_substrate_carbon / 6
+biocro_result$Stem_structural_carbon <- biocro_result$Stem_structural_carbon / 6
+biocro_result$Root_substrate_carbon <- biocro_result$Stem_substrate_carbon / 6
+biocro_result$Root_structural_carbon <- biocro_result$Stem_structural_carbon / 6
+biocro_result$Pod_substrate_carbon <- biocro_result$Stem_substrate_carbon / 6
+biocro_result$Pod_structural_carbon <- biocro_result$Pod_structural_carbon / 6
 
 # Run the simulation with reduced light intensity by 20%
 weather2022.afteremergence.lowlight <- weather2022.afteremergence
@@ -415,7 +423,7 @@ ggplot(data_long_per_m2, aes(x=time, y=Value, color=Type)) +
   geom_line()+
   labs(title = 'Substrate C per land area', 
        x='Day of Year (2022)',
-       y='Substrate C (mol C/m^2)')
+       y='Substrate C (mol glucose eq./m^2)')
 
 # Simulated + Measured
 # Leaf
@@ -441,7 +449,7 @@ ggplot(Leaf.carb.data, aes(time, Leaf_substrate_carbon, group = Source)) +
   scale_x_continuous(breaks = seq(180,280,30))+
   labs(title=element_blank(), 
        x='Day of Year (2022)',
-       y='Leaf Substrate C (mol C/m^2)')
+       y='Leaf Substrate C (mol glucose eq./m^2)')
 
 # Stem
 biocro_result$Source <- 'Simulated'
@@ -463,7 +471,7 @@ ggplot(Stem.carb.data, aes(time, Stem_substrate_carbon, group = Source)) +
   scale_x_continuous(breaks = seq(180,280,30))+
   labs(title=element_blank(), 
        x='Day of Year (2022)',
-       y='Stem Substrate C (mol C/m^2)')
+       y='Stem Substrate C (mol glucose eq./m^2)')
 
 # Plot measured vs simulated TNC per mass 
 # Simulated TNC alone
@@ -518,7 +526,7 @@ ggplot(Leaf.carb.data, aes(time, TNC, group = Source)) +
   scale_x_continuous(breaks = seq(180,280,30))+
   labs(title=element_blank(), 
        x='Day of Year (2022)',
-       y='Leaf Substrate C (mol C/Mg)')
+       y='Leaf Substrate C (mol glucose eq./Mg)')
 
 # Stem
 sim_stem_tnc_by_mass <- sim_substrate_C_by_mass[, c('time','Stem','hour')]
@@ -548,7 +556,7 @@ ggplot(Stem.carb.data, aes(time, TNC, group = Source)) +
   scale_x_continuous(breaks = seq(180,280,30))+
   labs(title=element_blank(), 
        x='Day of Year (2022)',
-       y='Stem Substrate C (mol C/Mg)')
+       y='Stem Substrate C (mol glucose eq./Mg)')
 
 # diurnal changes of substrate C
 # take out the last TNC data because in simulation the crop has stopped growing
@@ -582,7 +590,7 @@ ggplot(leaf.tnc.sampling.days, aes(hour, TNC, group = Source)) +
   scale_x_continuous(breaks = seq(0,24,6))+
   labs(title=element_blank(), 
        x='Hour of the Day',
-       y='Leaf Substrate C (mol C/Mg)')
+       y='Leaf Substrate C (mol glucose eq./Mg)')
 
 sim_stem_tnc_by_mass$DOY <- as.integer(sim_stem_tnc_by_mass$time)
 stem.tnc.mean$DOY <- as.integer(stem.tnc.mean$time)
@@ -616,7 +624,7 @@ ggplot(stem.tnc.sampling.days, aes(hour, TNC, group = Source)) +
   scale_x_continuous(breaks = seq(0,24,6))+
   labs(title=element_blank(), 
        x='Hour',
-       y='Stem Substrate C (mol C/Mg)')
+       y='Stem Substrate C (mol glucose eq./Mg)')
 
 leaf.tnc.sampling.days$Organ <- 'Leaf'
 stem.tnc.sampling.days$Organ <- 'Stem'
@@ -638,7 +646,7 @@ ggplot(TNC.sampling.days, aes(hour, TNC, group = Source)) +
   scale_x_continuous(breaks = seq(0,24,6))+
   labs(title=element_blank(), 
        x='Hour',
-       y='Substrate C (mol C/Mg)')
+       y='Substrate C (mol glucose eq./Mg)')
 
 source('plot_partitioning.R')
 allocation_percentage_tall <- plot_partitioning(biocro_result, '2022')

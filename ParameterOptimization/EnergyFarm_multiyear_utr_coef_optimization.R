@@ -24,6 +24,8 @@ source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
 load('../Data/Soybean-BioCro_Parameters/full_soybean_ld11.RData')
 # Load 2022 TNC data
 TNC.data <- read.csv('../Data/2022_Carb_data/2022_LD11_TNC_new.csv')
+TNC.data$Leaf <- TNC.data$Leaf * 6
+TNC.data$Stem <- TNC.data$Stem * 6
 
 # Modify the modules
 full_soybean_ld11$direct_modules <- steady_state_module_names
@@ -212,8 +214,6 @@ upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
               2.0, 2.0, 2.0,
               1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
-
-
 lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
               0.005, 0.005, 0.005, 0.1, # 6，7, 8, 9： Km [mol / Mg]
