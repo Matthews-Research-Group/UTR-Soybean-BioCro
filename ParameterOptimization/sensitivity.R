@@ -8,6 +8,7 @@ rm(list=ls())
 library(BioCro)
 library(lhs)
 library(parallel)
+library(sensitivity)
 
 # Set working directory to location of this file
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
@@ -179,7 +180,7 @@ lowerlim <- c(0.2, 0.0, 0.0, 0.0, 0.1, 0.005, 0.005, 0.005, 0.1, 0.1, 0.005, 0.0
 n_params <- length(upperlim)
 
 # Number of samples
-n_samples <- 1000000
+n_samples <- 10000
 
 # Generate Latin Hypercube samples
 lhs_samples <- randomLHS(n_samples, n_params)
@@ -216,27 +217,16 @@ print(head(output))
 summary(output$result)
 hist(output$result, main="Distribution of Cost Function Results", xlab="Cost")
 
-# Identify the best parameter set (assuming lower cost is better)
+# Identify the best parameter set
 best_params <- output[which.min(output$result), ]
 print("Best parameter set:")
 print(best_params)
 
-# Simple correlation analysis
-cor_matrix <- cor(output)
-cor_with_result <- cor_matrix["result", -ncol(cor_matrix)]
+# Calculate PRCC
+prcc_result <- pcc(X = output[, arg_names_short], y = lhc_result, rank = TRUE, nboot = 100)
+prcc_df <- prcc_result$PRCC
 
-# Rank correlations by absolute value
-ranked_correlations <- sort(abs(cor_with_result), decreasing = TRUE)
-
-# Create a data frame with original correlations and their ranks
-ranked_cor_df <- data.frame(
-  Parameter = names(ranked_correlations),
-  Correlation = cor_with_result[names(ranked_correlations)],
-  AbsCorrelation = ranked_correlations
-)
-
-# Print the ranked correlations
-print("Ranked correlations of parameters with result:")
-print(ranked_cor_df)
-# Save the ranked correlations to a CSV file
-write.csv(ranked_cor_df, file = paste0("ranked_correlations_", n_samples, ".csv"), row.names = FALSE)
+# Print results
+ordered_prcc <- prcc_df[order(abs(prcc_df$original), decreasing = TRUE),]
+print(ordered_prcc)
+write.csv(prcc_df, paste0("prcc_ranking_", n_samples,".csv"), row.names = FALSE)
