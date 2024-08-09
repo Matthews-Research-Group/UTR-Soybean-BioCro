@@ -180,7 +180,7 @@ lowerlim <- c(0.2, 0.0, 0.0, 0.0, 0.1, 0.005, 0.005, 0.005, 0.1, 0.1, 0.005, 0.0
 n_params <- length(upperlim)
 
 # Number of samples
-n_samples <- 10000
+n_samples <- 100000
 
 # Generate Latin Hypercube samples
 lhs_samples <- randomLHS(n_samples, n_params)
@@ -229,4 +229,4 @@ prcc_df <- prcc_result$PRCC
 # Print results
 ordered_prcc <- prcc_df[order(abs(prcc_df$original), decreasing = TRUE),]
 print(ordered_prcc)
-write.csv(prcc_df, paste0("prcc_ranking_", n_samples,".csv"), row.names = FALSE)
+write.csv(prcc_df, paste0("prcc_ranking_", n_samples,".csv"))
