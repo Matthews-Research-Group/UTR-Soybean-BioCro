@@ -10,7 +10,7 @@ library(UTRSoybeanBML)
 library(DEoptim)
 
 # Set working directory to location of this file
-# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Cost function
 source('soybean_parameter_expansion.R')
@@ -78,7 +78,7 @@ for (i in 1:length(year)) {   # Remember to change back
 }
 
 # Optimization
-wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 1, "Root" = 0.75, "CummulativeLitter" = 0.5)
+wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 2, "Root" = 0.5, "CummulativeLitter" = 0.5)
 
 # cost function
 cost_func <- function(x){
@@ -89,7 +89,7 @@ cost_func <- function(x){
 cost_func(optim_params_short_SoyFACE)
 
 # Parameter ranges
-upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+upperlim <- c(0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
               0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
               0.8, # 10: respiration factor [/]
@@ -100,11 +100,11 @@ upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
 
 
-lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+lowerlim <- c(0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
               0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
               0.1, # 10: respiration factor [dimensionless]
-              0.005, 0.005 ,0.01, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.0, 0.0 ,0.0, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta] 0.005, 0.005 ,0.01
               0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
               4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
               1.5, 1.5, 1.5,

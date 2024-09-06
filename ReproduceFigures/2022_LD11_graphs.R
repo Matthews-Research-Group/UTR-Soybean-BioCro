@@ -548,7 +548,10 @@ ggplot(Stem.carb.data, aes(time, TNC, group = Source)) +
   scale_shape_manual(values=c(3, 18, 16)) +
   scale_size_manual(values=c(1, 4, 0.5)) +
   theme_classic() +
-  theme(legend.position = c(0.85, 0.85),
+  theme(plot.title=element_text(size=size.title, hjust=0.5),
+        axis.text=element_text(size=size.axis),
+        axis.title=element_text(size=size.axislabel),
+        legend.position = c(0.85, 0.85),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
         plot.background = element_rect(fill = "transparent", colour = NA))+

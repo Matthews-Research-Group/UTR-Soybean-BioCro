@@ -9,6 +9,9 @@ steady_state_module_names <- c(
   "BioCro:solar_position_michalsky",# solar_coordinates = 
   "BioCro:shortwave_atmospheric_scattering",
   "BioCro:incident_shortwave_from_ground_par",
+  "BioCro:height_from_lai",
+  "BioCro:canopy_gbw_thornley",
+  "BioCro:stefan_boltzmann_longwave",
   "BioCro:ten_layer_canopy_properties",
   "BioCro:ten_layer_c3_canopy", # canopy_photosynthesis = 
   "BioCro:ten_layer_canopy_integrator"

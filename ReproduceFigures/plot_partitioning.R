@@ -63,16 +63,16 @@ plot_partitioning <- function(result, year){
   root_reuse_contribution_percentage <- root_reuse_contribution_percentage[
     -which(root_reuse_contribution_percentage>400)]
   
-  print(xyplot(root_reuse_daily$x/root_allocation_daily$x*100~
-                             root_reuse_daily$Group.1[
-                            -which(root_reuse_contribution_percentage>400)],
-                            xlab='DOY', ylab='Percentage contribution from reuse'))
+  # print(xyplot(root_reuse_daily$x/root_allocation_daily$x*100~
+  #                root_reuse_daily$Group.1[
+  #                  -which(root_reuse_contribution_percentage>400)],
+  #              xlab='DOY', ylab='Percentage contribution from reuse'))
   
   # reuse percentage of all C source
   reuse_percentage <- data.frame(DVI = avg_dvi_daily$x, # DOY = leaf_reuse_daily$Group.1, 
-                                Remobilization_rate = 100*(leaf_reuse_daily$x+
-                                                          stem_reuse_daily$x+
-                                                          root_reuse_daily$x)/net_subC_input$x)
+                                 Remobilization_rate = 100*(leaf_reuse_daily$x+
+                                                              stem_reuse_daily$x+
+                                                              root_reuse_daily$x)/net_subC_input$x)
   reuse_percentage <- reuse_percentage[1:which.min(abs(reuse_percentage$DVI-parameters$stop_growth_dvi)),]
   reuse.p <- ggplot() + theme_classic() +
     geom_point(data = reuse_percentage, aes(x=DVI, y=Remobilization_rate), # DOY
@@ -89,6 +89,7 @@ plot_partitioning <- function(result, year){
     labs(title=element_blank(), 
          x=paste0('DVI (', year, ')'),# paste0('Day of Year (', year, ')'), 
          y='Remobolization %')
-  ggsave(paste0("reuse__percentage_", year, '.png'), width = 4, height = 3, units = "in")
+  ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in") # allocation__percentage_ or reuse__percentage_
   return(p) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
 }
+

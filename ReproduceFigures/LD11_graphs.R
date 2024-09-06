@@ -231,7 +231,7 @@ combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', r
                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
                                                                   allocation.figs[[2]] + theme(legend.position="none"),
                                                                   allocation.figs[[3]] + theme(legend.position="none"),
-                                                                  ncol = 3),ß
+                                                                  ncol = 3),
                                                       ncol = 1),
                                           common_legend, 
                                           ncol=3, widths=c(0.3, 5, 1.1))

@@ -224,9 +224,10 @@ print(best_params)
 
 # Calculate PRCC
 prcc_result <- pcc(X = output[, arg_names_short], y = lhc_result, rank = TRUE, nboot = 100)
+save(prcc_result, file=paste0("lhc_output_", n_samples, ".RData"))
 prcc_df <- prcc_result$PRCC
 
 # Print results
 ordered_prcc <- prcc_df[order(abs(prcc_df$original), decreasing = TRUE),]
 print(ordered_prcc)
-write.csv(prcc_df, paste0("prcc_ranking_", n_samples,".csv"))
+write.csv(ordered_prcc, paste0("prcc_ranking_", n_samples,".csv"))

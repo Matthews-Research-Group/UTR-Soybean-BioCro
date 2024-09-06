@@ -50,10 +50,10 @@ parameters <- list(
   Stem_senescence_beta     =               -0.1,
   Root_senescence_beta     =               -2.0,
   Pod_senescence_beta      =               -0.4,
-  Leaf_senescence_reuse_factor =            0.6,
-  Stem_senescence_reuse_factor =            0.6,
-  Root_senescence_reuse_factor =            0.6,
-  Pod_senescence_reuse_factor =             0.6,
+  Leaf_senescence_reuse_factor =            0, # 0.6,
+  Stem_senescence_reuse_factor =            0, # 0.6,
+  Root_senescence_reuse_factor =            0, # 0.6,
+  Pod_senescence_reuse_factor =             0, # 0.6,
   
   # Parameters related to the `parameter_calculator` module
   iSp = 3,
@@ -103,9 +103,17 @@ parameters <- list(
   sowing_time     =                        0      ,     # Referred to data/soybean.R: Soybean-BioCro uses the weather data to set the sowing time
   
   # incident_shortwave_from_ground_par module
-  #  par_energy_fraction_of_sunlight=          0.5,
   par_energy_fraction            =        0.5,
   par_energy_content             =        0.235,
+  
+  # height_from_lai module
+  heightf                     = 6,           # m^-1; LAI of 6 when canopy is 1 m tall
+  
+  # canopy_gbw_thornley module
+  min_gbw_canopy              = 0.005,       # m / s
+  
+  # stefan_boltzmann_longwave module
+  emissivity_sky              = 1,
   
   # two_layer_soil_profile module
   soil_depth1=                             0.0,         # meters
@@ -132,13 +140,13 @@ parameters <- list(
   atmospheric_scattering  =                0.3,
   
   # ten_layer_canopy_properties module
-  absorptivity_par            = 0.8,         # Campbell and Norman, An Introduction to Environmental Biophysics, 2nd Edition
   chil                        = 0.81,        # Campbell and Norman, An Introduction to Environmental Biophysics, 2nd Edition, Table 15.1, pg 253
-  kd                          = 0.7,         # Estimated from Campbell and Norman, An Introduction to Environmental Biophysics, 2nd Edition, Figure 15.4, pg 254
-  heightf                     = 3,           # m^-1
+  k_diffuse                   = 0.7,         # Estimated from Campbell and Norman, An Introduction to Environmental Biophysics, 2nd Edition, Figure 15.4, pg 254
   kpLN                        = 0,           # not used in Soybean-BioCro
-  leaf_reflectance            = 0.2,
-  leaf_transmittance          = 0.2,
+  leaf_reflectance_nir        = 0.42,
+  leaf_reflectance_par        = 0.10,
+  leaf_transmittance_nir      = 0.42,
+  leaf_transmittance_par      = 0.05,
   lnfun                       = 0,           # not used in Soybean-BioCro
   
   # ten_layer_c3_canopy module
@@ -155,10 +163,9 @@ parameters <- list(
   b1                          = 10.6,        # Leakey et al. 2006 (https://10.1111/j.1365-3040.2006.01556.x)
   Gs_min                      = 1e-3,
   theta                       = 0.76,        # Bernacchi et al. 2003 (https://doi.org/10.1046/j.0016-8025.2003.01050.x)
-  minimum_gbw                 = 0.08,
   windspeed_height            = 5,
   beta_PSII                   = 0.5,         # Bernacchi et al. 2003 (https://doi.org/10.1046/j.0016-8025.2003.01050.x)
-  
+  leafwidth                   = 0.1,         # Large mature leaflets can reach 10 cm in width
   # ten_layer_canopy_integrator module
   growth_respiration_fraction = 0
 )
