@@ -167,20 +167,39 @@ for (i in 1:length(years)){
 }
 
 # cost function
-wts <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 2, "Root" = 0.5, "Litter" = 0.5, "TNC" = 1, "Pod_start" = 100)
+# wts <- data.frame("Leaf" = 1, "Stem" = 1,"Pod" = 1, "Root" = 1, "Litter" = 0.5, "TNC" = 1e-4)
+# cost_func <- function(x){
+#   EF_utr_optim(x, soybean_optsolver, ExpBiomass, TNC.data, numrows, wts)
+# }
 cost_func <- function(x){
-  EF_utr_optim(x, soybean_optsolver, ExpBiomass, TNC.data, numrows, wts)
+  max(soybean_optsolver[[1]](optim_params_conversion(x))$Pod)
 }
-
 # Define upper and lower limits
-upperlim <- c(0.5, 0.1, 0.1, 0.1, 1.0, 0.5, 0.5, 0.5, 0.5, 0.8, 0.5, 0.5, 5, 0.1, 0.1, 0.1, 10.0, 10.0, 2.0, 2.0, 2.0, 2.0, 1.2, 2.2)
-lowerlim <- c(0.2, 0.0, 0.0, 0.0, 0.1, 0.005, 0.005, 0.005, 0.1, 0.1, 0.005, 0.005, 0.01, 0.0, 0.0, 0.0, 4.0, 4.0, 1.0, 1.5, 1.5, 1.5, 0.6, 1.8)
-
+upperlim <- c(0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+              0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
+              0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
+              0.8, # 10: respiration factor [/]
+              0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
+              10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
+              2.0, 2.0, 2.0,
+              1.0,
+              1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
+lowerlim <- c(0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+              0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
+              0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
+              0.1, # 10: respiration factor [dimensionless]
+              0.0, 0.0 ,0.0, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta] 0.005, 0.005 ,0.01
+              0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
+              0.0, 0.0, 0.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
+              1.5, 1.5, 1.5,
+              0.0,
+              0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
 # Number of parameters
 n_params <- length(upperlim)
 
 # Number of samples
-n_samples <- 100000
+n_samples <- 1000000
 
 # Generate Latin Hypercube samples
 lhs_samples <- randomLHS(n_samples, n_params)
@@ -196,8 +215,9 @@ n_cores <- detectCores() - 1  # Use all but one core
 cl <- makeCluster(n_cores)
 
 # Export necessary objects to the cluster
-clusterExport(cl, c("cost_func", "EF_utr_optim", "optim_params_conversion", "soybean_optsolver", 
-                    "numrows", "ExpBiomass", "wts", "TNC.data"))
+# clusterExport(cl, c("cost_func", "EF_utr_optim", "optim_params_conversion", "soybean_optsolver", 
+#                     "numrows", "ExpBiomass", "wts", "TNC.data"))
+clusterExport(cl, c("cost_func", "EF_utr_optim", "optim_params_conversion", "soybean_optsolver"))
 
 # Parallel application of cost_func
 lhc_result <- parApply(cl, scaled_samples, 1, cost_func)
@@ -230,4 +250,4 @@ prcc_df <- prcc_result$PRCC
 # Print results
 ordered_prcc <- prcc_df[order(abs(prcc_df$original), decreasing = TRUE),]
 print(ordered_prcc)
-write.csv(ordered_prcc, paste0("prcc_ranking_", n_samples,".csv"))
+write.csv(ordered_prcc, paste0("prcc_ranking_pod_", n_samples,".csv"))

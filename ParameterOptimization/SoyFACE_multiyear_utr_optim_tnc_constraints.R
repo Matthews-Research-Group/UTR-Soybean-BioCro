@@ -40,22 +40,29 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       # weighted rmses
       err.leaf <- sum(wts$Leaf*((Pred$Leaf-TrueValues$Leaf)^2)/(TrueValues$Leaf+0.1))/length(Pred$Leaf)
       err.stem <- sum(wts$Stem*((Pred$Stem-TrueValues$Stem)^2)/(TrueValues$Stem+0.1))/length(Pred$Stem)
-      err.pod <- sum(wts$Pod*((Pred$Pod-TrueValues$Pod)^2)/(TrueValues$Pods+0.1))/length(Pred$Pod)
+      err.pod <- sum(wts$Pod*((Pred$Pod-TrueValues$Pod)^2)/(TrueValues$Pod+0.1))/length(Pred$Pod)
       err.root <- sum(((Pred.Root$Vals-RootValues$Root)^2)/(RootValues$Root+0.1))/length(Pred.Root$Vals)
      
       cost <- wts2$Leaf*err.leaf + wts2$Stem*err.stem + wts2$Pod*err.pod + wts2$Root*err.root
       
       # add litter to the cost function
-      err.litter <- sum(wts$CummulativeLitter*(((Pred$CummulativeLitter-TrueValues$CummulativeLitter)^2))/(TrueValues$CummulativeLitter+0.1))/length(Pred$CummulativeLitter)
+      err.litter <- sum(wts$CummulativeLitter*(((Pred$CummulativeLitter-TrueValues$CummulativeLitter)^2))/
+                          (TrueValues$CummulativeLitter+0.1))/length(Pred$CummulativeLitter)
       
       cost <- cost + wts2$CummulativeLitter * err.litter
+      print(paste0('err.leaf: ', err.leaf))
+      print(paste0('err.stem: ', err.stem))
+      print(paste0('err.pod: ', err.pod))
+      print(paste0('err.root: ', err.root))
+      print(paste0('err.litter: ', err.litter))
+      print(paste0('cost: ', cost))
       
       if(is.nan(cost)){
         cost.avg <- 1e10
-        # print('is nan')
+        print('is nan')
         break
       }
-      else if(max(result$Leaf_substrate_carbon/result$Leaf > 0.8)){
+      else if(max(result$Leaf_substrate_carbon/result$Leaf > 2.0)){
         # print(paste0('high substrate, cost: ', cost))
         cost.avg <- 1e10
         break

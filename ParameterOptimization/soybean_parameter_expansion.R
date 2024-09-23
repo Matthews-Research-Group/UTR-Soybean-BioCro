@@ -41,10 +41,12 @@ optim_params_conversion <- function(optim_params_short){
   optim_params[25] = optim_params_short[20] # 'Leaf_senescence_beta'
   optim_params[26] = optim_params_short[21] # 'Stem_senescence_beta'
   optim_params[27] = optim_params_short[22] # 'Root_senescence_beta'
+  ## senescence reuse factor
+  optim_params[c(28, 29, 30)] = optim_params_short[23]
   
   # DVI switches
-  optim_params[28] = optim_params_short[23] # 'Pod_start_dvi'
-  optim_params[29] = optim_params_short[24] # 'stop_growth_dvi'
+  optim_params[31] = optim_params_short[24] # 'Pod_start_dvi'
+  optim_params[32] = optim_params_short[25] # 'stop_growth_dvi'
   
   return(optim_params)
 }

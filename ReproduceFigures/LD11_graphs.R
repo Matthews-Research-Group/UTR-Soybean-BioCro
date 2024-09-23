@@ -185,7 +185,7 @@ for (i in 1:length(years)){
   col.palette.muted <- c( "#117733", "#999933",  "#882255", "#332288")
   
   figs[[i]] <- ggplot() + theme_classic() +
-    geom_line(data = biocro_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), size = 1) +
+    geom_line(data = biocro_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), linewidth = 1) +
     geom_point(data = field_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), shape = 15, size = 3)+
     theme(plot.title=element_text(size=size.title, hjust=0.5),
           axis.text=element_text(size=size.axis),
@@ -206,7 +206,7 @@ for (i in 1:length(years)){
   save(biocro_organ_biomass_tall, file = paste0('organ_biomass_sim_', years[i],'_ld11.RData'))
   save(field_organ_biomass_tall, file = paste0('organ_biomass_mea_', years[i],'_ld11.RData'))
   
-  allocation.figs[[i]] <- plot_partitioning(result, years[i])
+  # allocation.figs[[i]] <- plot_partitioning(result, years[i])
 }
 library(grid)
 library(gridExtra)

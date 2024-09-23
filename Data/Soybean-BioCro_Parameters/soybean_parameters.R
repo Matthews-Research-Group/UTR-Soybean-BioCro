@@ -38,10 +38,10 @@ parameters <- list(
   stop_growth_dvi = 2.0,
   
   # senescence_coefficient_logistic module
-  Leaf_senescence_rate_max =               0.003,
-  Stem_senescence_rate_max =               0.003,
-  Root_senescence_rate_max =               0.005,  # senescence of root not simulated in Soybean-BioCro (see Note 1 at end of file)
-  Pod_senescence_rate_max  =               0.0,
+  Leaf_senescence_fraction_max =           0.003,
+  Stem_senescence_fraction_max =           0.003,
+  Root_senescence_fraction_max =           0.005,  # senescence of root not simulated in Soybean-BioCro (see Note 1 at end of file)
+  Pod_senescence_fraction_max  =           0.0,
   Leaf_senescence_alpha    =               20.0,   
   Stem_senescence_alpha    =               20.0,
   Root_senescence_alpha    =               8.0,    # 3 for 2002,2005; 4 for 2004; 3 for 2006 (not sure)
@@ -50,9 +50,9 @@ parameters <- list(
   Stem_senescence_beta     =               -0.1,
   Root_senescence_beta     =               -2.0,
   Pod_senescence_beta      =               -0.4,
-  Leaf_senescence_reuse_factor =            0, # 0.6,
-  Stem_senescence_reuse_factor =            0, # 0.6,
-  Root_senescence_reuse_factor =            0, # 0.6,
+  Leaf_senescence_reuse_factor =            0.5, # 0.6,
+  Stem_senescence_reuse_factor =            0.5, # 0.6,
+  Root_senescence_reuse_factor =            0.5, # 0.6,
   Pod_senescence_reuse_factor =             0, # 0.6,
   
   # Parameters related to the `parameter_calculator` module

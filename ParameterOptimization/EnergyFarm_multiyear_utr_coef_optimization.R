@@ -198,7 +198,7 @@ xyplot(data = result,
        auto.key = TRUE)
 
 # Parameter ranges
-upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+upperlim <- c(0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
               0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
               0.8, # 10: respiration factor [/]
@@ -206,15 +206,17 @@ upperlim <- c(0.5,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
               10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
               2.0, 2.0, 2.0,
+              1.0,
               1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
-lowerlim <- c(0.2,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+lowerlim <- c(0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
               0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
               0.1, # 10: respiration factor [dimensionless]
-              0.005, 0.005 ,0.01, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.0, 0.0 ,0.0, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta] 0.005, 0.005 ,0.01
               0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
-              4.0, 4.0, 1.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
+              0.0, 0.0, 0.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
               1.5, 1.5, 1.5,
+              0.0,
               0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
 
 rng.seed <- 1234 # seed for random number generator

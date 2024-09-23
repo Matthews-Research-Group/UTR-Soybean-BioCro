@@ -58,19 +58,21 @@ EF_utr_optim <- function(optim_params_short,
       err.pod <- sum((weights.pod*(Pred.BM$Pod-TrueValues.BM$Pod)^2)/(TrueValues.BM$Pod + 0.1))/length(Pred.BM$Pod)
       err.root <- sum((weights.root*(Pred.BM$Root-TrueValues.BM$Root)^2)/(TrueValues.BM$Root+ 0.1))/length(Pred.BM$Root)
       
-      print(paste0('err.leaf:', err.leaf))
-      print(paste0('err.stem:', err.stem))
-      print(paste0('err.pod:', err.pod))
-      print(paste0('err.root:', err.root))
+      # print(paste0('err.leaf:', err.leaf))
+      # print(paste0('err.stem:', err.stem))
+      # print(paste0('err.pod:', err.pod))
+      # print(paste0('err.root:', err.root))
       
       cost <- wts$Leaf*err.leaf + wts$Stem*err.stem + wts$Pod*err.pod + wts$Root*err.root
       
       # add litter to the cost function
-      err.LeafLitter <- sum((weights.leaf.litter*(Pred.BM$LeafLitter-TrueValues.BM$LeafLitter)^2)/(TrueValues.BM$LeafLitter + 0.1))/length(Pred.BM$LeafLitter)
-      err.StemLitter <- sum((weights.stem.litter*(Pred.BM$StemLitter-TrueValues.BM$StemLitter)^2)/(TrueValues.BM$StemLitter + 0.1))/length(Pred.BM$StemLitter)
+      err.LeafLitter <- sum((weights.leaf.litter*(Pred.BM$LeafLitter-TrueValues.BM$LeafLitter)^2)/
+                              (TrueValues.BM$LeafLitter + 0.1))/length(Pred.BM$LeafLitter)
+      err.StemLitter <- sum((weights.stem.litter*(Pred.BM$StemLitter-TrueValues.BM$StemLitter)^2)/
+                              (TrueValues.BM$StemLitter + 0.1))/length(Pred.BM$StemLitter)
       
-      print(paste0('err.LeafLitter:', err.LeafLitter))
-      print(paste0('err.StemLitter:', err.StemLitter))
+      # print(paste0('err.LeafLitter:', err.LeafLitter))
+      # print(paste0('err.StemLitter:', err.StemLitter))
       
       cost <- cost + wts$Litter * (err.LeafLitter + err.StemLitter)
       
@@ -101,8 +103,8 @@ EF_utr_optim <- function(optim_params_short,
         # add substrate C data to the cost function
         err.Leaf.TNC <- sum(((Pred.TNC$Leaf-TrueValues.TNC$Leaf)^2)/(TrueValues.TNC$Leaf + 10))/length(Pred.TNC$Leaf)
         err.Stem.TNC <- sum(((Pred.TNC$Stem-TrueValues.TNC$Stem)^2)/(TrueValues.TNC$Stem + 10))/length(Pred.TNC$Stem)
-        print(paste0('err.Leaf.TNC: ', err.Leaf.TNC))
-        print(paste0('err.Stem.TNC: ', err.Stem.TNC))
+        # print(paste0('err.Leaf.TNC: ', err.Leaf.TNC))
+        # print(paste0('err.Stem.TNC: ', err.Stem.TNC))
         
         cost <- cost + wts$TNC * (err.Leaf.TNC + err.Stem.TNC)
       }
