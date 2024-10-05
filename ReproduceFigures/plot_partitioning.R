@@ -1,18 +1,18 @@
 # Plot partitioning
-col.palette.muted <- c( "#117733", "#999933",  "#882255", "#332288")
+col.palette.muted <- c( "#117733", "#999933", "#332288",  "#882255")
 plot_partitioning <- function(result, year){
   canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), 
                                   FUN=sum) * 0.6 / 180.156e-3
-  leaf_reuse_daily <- aggregate(result$Leaf_senescence_rate * 
+  leaf_reuse_daily <- aggregate(result$Leaf_substrate_senescence_rate * 
                                   parameters$Leaf_senescence_reuse_factor,
                                 list(result$doy), FUN=sum)
-  stem_reuse_daily <- aggregate(result$Stem_senescence_rate * 
+  stem_reuse_daily <- aggregate(result$Stem_substrate_senescence_rate * 
                                   parameters$Stem_senescence_reuse_factor,
                                 list(result$doy), FUN=sum)
-  root_reuse_daily <- aggregate(result$Root_senescence_rate * 
+  root_reuse_daily <- aggregate(result$Root_substrate_senescence_rate * 
                                   parameters$Root_senescence_reuse_factor,
                                 list(result$doy), FUN=sum)
-  avg_dvi_daily <- aggregate(result$DVI, list(result$doy), FUN=mean)
+  avg_dvi_daily <- aggregate(result$DVI, list(result$doy), FUN=mean) # result$DVI or doy
   
   net_subC_input <- data.frame(Group.1 = avg_dvi_daily$x, # canopy_assim_daily$Group.1
                                x = canopy_assim_daily$x + 
@@ -88,8 +88,8 @@ plot_partitioning <- function(result, year){
     scale_x_continuous(breaks = seq(0,2,0.5))+
     labs(title=element_blank(), 
          x=paste0('DVI (', year, ')'),# paste0('Day of Year (', year, ')'), 
-         y='Remobolization %')
+         y='Remobolization %') # 
   ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in") # allocation__percentage_ or reuse__percentage_
-  return(p) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
+  return(reuse.p) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
 }
 

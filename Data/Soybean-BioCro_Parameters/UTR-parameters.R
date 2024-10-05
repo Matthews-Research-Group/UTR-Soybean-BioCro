@@ -9,6 +9,11 @@ optim_params_short <-c(0.308663,    0.047340,    0.038147,    0.093637,    0.799
                        0.385811,    0.239362,    2.711464,    0.020813,    0.001882,    
                        0.002422,    9.799749,    7.380839,    1.183634,    1.986812,    
                        1.765750,    1.985843,    0.752978,    0.987921,    2.050715) 
+optim_params_short <-c(0.345367,    0.002620,    0.034941,    0.058760,    0.312415,    
+                       0.143702,    0.289450,    0.317765,    0.134854,    0.103661,    
+                       0.048093,    0.319665,    1.506278,    0.024355,    0.001974,    
+                       0.006506,    9.108652,    4.088730,    1.659319,    1.843764,    
+                       1.959387,    1.984124,    0.999885,    1.153776,    2.010368) # 10/2/2024
 
 optim_params_short_SoyFACE <-c(0.316160,    0.005007,    0.013080,    0.095773,    0.750602,    
                                0.187277,    0.091740,    0.245969,    0.118309,    0.144260,    
@@ -23,7 +28,16 @@ optim_params_short_SoyFACE <-c(0.340787,    0.006314,    0.026195,    0.071335, 
                                0.001230,    9.963829,    7.405092,    0.258005,    1.965341,    
                                1.986972,    1.539534,    0.999618,    1.146891,    1.986127)
 
-
+optim_params_short_SoyFACE <-c(0.270165,    0.010248,    0.054891,    0.067387,    0.583982,    
+                               0.286407,    0.445138,    0.474320,    0.304828,    0.126300,    
+                               0.233157,    0.472530,    1.757361,    0.039268,    0.001498,    
+                               0.003244,    9.331028,    5.771867,    1.808724,    1.967422,    
+                               1.769574,    1.988078,    0.999927,    1.093697,    1.989707) # 1.093697
+optim_params_short_SoyFACE <-c(0.345367,    0.002620,    0.034941,    0.058760,    0.312415,    
+                               0.143702,    0.289450,    0.317765,    0.134854,    0.103661,    
+                               0.048093,    0.319665,    1.506278,    0.024355,    0.001974,    
+                               0.006506,    9.108652,    4.088730,    1.659319,    1.843764,    
+                               1.959387,    1.984124,    0.999885,    1.153776,    2.010368) # 10/2/2024 1.153776
 
 
 arg_names <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
@@ -54,9 +68,12 @@ arg_names_short <- c('carbon_to_mass_factor',# 1,
                'senescence_reuse_factor', # 23
                'Pod_start_dvi', 'stop_growth_dvi')# 24, 25
 
-# utr.model.params <- data.frame(arg_names_short, optim_params_short, optim_params_short_SoyFACE)
-# names(utr.model.params) <- c('Parameters', 'EF', 'SF')
-# utr.model.params$change <- 100*(utr.model.params$EF-utr.model.params$SF)/utr.model.params$SF
-# utr.model.params[] <- lapply(utr.model.params, function(x) if(is.numeric(x)&&(x>0.01)) round(x, 2) else x)
-# View(utr.model.params)
-# write.csv(utr.model.params, 'UTR_params.csv')
+utr.model.params <- data.frame(arg_names_short, optim_params_short, optim_params_short_SoyFACE)
+names(utr.model.params) <- c('Parameters', 'EF', 'SF')
+utr.model.params$change <- 100*(utr.model.params$EF-utr.model.params$SF)/utr.model.params$SF
+utr.model.params[] <- lapply(utr.model.params, function(x) {
+  if(is.numeric(x)) { sapply(x, function(y) if(y > 0.01) round(y, 2) else y)
+  } else {x}
+})
+View(utr.model.params)
+write.csv(utr.model.params, 'UTR_params.csv')

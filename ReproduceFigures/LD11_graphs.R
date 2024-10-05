@@ -182,7 +182,7 @@ for (i in 1:length(years)){
   size.axis <- 12
   size.legend <- 8
   
-  col.palette.muted <- c( "#117733", "#999933",  "#882255", "#332288")
+  col.palette.muted <- c( "#117733", "#999933", "#332288", "#882255")
   
   figs[[i]] <- ggplot() + theme_classic() +
     geom_line(data = biocro_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), linewidth = 1) +
@@ -195,18 +195,22 @@ for (i in 1:length(years)){
           panel.grid.minor = element_blank(), 
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
-    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
+    scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
     scale_x_continuous(breaks = seq(180,280,30))+
     labs(title=element_blank(), 
          x=paste0('Day of Year (', years[i], ')'), 
          y='Biomass (Mg/ha)')+
     scale_color_manual(values = col.palette.muted)
   
+  # if (years[i]=='2022'){
+  #   figs[[i]] <- figs[[i]] + theme(plot.background = element_rect(fill = "grey90", colour = NA))
+  # }
+  
   print(figs[[i]])
   save(biocro_organ_biomass_tall, file = paste0('organ_biomass_sim_', years[i],'_ld11.RData'))
   save(field_organ_biomass_tall, file = paste0('organ_biomass_mea_', years[i],'_ld11.RData'))
   
-  # allocation.figs[[i]] <- plot_partitioning(result, years[i])
+  allocation.figs[[i]] <- plot_partitioning(result, years[i])
 }
 library(grid)
 library(gridExtra)
@@ -219,22 +223,21 @@ g_legend <-function(a.gplot){
 common_legend <- g_legend(figs[[1]])
 
 combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90, gp=gpar(fontsize=12))),
-                               arrangeGrob(arrangeGrob(figs[[1]] + theme(legend.position="none"),
-                                                       figs[[2]] + theme(legend.position="none"),
-                                                       figs[[3]] + theme(legend.position="none"),
-                                                       ncol = 3),
-                                           ncol = 1),
+                               arrangeGrob(arrangeGrob(figs[[1]] + theme(legend.position="none"), top = "Testing"),
+                                           arrangeGrob(figs[[2]] + theme(legend.position="none"), top = "Testing"),
+                                           arrangeGrob(figs[[3]] + theme(legend.position="none"), top = "Testing"),
+                                           ncol = 3, top = "LD11 at Energy Farm (Ambient CO2)"),
                                common_legend, 
                                ncol=3, widths=c(0.3, 5, 1.1))
 
-combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
-                                          arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
-                                                                  allocation.figs[[2]] + theme(legend.position="none"),
-                                                                  allocation.figs[[3]] + theme(legend.position="none"),
-                                                                  ncol = 3),
-                                                      ncol = 1),
-                                          common_legend, 
-                                          ncol=3, widths=c(0.3, 5, 1.1))
+# combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
+#                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
+#                                                                   allocation.figs[[2]] + theme(legend.position="none"),
+#                                                                   allocation.figs[[3]] + theme(legend.position="none"),
+#                                                                   ncol = 3),
+#                                                       ncol = 1),
+#                                           common_legend,
+#                                           ncol=3, widths=c(0.3, 5, 1.1))
 
 
 combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remoblized C %', rot = 90, gp=gpar(fontsize=12))),

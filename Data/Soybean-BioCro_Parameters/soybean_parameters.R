@@ -4,7 +4,7 @@ parameters <- list(
   # Parameters unrelated to any module
   timestep = 1.0,
   
-  default_carbon_to_mass_factor <- 0.33,
+  default_carbon_to_mass_factor <- 0.3,
   base_utilization_rate_constant <- 3e-2,
   base_utilization_km <- 1,
   base_conductance <- 0.5,

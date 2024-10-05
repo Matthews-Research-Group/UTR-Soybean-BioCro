@@ -78,7 +78,7 @@ for (i in 1:length(year)) {   # Remember to change back
 }
 
 # Optimization
-wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 2, "Root" = 0.75, "CummulativeLitter" = 0.5)
+wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 5, "Root" = 0.75, "CummulativeLitter" = 0.5)
 
 # cost function
 cost_func <- function(x){
@@ -111,7 +111,7 @@ lowerlim <- c(0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
 
 
-rng.seed <- 1234 # seed for random number generator
+rng.seed <- 12345 # seed for random number generator
 set.seed(rng.seed)
 # maximum number of iterations
 max.iter <- 1000

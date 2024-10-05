@@ -93,7 +93,7 @@ for (i in 1:length(years)) {
   r.lsrp.doy$value<-r.lsrp.doy$value
   
   # Leaf
-  # organize the expirimental data (mean and std)
+  # organize the experimental data (mean and std)
   s.exp.leaf <- cbind(ExpBiomass[[i]][,c("DOY","Leaf")])
   colnames(s.exp.leaf) <- c("time","Leaf") # DOY renamed as time
   r.exp.leaf <- reshape2::melt(s.exp.leaf, id.vars = "time") # DOY renamed as time
@@ -135,7 +135,7 @@ for (i in 1:length(years)) {
   r.all$Organ <- factor(r.all$variable, levels = rev(levels(r.all$variable)))
   
   # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
-  col.palette.muted <- c("#332288", "#999933", "#117733", "#882255")
+  col.palette.muted <- c("#882255", "#999933", "#117733", "#332288")
   
   size.title <- 12
   size.axislabel <- 10
@@ -148,6 +148,7 @@ for (i in 1:length(years)) {
                                       color=Organ,
                                       size = Source, shape = Source),
                       show.legend = TRUE, stroke=0.5) +
+    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
     scale_shape_manual(values = c(15, 16)) +
     scale_size_manual(values = c(2, 0.25)) +
     scale_color_manual(values = col.palette.muted)
@@ -321,6 +322,7 @@ for (i in 1:length(years)) {
                                       color=Organ,
                                       size = Source, shape = Source),
                       show.legend = TRUE, stroke=0.5) +
+    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
     scale_shape_manual(values = c(15, 16)) +
     scale_size_manual(values = c(2, 0.25)) +
     scale_color_manual(values = col.palette.muted)
@@ -429,3 +431,5 @@ save(results, results.elevCO2, ExpBiomass, ExpBiomass.elevCO2, file = 'SoyFACE_r
 #                ylim = c(0,1),
 #                main = years[i]))
 # }
+source('../../ReproduceFigures/plot_partitioning.R')
+plot_partitioning(results[[1]], years[1])
