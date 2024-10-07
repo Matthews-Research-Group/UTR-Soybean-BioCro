@@ -75,7 +75,7 @@ for (i in 1:length(years)){
   stem_frac <- ExpBiomass[[i]]$stem[j]/mass_t
   root_frac <- ExpBiomass[[i]]$root[j]/mass_t
   print(paste0("fractions - leaf: ", leaf_frac, " stem: ", stem_frac, " root: ",root_frac))
-  cf <- optim_params_short[1]
+  cf <- 0.3 # optim_params_short[1]
   
   initial_state <- list(
     Leaf_respiration_loss = 0.0,
@@ -230,14 +230,14 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
                                common_legend, 
                                ncol=3, widths=c(0.3, 5, 1.1))
 
-# combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
-#                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
-#                                                                   allocation.figs[[2]] + theme(legend.position="none"),
-#                                                                   allocation.figs[[3]] + theme(legend.position="none"),
-#                                                                   ncol = 3),
-#                                                       ncol = 1),
-#                                           common_legend,
-#                                           ncol=3, widths=c(0.3, 5, 1.1))
+combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
+                                          arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
+                                                                  allocation.figs[[2]] + theme(legend.position="none"),
+                                                                  allocation.figs[[3]] + theme(legend.position="none"),
+                                                                  ncol = 3),
+                                                      ncol = 1),
+                                          common_legend,
+                                          ncol=3, widths=c(0.3, 5, 1.1))
 
 
 combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remoblized C %', rot = 90, gp=gpar(fontsize=12))),

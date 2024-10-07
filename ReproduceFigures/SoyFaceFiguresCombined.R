@@ -431,5 +431,5 @@ save(results, results.elevCO2, ExpBiomass, ExpBiomass.elevCO2, file = 'SoyFACE_r
 #                ylim = c(0,1),
 #                main = years[i]))
 # }
-source('../../ReproduceFigures/plot_partitioning.R')
+source('plot_partitioning.R')
 plot_partitioning(results[[1]], years[1])

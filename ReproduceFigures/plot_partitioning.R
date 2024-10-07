@@ -90,6 +90,6 @@ plot_partitioning <- function(result, year){
          x=paste0('DVI (', year, ')'),# paste0('Day of Year (', year, ')'), 
          y='Remobolization %') # 
   ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in") # allocation__percentage_ or reuse__percentage_
-  return(reuse.p) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
+  return(p) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
 }
 

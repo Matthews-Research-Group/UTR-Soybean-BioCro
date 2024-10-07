@@ -89,7 +89,7 @@ cost_func <- function(x){
 cost_func(optim_params_short_SoyFACE)
 
 # Parameter ranges
-upperlim <- c(0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+upperlim <- c(# 0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
               0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
               0.8, # 10: respiration factor [/]
@@ -99,7 +99,7 @@ upperlim <- c(0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               2.0, 2.0, 2.0,
               1.0,
               1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
-lowerlim <- c(0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+lowerlim <- c(# 0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
               0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
               0.1, # 10: respiration factor [dimensionless]

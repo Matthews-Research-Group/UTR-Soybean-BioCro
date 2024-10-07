@@ -76,7 +76,7 @@ mass_t <- sum(soybean_ld11_biomass_2022[i, c('leaf', 'stem', 'root')])
 leaf_frac <- soybean_ld11_biomass_2022$leaf[i]/mass_t
 stem_frac <- soybean_ld11_biomass_2022$stem[i]/mass_t
 root_frac <- soybean_ld11_biomass_2022$root[i]/mass_t
-cf <- optim_params_short[1]
+cf <- 0.3 # optim_params_short[1]
 
 initial_state <- list(
   Leaf_respiration_loss = 0.0,

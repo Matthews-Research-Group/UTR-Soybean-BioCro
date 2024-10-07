@@ -12,6 +12,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 
 # Cost function
 source('../ParameterOptimization/soybean_parameter_expansion.R')
+source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 
 # initialize lists for figures
 co2_opt = '_co2_'
@@ -57,6 +58,7 @@ soybean_optsolver_no_hail <- partial_run_biocro(initial_state,
                                                 arg_names,
                                                 verbose = FALSE)
 updated_params <- optim_params_conversion(optim_params_short_SoyFACE)
+names(updated_params) <- arg_names
 result_no_hail <- soybean_optsolver_no_hail(updated_params)
 
 xyplot(data=result_no_hail, Leaf+Stem+Root+Pod~time, auto=TRUE)
@@ -70,8 +72,8 @@ soybean_optsolver_1 <- partial_run_biocro(initial_state,
                                           solver,
                                           arg_names,
                                           verbose = FALSE)
-updated_params[28] <- 1.15
-result_1 <- soybean_optsolver_1(updated_params)
+# updated_params[28] <- 1.15
+result_1 <- soybean_optsolver_1(optim_params_conversion(optim_params_short_SoyFACE))
 # xyplot(data=result_1, Leaf+Stem+Root+Pod~time, auto=TRUE)
 # Get the final values of the differential quantities; these will be the
 # values just before defoliation
@@ -81,14 +83,14 @@ differential_quantities_just_before_defoliation <-
 differential_quantities_just_after_defoliation <-
   differential_quantities_just_before_defoliation
 # # Now reduce the leaf mass
-leaf_reduction_percent <- 0.4
+remaining_leaf_percent <- 0.4
 # differential_quantities_just_after_defoliation$Leaf <-
-#   differential_quantities_just_before_defoliation$Leaf * leaf_reduction_percent
+#   differential_quantities_just_before_defoliation$Leaf * remaining_leaf_percent
 
 differential_quantities_just_after_defoliation$Leaf_substrate_carbon <-
-  differential_quantities_just_before_defoliation$Leaf_substrate_carbon * leaf_reduction_percent
+  differential_quantities_just_before_defoliation$Leaf_substrate_carbon * remaining_leaf_percent
 differential_quantities_just_after_defoliation$Leaf_structural_carbon <-
-  differential_quantities_just_before_defoliation$Leaf_structural_carbon * leaf_reduction_percent # Could be changed to a different percentage
+  differential_quantities_just_before_defoliation$Leaf_structural_carbon * remaining_leaf_percent # Could be changed to a different percentage
 
 leaf_C_before_defoliation <- differential_quantities_just_before_defoliation$Leaf_substrate_carbon+
   differential_quantities_just_before_defoliation$Leaf_structural_carbon
@@ -115,6 +117,14 @@ if (stem_new_percentage < 1){
     differential_quantities_just_before_defoliation$Stem_structural_carbon * stem_new_percentage
 }
 
+orignal_utr_params <- data.frame(optim_params_conversion(optim_params_short_SoyFACE))
+rownames(orignal_utr_params) <- arg_names
+colnames(orignal_utr_params) <- "Value"
+parameters_after_hail <- orignal_utr_params
+parameters_after_hail['Stem_respiration_factor', 'Value'] <- orignal_utr_params['Stem_respiration_factor', 'Value'] * 2
+parameters_after_hail['Pod_start_dvi', 'Value'] <- orignal_utr_params['Pod_start_dvi', 'Value'] + 0.1
+
+
 soybean_optsolver_2 <- partial_run_biocro(differential_quantities_just_after_defoliation,
                                           parameters,
                                           weather.growingseason_2,
@@ -125,43 +135,7 @@ soybean_optsolver_2 <- partial_run_biocro(differential_quantities_just_after_def
                                           verbose = TRUE)
 
 
-result_2 <- soybean_optsolver_2(updated_params)
-# xyplot(data=result_2, Leaf+Stem+Root+Pod~time, auto=TRUE)
-
-# steady_state_module_names_2 <-c(
-#   "soil_type_selector",
-#   "stomata_water_stress_linear",
-#   "soybean_development_rate_calculator", # Soybean specific
-#   "thornley_utilization_calculator_lsrp",
-#   "thornley_transport_calculator_lsrp",
-#   "parameter_calculator",
-#   "soil_evaporation",
-#   "solar_zenith_angle", # Added
-#   "shortwave_atmospheric_scattering",
-#   "incident_shortwave_from_ground_par",
-#   "ten_layer_canopy_properties",
-#   "ten_layer_c3_canopy",
-#   "ten_layer_canopy_integrator",
-#   "thornley_biomass_calculator_lsrp"
-# )
-# soybean_optsolver_2_2 <- partial_run_biocro(differential_quantities_just_before_defoliation,
-#                                           parameters,
-#                                           weather.growingseason_2,
-#                                           steady_state_module_names_2,
-#                                           derivative_module_names,
-#                                           solver,
-#                                           arg_names,
-#                                           verbose = TRUE)
-# 
-# result_2_2 <- soybean_optsolver_2(updated_params)
-# xyplot(data=result_2_2, Leaf+Stem+Root+Pod~time, auto=TRUE)
-
-# print(result_2$Leaf_total_C_change_per_m2)
-# print(result_2$canopy_assimilation_rate)
-# print(result_2$Leaf_utilization_rate)
-# print(result_2$Leaf_senescence_loss)
-# print(result_2$substrate_transport_Leaf_to_Stem)
-
+result_2 <- soybean_optsolver_2(parameters_after_hail$Value)
 result <- rbind(result_1[seq_len(nrow(result_1) - 1), ], result_2)
 xyplot(data=result, Leaf+Stem+Root+Pod~time, auto=TRUE)
 
@@ -214,7 +188,7 @@ r.all$Organ <- factor(r.all$variable, levels = rev(levels(r.all$variable)))
 # combine the simulated and experimental data
 
 # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
-col.palette.muted <- c("#332288", "#117733", "#999933", "#882255")
+col.palette.muted <- c( "#882255", "#117733", "#999933", "#332288")
 
 size.title <- 14
 size.axislabel <- 12
