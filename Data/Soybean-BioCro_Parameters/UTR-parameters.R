@@ -53,8 +53,8 @@ optim_params_short_SoyFACE <-c(0.003746,    0.017267,    0.063001,    0.187819,
                                1.991700,    1.984780,    0.998544,    1.172285,    2.000373) # 10/7/2024
 
 
-arg_names <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
-               'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
+arg_names <- c(# 'Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 2 
+               # 'Root_carbon_to_mass_factor', 'Pod_carbon_to_mass_factor',  # 3, 4
                'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 5, 6
                'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 7, 8
                'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 9, 10, 11, 12
@@ -68,7 +68,7 @@ arg_names <- c('Leaf_carbon_to_mass_factor', 'Stem_carbon_to_mass_factor', # 1, 
                'Leaf_senescence_reuse_factor', 'Stem_senescence_reuse_factor', 'Root_senescence_reuse_factor', # 28, 29, 30
                'Pod_start_dvi', 'stop_growth_dvi') # 31, 32
 
-arg_names_short <- c('carbon_to_mass_factor',# 1,
+arg_names_short <- c(# 'carbon_to_mass_factor',# 1,
                'Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', # 2, 3
                'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',  # 4, 5
                'Leaf_utilization_km', 'Stem_utilization_km', 'Root_utilization_km', 'Pod_utilization_km', # 5,7,8,9

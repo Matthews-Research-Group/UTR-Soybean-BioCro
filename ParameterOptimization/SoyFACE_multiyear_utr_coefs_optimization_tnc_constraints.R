@@ -111,7 +111,7 @@ lowerlim <- c(# 0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
 
 
-rng.seed <- 12345 # seed for random number generator
+rng.seed <- 1234 # seed for random number generator
 set.seed(rng.seed)
 # maximum number of iterations
 max.iter <- 1000
