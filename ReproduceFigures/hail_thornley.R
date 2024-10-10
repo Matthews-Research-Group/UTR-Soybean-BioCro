@@ -188,7 +188,7 @@ r.all$Organ <- factor(r.all$variable, levels = rev(levels(r.all$variable)))
 # combine the simulated and experimental data
 
 # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
-col.palette.muted <- c( "#882255", "#117733", "#999933", "#332288")
+col.palette.muted <- c( "#882255", "#999933", "#117733", "#332288")
 
 size.title <- 14
 size.axislabel <- 12
