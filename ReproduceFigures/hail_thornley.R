@@ -140,7 +140,7 @@ result <- rbind(result_1[seq_len(nrow(result_1) - 1), ], result_2)
 xyplot(data=result, Leaf+Stem+Root+Pod~time, auto=TRUE)
 
 # organize simulated data
-r.lsrp.doy <- reshape2::melt(result[,c("time","Root","Leaf","Stem","Pod")],id.vars="time")
+r.lsrp.doy <- reshape2::melt(result_no_hail[,c("time","Root","Leaf","Stem","Pod")],id.vars="time")
 r.lsrp.doy$value<-r.lsrp.doy$value
 
 # Leaf

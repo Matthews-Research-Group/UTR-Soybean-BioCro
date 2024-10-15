@@ -176,31 +176,34 @@ cost_func <- function(x){
   max(soybean_optsolver[[1]](optim_params_conversion(x))$Pod)
 }
 # Define upper and lower limits
-upperlim <- c(0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
-              0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
-              0.8, # 10: respiration factor [/]
-              0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
-              0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
-              10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
-              2.0, 2.0, 2.0,
-              1.0,
-              1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
-lowerlim <- c(0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
-              0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
-              0.1, # 10: respiration factor [dimensionless]
-              0.0, 0.0 ,0.0, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta] 0.005, 0.005 ,0.01
-              0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
-              0.0, 0.0, 0.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
-              1.5, 1.5, 1.5,
-              0.0,
-              0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
+# upperlim <- c(0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+#               0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
+#               0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
+#               0.8, # 10: respiration factor [/]
+#               0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
+#               0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
+#               10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
+#               2.0, 2.0, 2.0,
+#               1.0,
+#               1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
+# lowerlim <- c(0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+#               0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
+#               0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
+#               0.1, # 10: respiration factor [dimensionless]
+#               0.0, 0.0 ,0.0, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta] 0.005, 0.005 ,0.01
+#               0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
+#               0.0, 0.0, 0.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
+#               1.5, 1.5, 1.5,
+#               0.0,
+#               0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
+upperlim <- optim_params_short_SoyFACE * 1.1
+lowerlim <- optim_params_short_SoyFACE * 0.9
+
 # Number of parameters
 n_params <- length(upperlim)
 
 # Number of samples
-n_samples <- 1000000
+n_samples <- 10000
 
 # Generate Latin Hypercube samples
 lhs_samples <- randomLHS(n_samples, n_params)
@@ -245,10 +248,10 @@ print(best_params)
 
 # Calculate PRCC
 prcc_result <- pcc(X = output[, arg_names_short], y = lhc_result, rank = TRUE, nboot = 100)
-save(prcc_result, file=paste0("lhc_output_", n_samples, ".RData"))
+save(prcc_result, file=paste0("lhc_output_pod_10percent_", n_samples, ".RData"))
 prcc_df <- prcc_result$PRCC
 
 # Print results
 ordered_prcc <- prcc_df[order(abs(prcc_df$original), decreasing = TRUE),]
 print(ordered_prcc)
-write.csv(ordered_prcc, paste0("prcc_ranking_pod_", n_samples,".csv"))
+write.csv(ordered_prcc, paste0("prcc_ranking_pod_10percent_", n_samples,".csv"))

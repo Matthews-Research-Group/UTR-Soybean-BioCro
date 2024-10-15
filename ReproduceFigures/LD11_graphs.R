@@ -278,8 +278,8 @@ for (t in 1:length(times)){
     assim <- (r[idx, paste0('sunlit_Assim_layer_', i)]*
               r[idx, paste0('sunlit_fraction_layer_', i)] +
               r[idx, paste0('shaded_Assim_layer_', i)]*
-              r[idx, paste0('shaded_fraction_layer_', i)])*
-      r[idx, 'lai']/10
+              r[idx, paste0('shaded_fraction_layer_', i)]) *
+      r[idx, 'lai'] /10 
     new_row <- data.frame(
       DOY = doy,
       layer_number = i,
@@ -294,7 +294,7 @@ plot <- ggplot(layer_assim, aes(x = layer_number, y = layer_assimilation)) +
   facet_wrap(~ DOY, nrow = 1, scales = "fixed") +
   labs(# title = "Layer Assimilation by Layer Number on Different DOYs",
        x = "Layer Number",
-       y = "Layer Assimilation (micromol / m^2 /s)") +
+       y = "Layer Assimilation (micromol / s)") +
   theme_minimal() +
   theme(
     strip.background = element_rect(fill = "lightgrey"),
@@ -307,5 +307,4 @@ plot <- ggplot(layer_assim, aes(x = layer_number, y = layer_assimilation)) +
 
 # Display the plot
 print(plot)
-
 
