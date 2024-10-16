@@ -175,9 +175,34 @@ for (i in 1:length(years)){
 cost_func <- function(x){
   max(soybean_optsolver[[1]](optim_params_conversion(x))$Pod)
 }
+optim_params_short <-c(0.003978,    0.031671,    0.089488,    0.531844,    
+                       0.134289,    0.237818,    0.380950,    0.176886,    0.105725,    
+                       0.136471,    0.497586,    2.109346,    0.033999,    0.003221,    
+                       0.003459,    9.035651,    6.668883,    1.471848,    1.953746,    
+                       1.983503,    1.998819,    0.992997,    1.137508,    1.989770)
 # Define upper and lower limits
-# upperlim <- c(0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-#               0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
+upperlim <- c(# 0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+              0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
+              0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
+              0.5, # 10: respiration factor [/]
+              0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
+              0.1, 0.05, 0.05, # 14,15,16: senescence rate max, LSR
+              15.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
+              2.0, 2.0, 2.0,
+              1.0,
+              1.2, 2.1) # 20,21,22: senescence beta, LSR [/dvi]
+lowerlim <- c(# 0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+              0.001, 0.01, 0.01, 0.1, # 2，3，4，5： utilization rate constant [/hr]
+              0.01, 0.01, 0.01, 0.01, # 6，7, 8, 9： Km [mol / Mg]
+              0.01, # 10: respiration factor [dimensionless]
+              0.001, 0.001 ,0.1, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta] 0.005, 0.005 ,0.01
+              0.001, 0.001, 0.001, # 14,15,16: senescence rate max, LSR
+              5.0, 2.0, 0.5, # 17, 18, 19: senescence alpha, LSR [dimensionless]
+              1.5, 1.5, 1.5,
+              0.6,
+              0.95, 1.9) # 20, 21, 22: senescence beta, LSR [/dvi]
+# upperlim <- c(# 0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+#               0.05, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
 #               0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
 #               0.8, # 10: respiration factor [/]
 #               0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
@@ -186,7 +211,8 @@ cost_func <- function(x){
 #               2.0, 2.0, 2.0,
 #               1.0,
 #               1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
-# lowerlim <- c(0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
+
+# lowerlim <- c(# 0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
 #               0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
 #               0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
 #               0.1, # 10: respiration factor [dimensionless]
@@ -196,6 +222,7 @@ cost_func <- function(x){
 #               1.5, 1.5, 1.5,
 #               0.0,
 #               0.8, 1.8) # 20, 21, 22: senescence beta, LSR [/dvi]
+
 upperlim <- optim_params_short_SoyFACE * 1.1
 lowerlim <- optim_params_short_SoyFACE * 0.9
 
