@@ -1,11 +1,14 @@
 rm(list=ls())
 library(ppcor)
-sensitivity_result <- read.csv('prcc_ranking_pod_1e+06.csv')
-load("lhc_output_1e+06.RData")
+sensitivity_result <- read.csv('prcc_ranking_pod_10percent_10000.csv')
+load("lhc_output_pod_10percent_10000.RData")
 source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 View(sensitivity_result)
 View(prcc_result)
 
+X_w_pod_constraint <- prcc_result$X[which(prcc_result$y>1), ]
+y_w_pod_constraint <- prcc_result$y[which(prcc_result$y>1)]
+print(length(y_w_pod_constraint))
 # Function to calculate partial rank correlation and p-value for one parameter
 calc_partial_rank_corr <- function(X, y, param_index) {
   # Convert to ranks
@@ -19,7 +22,8 @@ calc_partial_rank_corr <- function(X, y, param_index) {
 }
 
 # Apply the function to all parameters
-results <- t(sapply(1:ncol(prcc_result$X), function(i) calc_partial_rank_corr(prcc_result$X, prcc_result$y, i)))
+results <- t(sapply(1:ncol(X_w_pod_constraint), function(i) calc_partial_rank_corr(
+  X_w_pod_constraint, y_w_pod_constraint, i)))
 
 # Create a data frame with results
 results_df <- data.frame(
@@ -46,7 +50,7 @@ library(viridis)
 plot_data <- results_df_sorted %>%
   mutate(log_p_value = log10(P_value)) %>%
   mutate(Parameter = factor(Parameter, levels = Parameter[order(Correlation_abs, decreasing = FALSE)])) %>%
-  mutate(significant = ifelse(P_value < 0.05, "*", ""))  # Add this line
+  mutate(significant = ifelse(P_value < 0.05, "*", "")) 
 
 parameter_labels <- c(
   'carbon_to_mass_factor' = "f",
@@ -84,11 +88,17 @@ ggplot(plot_data, aes(x = Correlation, y = Parameter, fill = log_p_value)) +
             hjust = ifelse(plot_data$Correlation > 0, -0.5, 1.5),
             size = 5, color = "black") +  
   labs(title = "Parameter Correlations",
-       x = "Partial rank correlation Coefficient",
+       x = "Partial Rank Correlation Coefficient",
        y = "Parameter") +
   scale_y_discrete(labels = function(x) parse(text = parameter_labels[x])) +
   theme_minimal() +
   theme(axis.text.y = element_text(size = 12),
         plot.title = element_text(hjust = 0.5),
         legend.position = "right")
-
+print(length(y_w_pod_constraint))
+for (i in 1:dim(X_w_pod_constraint)[2]){
+  print(
+    xyplot(y_w_pod_constraint~X_w_pod_constraint[, i],
+           xlab = list(label=arg_names_short[i], fontsize=15),
+           ylab = list(label="Pod (Mg / ha)", fontsize=15)))
+}
