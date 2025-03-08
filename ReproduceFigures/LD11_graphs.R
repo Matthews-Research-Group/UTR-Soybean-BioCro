@@ -30,7 +30,7 @@ full_soybean_ld11$differential_modules <- derivative_module_names
 full_soybean_ld11$ode_solver <- solver
 
 # Update UTR parameters
-fitted.utr.params <- optim_params_conversion(optim_params_short)
+fitted.utr.params <- optim_params_conversion(optim_params_short_SoyFACE)
 names(fitted.utr.params) <- arg_names
 parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters), 
                                                             names(fitted.utr.params)), 
@@ -51,6 +51,7 @@ ExpBiomass <- list()
 weather.afteremergence <- list()
 results <- list()
 figs <- list()
+lai.figs <- list()
 allocation.figs <- list()
 
 loadRData <- function(fileName){
@@ -74,8 +75,7 @@ for (i in 1:length(years)){
   leaf_frac <- ExpBiomass[[i]]$leaf[j]/mass_t
   stem_frac <- ExpBiomass[[i]]$stem[j]/mass_t
   root_frac <- ExpBiomass[[i]]$root[j]/mass_t
-  print(paste0("fractions - leaf: ", leaf_frac, " stem: ", stem_frac, " root: ",root_frac))
-  cf <- 0.3 # optim_params_short[1]
+  cf <- 0.3 # optim_params_short_SoyFACE[1]
   
   initial_state <- list(
     Leaf_respiration_loss = 0.0,
@@ -115,7 +115,7 @@ for (i in 1:length(years)){
   }
   
   # Make some decisions about what to do
-  SLA_AS_DRIVER <- TRUE
+  SLA_AS_DRIVER <- FALSE
   
   first_data_time <- ExpBiomass[[i]]$time[1]
   weather.aftersowing <- weather[weather$time >= first_data_time, ]
@@ -210,6 +210,27 @@ for (i in 1:length(years)){
   save(biocro_organ_biomass_tall, file = paste0('organ_biomass_sim_', years[i],'_ld11.RData'))
   save(field_organ_biomass_tall, file = paste0('organ_biomass_mea_', years[i],'_ld11.RData'))
   
+  # lai plots
+  lai.figs[[i]] <- ggplot() + theme_classic() +
+    geom_line(data = result, aes(x = time, y = lai), linewidth = 1) +
+    geom_point(data = ExpBiomass[[i]], aes(x = time, y = LAI_from_LMA), shape = 15, size = 3)+
+    theme(plot.title=element_text(size=size.title, hjust=0.5),
+          axis.text=element_text(size=size.axis),
+          axis.title.x =element_text(size=size.axislabel),
+          axis.title.y = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(), 
+          panel.background = element_rect(fill = "transparent",colour = NA),
+          plot.background = element_rect(fill = "transparent", colour = NA))+
+    # scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
+    # scale_x_continuous(breaks = seq(180,280,30))+
+    labs(title=element_blank(), 
+         x=paste0('Day of Year (', years[i], ')'), 
+         y='LAI')+
+    scale_color_manual(values = col.palette.muted)
+  
+  print(lai.figs[[i]])
+  
   allocation.figs[[i]] <- plot_partitioning(result, years[i])
 }
 library(grid)
@@ -240,16 +261,24 @@ combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', r
                                           ncol=3, widths=c(0.3, 5, 1.1))
 
 
-combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remoblized C %', rot = 90, gp=gpar(fontsize=12))),
-                                          arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
-                                                                  allocation.figs[[2]] + theme(legend.position="none"),
-                                                                  allocation.figs[[3]] + theme(legend.position="none"),
+# combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remoblized C %', rot = 90, gp=gpar(fontsize=12))),
+#                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
+#                                                                   allocation.figs[[2]] + theme(legend.position="none"),
+#                                                                   allocation.figs[[3]] + theme(legend.position="none"),
+#                                                                   ncol = 3),
+#                                                       ncol = 1),
+#                                           ncol=2, widths=c(0.3, 5))
+
+combined_graph.lai <- grid.arrange(arrangeGrob(textGrob('LAI', rot = 90, gp=gpar(fontsize=12))),
+                                          arrangeGrob(arrangeGrob(lai.figs[[1]] + theme(legend.position="none"),
+                                                                  lai.figs[[2]] + theme(legend.position="none"),
+                                                                  lai.figs[[3]] + theme(legend.position="none"),
                                                                   ncol = 3),
                                                       ncol = 1),
                                           ncol=2, widths=c(0.3, 5))
 
 # for(i in 1:3){
-#   print(xyplot(data=weather.afteremergence[[i]], temp~time, 
+#   print(xyplot(data=weather.afteremergence[[i]], temp~time,
 #                scales = list(x = list(at = seq(150, 300, by = 20))),
 #                ylim = c(-5,40),
 #                main = years[i],
@@ -263,7 +292,7 @@ combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remoblized C %',
 #                   panel.abline(h = 8, col = "red", lty = 2)
 #                }))
 # }
-# 
+
 r <- results[[2]]
 times <- c(186.5, 209.5, 236.5, 258.5)
 doys <- c(186, 209, 236, 258)
@@ -308,3 +337,101 @@ plot <- ggplot(layer_assim, aes(x = layer_number, y = layer_assimilation)) +
 # Display the plot
 print(plot)
 
+canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), 
+                                FUN=sum) * 0.6 / 180.156e-3
+leaf_reuse_daily <- aggregate(result$Leaf_substrate_senescence_rate * 
+                                parameters$Leaf_senescence_reuse_factor /
+                                (1 - parameters$Leaf_senescence_reuse_factor),
+                              list(result$doy), FUN=sum)
+stem_reuse_daily <- aggregate(result$Stem_substrate_senescence_rate * 
+                                parameters$Stem_senescence_reuse_factor/
+                                (1 - parameters$Stem_senescence_reuse_factor),
+                              list(result$doy), FUN=sum)
+root_reuse_daily <- aggregate(result$Root_substrate_senescence_rate * 
+                                parameters$Root_senescence_reuse_factor/
+                                (1 - parameters$Root_senescence_reuse_factor),
+                              list(result$doy), FUN=sum)
+avg_dvi_daily <- aggregate(result$DVI, list(result$doy), FUN=mean) # result$DVI or doy
+
+leaf_export_daily <- aggregate(result$substrate_transport_Leaf_to_Stem,
+                               list(result$doy), FUN=sum)
+stem_utilization_daily <- aggregate(result$Stem_utilization_rate,
+                               list(result$doy), FUN=sum)
+pod_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Pod,
+                                  list(result$doy), FUN=sum) 
+root_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Root,
+                                   list(result$doy), FUN=sum) + root_reuse_daily
+stem_allocation_daily <- leaf_export_daily + stem_reuse_daily - 
+  pod_allocation_daily - root_allocation_daily
+leaf_allocation_daily <- canopy_assim_daily + leaf_reuse_daily - leaf_export_daily
+net_subC_input <- data.frame(Group.1 = avg_dvi_daily$x, # canopy_assim_daily$Group.1
+                             x = canopy_assim_daily$x + 
+                               leaf_reuse_daily$x + 
+                               stem_reuse_daily$x + 
+                               root_reuse_daily$x)
+
+stem_input_output <- data.frame(DVI = avg_dvi_daily$x, # DOY = leaf_export_daily$Group.1, 
+                                    Leaf_export = leaf_export_daily$x,
+                                    Stem_reuse = stem_reuse_daily$x,
+                                    Stem_utilization = stem_utilization_daily$x,
+                                    Stem_to_Root = root_allocation_daily$x,
+                                    Stem_to_Pod = pod_allocation_daily$x)
+
+reuse_contribution_percentage <- data.frame(DVI = avg_dvi_daily$x, # DOY = leaf_export_daily$Group.1, 
+                                    Leaf = 100 * leaf_reuse_daily$x / net_subC_input$x,
+                                    Stem = 100 * stem_reuse_daily$x / net_subC_input$x,
+                                    Root = 100 * root_reuse_daily$x / net_subC_input$x)
+
+library(tidyr)
+
+# Convert dataframe to long format
+reuse_long <- pivot_longer(reuse_contribution_percentage, cols = Leaf:Root, 
+                           names_to = "Organ", values_to = "Percentage")
+
+# Create the ggplot
+ggplot(reuse_long, aes(x = DVI, y = Percentage, color = Organ)) + theme_classic()+
+  geom_line(size = 1) +  # Line plot
+  labs(x = "DVI (2023)",
+       y = "Percentage of substrate C contribution from senesced parts compared to the total substrate C input",
+       color = "Organ") +  # Legend title
+  theme(plot.title=element_text(size=size.title, hjust=0.5),
+        axis.text=element_text(size=size.axis),
+        axis.title.x =element_text(size=size.axislabel),
+        axis.title.y = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), 
+        panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  scale_color_manual(values = c( "#117733", "#332288", "#999933"))+
+  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, 20)) +
+  scale_x_continuous(breaks = seq(0,2,1))
+
+xyplot(data=reuse_contribution_percentage, 
+         Leaf +
+         Stem +
+         Root
+       ~DVI, 
+       type="l",
+       auto=TRUE)
+
+xyplot(data=stem_input_output, 
+         Leaf_export +
+         Stem_reuse +
+         Stem_utilization +
+         Stem_to_Root +
+         Stem_to_Pod
+       ~DVI, 
+       type="l",
+       auto=TRUE)
+
+substrate_carbon_concentrations <- data.frame(
+  time = result$time,
+  DVI = result$DVI,
+  Leaf = 0.3 * result$Leaf_substrate_carbon/result$Leaf,
+  Stem = 0.3 * result$Stem_substrate_carbon/result$Stem,
+  Root = 0.3 * result$Root_substrate_carbon/result$Root,
+  Pod = 0.3 * result$Pod_substrate_carbon/result$Pod)
+xyplot(data=substrate_carbon_concentrations,
+       Leaf+Stem+Root+Pod~DVI,
+       ylab = "Substrate C concentration",
+       auto=TRUE)

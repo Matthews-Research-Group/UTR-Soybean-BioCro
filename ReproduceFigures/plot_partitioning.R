@@ -1,16 +1,20 @@
 # Plot partitioning
+library(reshape2)
 col.palette.muted <- c( "#117733", "#999933", "#332288",  "#882255")
 plot_partitioning <- function(result, year){
   canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), 
                                   FUN=sum) * 0.6 / 180.156e-3
   leaf_reuse_daily <- aggregate(result$Leaf_substrate_senescence_rate * 
-                                  parameters$Leaf_senescence_reuse_factor,
+                                  parameters$Leaf_senescence_reuse_factor /
+                                  (1 - parameters$Leaf_senescence_reuse_factor),
                                 list(result$doy), FUN=sum)
   stem_reuse_daily <- aggregate(result$Stem_substrate_senescence_rate * 
-                                  parameters$Stem_senescence_reuse_factor,
+                                  parameters$Stem_senescence_reuse_factor/
+                                  (1 - parameters$Stem_senescence_reuse_factor),
                                 list(result$doy), FUN=sum)
   root_reuse_daily <- aggregate(result$Root_substrate_senescence_rate * 
-                                  parameters$Root_senescence_reuse_factor,
+                                  parameters$Root_senescence_reuse_factor/
+                                  (1 - parameters$Root_senescence_reuse_factor),
                                 list(result$doy), FUN=sum)
   avg_dvi_daily <- aggregate(result$DVI, list(result$doy), FUN=mean) # result$DVI or doy
   
@@ -40,6 +44,7 @@ plot_partitioning <- function(result, year){
   #                                         allocation_percentage$Root+
   #                                         allocation_percentage$Pod
   allocation_percentage <- allocation_percentage[1:which.min(abs(allocation_percentage$DVI-parameters$stop_growth_dvi)),]
+  # print(xyplot(data=allocation_percentage, tot_percentage~DVI))
   
   allocation_percentage_tall <- melt(allocation_percentage, id.vars = 'DVI') # 'DOY')
   names(allocation_percentage_tall) <- c('DVI','Organ', 'Percentage') # DOY
@@ -54,7 +59,7 @@ plot_partitioning <- function(result, year){
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
     scale_y_continuous(limits = c(-20, 120), breaks = seq(-20, 120, 20)) +
-    scale_x_continuous(breaks = seq(0,2,0.5))+
+    scale_x_continuous(breaks = seq(-1,2,1))+
     labs(title=element_blank(), 
          x= paste0('DVI (', year, ')'), # paste0('Day of Year (', year, ')'), 
          y='Allocation %')
@@ -85,7 +90,7 @@ plot_partitioning <- function(result, year){
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
     scale_y_continuous(limits = c(-20, 120), breaks = seq(-20, 120, 20)) +
-    scale_x_continuous(breaks = seq(0,2,0.5))+
+    scale_x_continuous(breaks = seq(-1,2,1))+
     labs(title=element_blank(), 
          x=paste0('DVI (', year, ')'),# paste0('Day of Year (', year, ')'), 
          y='Remobolization %') # 
