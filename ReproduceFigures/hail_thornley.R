@@ -124,6 +124,7 @@ parameters_after_hail <- orignal_utr_params
 parameters_after_hail['Stem_respiration_factor', 'Value'] <- orignal_utr_params['Stem_respiration_factor', 'Value'] * 2
 parameters_after_hail['Pod_start_dvi', 'Value'] <- orignal_utr_params['Pod_start_dvi', 'Value'] + 0.1
 
+parameters$Leaf_respiration_factor <- orignal_utr_params['Stem_respiration_factor', 'Value']
 
 soybean_optsolver_2 <- partial_run_biocro(differential_quantities_just_after_defoliation,
                                           parameters,
@@ -140,7 +141,7 @@ result <- rbind(result_1[seq_len(nrow(result_1) - 1), ], result_2)
 xyplot(data=result, Leaf+Stem+Root+Pod~time, auto=TRUE)
 
 # organize simulated data
-r.lsrp.doy <- reshape2::melt(result_no_hail[,c("time","Root","Leaf","Stem","Pod")],id.vars="time")
+r.lsrp.doy <- reshape2::melt(result[,c("time","Root","Leaf","Stem","Pod")],id.vars="time")
 r.lsrp.doy$value<-r.lsrp.doy$value
 
 # Leaf
@@ -227,6 +228,7 @@ f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
                plot.background = element_rect(fill = "transparent", colour = NA))
 
 f <- f + scale_x_continuous(breaks = seq(150,280,30))
+f <- f + scale_y_continuous(limits = c(0, 10), breaks = seq(0,10,2))
 f
 
 # xyplot(result_no_hail$substrate_transport_Leaf_to_Stem+

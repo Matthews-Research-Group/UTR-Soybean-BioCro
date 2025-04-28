@@ -54,6 +54,7 @@ figs <- list()
 lai.figs <- list()
 allocation.figs <- list()
 pod_change <- data.frame()
+pod_change_utilization_rate <- data.frame()
 
 loadRData <- function(fileName){
   # loads an RData file, and returns it
@@ -205,109 +206,66 @@ for (i in 1:length(years)){
   results[[i]] <- result
   figs[[i]] <- plot_biomass(result, ExpBiomass[[i]], years[i])
   
-  # change the parameters by 10%
-  for (j in 1:length(arg_names)){
-    lower_params <- full_soybean_ld11$parameters
-    lower_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 0.9
-    higher_params <- full_soybean_ld11$parameters
-    higher_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 1.1
-    
-    result_lower_param <- with(full_soybean_ld11, {run_biocro(
-      initial_values,
-      lower_params,
-      weather.afteremergence[[i]],
-      direct_modules,
-      differential_modules,
-      ode_solver
-    )})
-    lower_param_pod_change <- (max(result_lower_param$Pod)-max(result$Pod))/max(result$Pod)
-    
-    result_higher_param <- with(full_soybean_ld11, {run_biocro(
-      initial_values,
-      higher_params,
-      weather.afteremergence[[i]],
-      direct_modules,
-      differential_modules,
-      ode_solver
-    )})
-    higher_param_pod_change <- (max(result_higher_param$Pod)-max(result$Pod))/max(result$Pod)
-    pod_change[arg_names[j],paste0(years[i],' -10%')] <- paste0(round(lower_param_pod_change*100, 2), "%")
-    pod_change[arg_names[j],paste0(years[i],' +10%')] <- paste0(round(higher_param_pod_change*100, 2), "%")
-  }
-  print(pod_change)
-  write.csv(pod_change, "LD11_pod_sensitivity.csv")
-  
-  # if (years[i]=='2022'){
-  #   figs[[i]] <- figs[[i]] + theme(plot.background = element_rect(fill = "grey90", colour = NA))
+  # # change the parameters by 10%
+  # for (j in 1:length(arg_names)){
+  #   lower_params <- full_soybean_ld11$parameters
+  #   lower_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 0.9
+  #   higher_params <- full_soybean_ld11$parameters
+  #   higher_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 1.1
+  #   
+  #   result_lower_param <- with(full_soybean_ld11, {run_biocro(
+  #     initial_values,
+  #     lower_params,
+  #     weather.afteremergence[[i]],
+  #     direct_modules,
+  #     differential_modules,
+  #     ode_solver
+  #   )})
+  #   lower_param_pod_change <- (max(result_lower_param$Pod)-max(result$Pod))/max(result$Pod)
+  #   
+  #   result_higher_param <- with(full_soybean_ld11, {run_biocro(
+  #     initial_values,
+  #     higher_params,
+  #     weather.afteremergence[[i]],
+  #     direct_modules,
+  #     differential_modules,
+  #     ode_solver
+  #   )})
+  #   higher_param_pod_change <- (max(result_higher_param$Pod)-max(result$Pod))/max(result$Pod)
+  #   pod_change[arg_names[j],paste0(years[i],' -10%')] <- paste0(round(lower_param_pod_change*100, 2), "%")
+  #   pod_change[arg_names[j],paste0(years[i],' +10%')] <- paste0(round(higher_param_pod_change*100, 2), "%")
   # }
-  
-  print(figs[[i]])
-  # save(biocro_organ_biomass_tall, file = paste0('organ_biomass_sim_', years[i],'_ld11.RData'))
-  # save(field_organ_biomass_tall, file = paste0('organ_biomass_mea_', years[i],'_ld11.RData'))
-  
-  # lai plots
-  lai.figs[[i]] <- ggplot() + theme_classic() +
-    geom_line(data = result, aes(x = time, y = lai), linewidth = 1) +
-    geom_point(data = ExpBiomass[[i]], aes(x = time, y = LAI_from_LMA), shape = 15, size = 3)+
-    theme(plot.title=element_text(size=size.title, hjust=0.5),
-          axis.text=element_text(size=size.axis),
-          axis.title.x =element_text(size=size.axislabel),
-          axis.title.y = element_blank(),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(), 
-          panel.background = element_rect(fill = "transparent",colour = NA),
-          plot.background = element_rect(fill = "transparent", colour = NA))+
-    # scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
-    # scale_x_continuous(breaks = seq(180,280,30))+
-    labs(title=element_blank(), 
-         x=paste0('Day of Year (', years[i], ')'), 
-         y='LAI')+
-    scale_color_manual(values = col.palette.muted)
-  
-  # print(lai.figs[[i]])
-  
-  allocation.figs[[i]] <- plot_partitioning(result, years[i])
+  # print(pod_change)
+  # write.csv(pod_change, "LD11_pod_sensitivity_10percent.csv")
+  # 
+  # for (j in c(1:4,12:14)){
+  #   lower_params <- full_soybean_ld11$parameters
+  #   lower_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 0.01
+  #   higher_params <- full_soybean_ld11$parameters
+  #   higher_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 100
+  # 
+  #   result_lower_param <- with(full_soybean_ld11, {run_biocro(
+  #     initial_values,
+  #     lower_params,
+  #     weather.afteremergence[[i]],
+  #     direct_modules,
+  #     differential_modules,
+  #     ode_solver
+  #   )})
+  #   lower_param_pod_change <- (max(result_lower_param$Pod)-max(result$Pod))/max(result$Pod)
+  # 
+  #   result_higher_param <- with(full_soybean_ld11, {run_biocro(
+  #     initial_values,
+  #     higher_params,
+  #     weather.afteremergence[[i]],
+  #     direct_modules,
+  #     differential_modules,
+  #     ode_solver
+  #   )})
+  #   higher_param_pod_change <- (max(result_higher_param$Pod)-max(result$Pod))/max(result$Pod)
+  #   pod_change_utilization_rate[arg_names[j],paste0(years[i],' x0.01')] <- paste0(round(lower_param_pod_change*100, 2), "%")
+  #   pod_change_utilization_rate[arg_names[j],paste0(years[i],' x100')] <- paste0(round(higher_param_pod_change*100, 2), "%")
+  # }
+  # print(pod_change_utilization_rate)
+  # write.csv(pod_change_utilization_rate, "LD11_pod_sensitivity_10000percent.csv")
 }
-library(grid)
-library(gridExtra)
-g_legend <-function(a.gplot){
-  tmp <- ggplot_gtable(ggplot_build(a.gplot))
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
-  legend <- tmp$grobs[[leg]]
-  return(legend)}
-
-common_legend <- g_legend(figs[[1]])
-
-combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90, gp=gpar(fontsize=12))),
-                               arrangeGrob(arrangeGrob(figs[[1]] + theme(legend.position="none"), top = "Testing"),
-                                           arrangeGrob(figs[[2]] + theme(legend.position="none"), top = "Testing"),
-                                           arrangeGrob(figs[[3]] + theme(legend.position="none"), top = "Testing"),
-                                           ncol = 3, top = "LD11 at Energy Farm (Ambient CO2)"),
-                               common_legend, 
-                               ncol=3, widths=c(0.3, 5, 1.1))
-
-combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
-                                          arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
-                                                                  allocation.figs[[2]] + theme(legend.position="none"),
-                                                                  allocation.figs[[3]] + theme(legend.position="none"),
-                                                                  ncol = 3),
-                                                      ncol = 1),
-                                          common_legend,
-                                          ncol=3, widths=c(0.3, 5, 1.1))
-
-
-# combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Remoblized C %', rot = 90, gp=gpar(fontsize=12))),
-#                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
-#                                                                   allocation.figs[[2]] + theme(legend.position="none"),
-#                                                                   allocation.figs[[3]] + theme(legend.position="none"),
-#                                                                   ncol = 3),
-#                                                       ncol = 1),
-#                                           ncol=2, widths=c(0.3, 5))
-
-combined_graph.lai <- grid.arrange(arrangeGrob(textGrob('LAI', rot = 90, gp=gpar(fontsize=12))),
-                                          arrangeGrob(arrangeGrob(lai.figs[[1]] + theme(legend.position="none"),
-                                                                  lai.figs[[2]] + theme(legend.position="none"),
-                                                                  lai.figs[[3]] + theme(legend.position="none"),
-                                                                  ncol = 3),
-                                                      ncol = 1),
-                                          ncol=2, widths=c(0.3, 5))

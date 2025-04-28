@@ -156,12 +156,12 @@ for (i in 1:length(years)){
   full_soybean_ld11$parameters$time_zone_offset <- NULL
   full_soybean_ld11$parameters$Rd = 1.28
   # full_soybean_ld11$parameters$Stem_senescence_beta <- 2.1
-  
+  # full_soybean_ld11$parameters$StomataWS <- 0.2
   result <- with(full_soybean_ld11, {run_biocro(
     initial_values,
     parameters,
     weather.afteremergence[[i]],
-    direct_modules,
+    direct_modules,#[-1],
     differential_modules,
     ode_solver
   )})
@@ -339,18 +339,6 @@ print(plot)
 
 canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), 
                                 FUN=sum) * 0.6 / 180.156e-3
-leaf_reuse_daily <- aggregate(result$Leaf_substrate_senescence_rate * 
-                                parameters$Leaf_senescence_reuse_factor /
-                                (1 - parameters$Leaf_senescence_reuse_factor),
-                              list(result$doy), FUN=sum)
-stem_reuse_daily <- aggregate(result$Stem_substrate_senescence_rate * 
-                                parameters$Stem_senescence_reuse_factor/
-                                (1 - parameters$Stem_senescence_reuse_factor),
-                              list(result$doy), FUN=sum)
-root_reuse_daily <- aggregate(result$Root_substrate_senescence_rate * 
-                                parameters$Root_senescence_reuse_factor/
-                                (1 - parameters$Root_senescence_reuse_factor),
-                              list(result$doy), FUN=sum)
 avg_dvi_daily <- aggregate(result$DVI, list(result$doy), FUN=mean) # result$DVI or doy
 
 leaf_export_daily <- aggregate(result$substrate_transport_Leaf_to_Stem,
@@ -360,69 +348,12 @@ stem_utilization_daily <- aggregate(result$Stem_utilization_rate,
 pod_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Pod,
                                   list(result$doy), FUN=sum) 
 root_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Root,
-                                   list(result$doy), FUN=sum) + root_reuse_daily
-stem_allocation_daily <- leaf_export_daily + stem_reuse_daily - 
-  pod_allocation_daily - root_allocation_daily
+                                   list(result$doy), FUN=sum)
+
+stem_allocation_daily <- leaf_export_daily - pod_allocation_daily - root_allocation_daily
 leaf_allocation_daily <- canopy_assim_daily + leaf_reuse_daily - leaf_export_daily
 net_subC_input <- data.frame(Group.1 = avg_dvi_daily$x, # canopy_assim_daily$Group.1
-                             x = canopy_assim_daily$x + 
-                               leaf_reuse_daily$x + 
-                               stem_reuse_daily$x + 
-                               root_reuse_daily$x)
-
-stem_input_output <- data.frame(DVI = avg_dvi_daily$x, # DOY = leaf_export_daily$Group.1, 
-                                    Leaf_export = leaf_export_daily$x,
-                                    Stem_reuse = stem_reuse_daily$x,
-                                    Stem_utilization = stem_utilization_daily$x,
-                                    Stem_to_Root = root_allocation_daily$x,
-                                    Stem_to_Pod = pod_allocation_daily$x)
-
-reuse_contribution_percentage <- data.frame(DVI = avg_dvi_daily$x, # DOY = leaf_export_daily$Group.1, 
-                                    Leaf = 100 * leaf_reuse_daily$x / net_subC_input$x,
-                                    Stem = 100 * stem_reuse_daily$x / net_subC_input$x,
-                                    Root = 100 * root_reuse_daily$x / net_subC_input$x)
-
-library(tidyr)
-
-# Convert dataframe to long format
-reuse_long <- pivot_longer(reuse_contribution_percentage, cols = Leaf:Root, 
-                           names_to = "Organ", values_to = "Percentage")
-
-# Create the ggplot
-ggplot(reuse_long, aes(x = DVI, y = Percentage, color = Organ)) + theme_classic()+
-  geom_line(size = 1) +  # Line plot
-  labs(x = "DVI (2023)",
-       y = "Percentage of substrate C contribution from senesced parts compared to the total substrate C input",
-       color = "Organ") +  # Legend title
-  theme(plot.title=element_text(size=size.title, hjust=0.5),
-        axis.text=element_text(size=size.axis),
-        axis.title.x =element_text(size=size.axislabel),
-        axis.title.y = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), 
-        panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  scale_color_manual(values = c( "#117733", "#332288", "#999933"))+
-  scale_y_continuous(limits = c(0, 80), breaks = seq(0, 80, 20)) +
-  scale_x_continuous(breaks = seq(0,2,1))
-
-xyplot(data=reuse_contribution_percentage, 
-         Leaf +
-         Stem +
-         Root
-       ~DVI, 
-       type="l",
-       auto=TRUE)
-
-xyplot(data=stem_input_output, 
-         Leaf_export +
-         Stem_reuse +
-         Stem_utilization +
-         Stem_to_Root +
-         Stem_to_Pod
-       ~DVI, 
-       type="l",
-       auto=TRUE)
+                             x = canopy_assim_daily$x)
 
 substrate_carbon_concentrations <- data.frame(
   time = result$time,

@@ -123,10 +123,11 @@ for (i in 1:length(years)) {
   # load parameter files
   source('soybean_initial_values.R')
   initial_state$DVI <- NULL
+  # parameters$StomataWS <- 1
   soybean_optsolver[[i]] <- partial_run_biocro(initial_state,
                                                parameters,
                                                weather.growingseason[[i]],
-                                               steady_state_module_names,
+                                               steady_state_module_names, # [-1],
                                                derivative_module_names,
                                                solver,
                                                arg_names,
@@ -306,10 +307,11 @@ for (i in 1:length(years)) {
   # load parameter files
   source('soybean_initial_values.R')
   initial_state$DVI <- NULL
+  # parameters$StomataWS <- 1
   soybean_optsolver[[i]] <- partial_run_biocro(initial_state,
                                                parameters,
                                                weather.growingseason[[i]],
-                                               steady_state_module_names,
+                                               steady_state_module_names,#[-1],
                                                derivative_module_names,
                                                solver,
                                                arg_names,
@@ -426,17 +428,17 @@ common_legend <- g_legend(figs[[1]])
 combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
                                arrangeGrob(arrangeGrob(figs[[1]] + theme(legend.position="none"),
                                                         figs[[3]] + theme(legend.position="none"),
-                                                        nrow = 2, top = 'Training'),
+                                                        nrow = 2, top = 'Fitting'),
                                             arrangeGrob(figs[[2]] + theme(legend.position="none"),
                                                         figs[[4]] + theme(legend.position="none"),
-                                                        nrow = 2, top = 'Testing'),
+                                                        nrow = 2), # top = 'Testing'),
                                             ncol = 2, top = 'Ambient CO2'),
                                 arrangeGrob(arrangeGrob(figs.elevCO2[[1]] + theme(legend.position="none"),
                                                         figs.elevCO2[[3]] + theme(legend.position="none"),
-                                                        nrow = 2, top = 'Testing'),
+                                                        nrow = 2), # top = 'Testing'),
                                             arrangeGrob(figs.elevCO2[[2]] + theme(legend.position="none"),
                                                         figs.elevCO2[[4]] + theme(legend.position="none"),
-                                                        nrow = 2, top = 'Testing'),
+                                                        nrow = 2), # top = 'Testing'),
                                             ncol = 2, top = 'Elevated CO2'),
                                 common_legend,
                                 ncol=4, widths=c(0.3, 5,5,1.2))
