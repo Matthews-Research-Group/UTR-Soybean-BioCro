@@ -1,3 +1,4 @@
+library(BioCroWater)
 # Clear the workspace
 rm(list=ls())
 
@@ -154,9 +155,12 @@ for (i in 1:length(years)){
   
   full_soybean_ld11$parameters$timestep <- 1
   full_soybean_ld11$parameters$time_zone_offset <- NULL
-  full_soybean_ld11$parameters$Rd = 1.28
+  full_soybean_ld11$parameters$Rd <- 1.28
+  # full_soybean_ld11$parameters$Stem_utilization_km <- full_soybean_ld11$parameters$Stem_utilization_km * 1.1
   # full_soybean_ld11$parameters$Stem_senescence_beta <- 2.1
   # full_soybean_ld11$parameters$StomataWS <- 0.2
+  # Set soil water module
+  # source('set_modules_for_soil_water.R')
   result <- with(full_soybean_ld11, {run_biocro(
     initial_values,
     parameters,
@@ -337,32 +341,14 @@ plot <- ggplot(layer_assim, aes(x = layer_number, y = layer_assimilation)) +
 # Display the plot
 print(plot)
 
-canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), 
-                                FUN=sum) * 0.6 / 180.156e-3
-avg_dvi_daily <- aggregate(result$DVI, list(result$doy), FUN=mean) # result$DVI or doy
-
-leaf_export_daily <- aggregate(result$substrate_transport_Leaf_to_Stem,
-                               list(result$doy), FUN=sum)
-stem_utilization_daily <- aggregate(result$Stem_utilization_rate,
-                               list(result$doy), FUN=sum)
-pod_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Pod,
-                                  list(result$doy), FUN=sum) 
-root_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Root,
-                                   list(result$doy), FUN=sum)
-
-stem_allocation_daily <- leaf_export_daily - pod_allocation_daily - root_allocation_daily
-leaf_allocation_daily <- canopy_assim_daily + leaf_reuse_daily - leaf_export_daily
-net_subC_input <- data.frame(Group.1 = avg_dvi_daily$x, # canopy_assim_daily$Group.1
-                             x = canopy_assim_daily$x)
-
-substrate_carbon_concentrations <- data.frame(
-  time = result$time,
-  DVI = result$DVI,
-  Leaf = 0.3 * result$Leaf_substrate_carbon/result$Leaf,
-  Stem = 0.3 * result$Stem_substrate_carbon/result$Stem,
-  Root = 0.3 * result$Root_substrate_carbon/result$Root,
-  Pod = 0.3 * result$Pod_substrate_carbon/result$Pod)
-xyplot(data=substrate_carbon_concentrations,
-       Leaf+Stem+Root+Pod~DVI,
-       ylab = "Substrate C concentration",
-       auto=TRUE)
+# substrate_carbon_concentrations <- data.frame(
+#   time = result$time,
+#   DVI = result$DVI,
+#   Leaf = 0.3 * result$Leaf_substrate_carbon/result$Leaf,
+#   Stem = 0.3 * result$Stem_substrate_carbon/result$Stem,
+#   Root = 0.3 * result$Root_substrate_carbon/result$Root,
+#   Pod = 0.3 * result$Pod_substrate_carbon/result$Pod)
+# xyplot(data=substrate_carbon_concentrations,
+#        Leaf+Stem+Root+Pod~DVI,
+#        ylab = "Substrate C concentration",
+#        auto=TRUE)

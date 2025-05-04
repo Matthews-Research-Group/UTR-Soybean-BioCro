@@ -37,7 +37,7 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       # weights
       wts <- weights[[i]]
       
-      # weighted rmses
+      # weighted mses
       err.leaf <- sum(wts$Leaf*((Pred$Leaf-TrueValues$Leaf)^2)/(TrueValues$Leaf+0.1))/length(Pred$Leaf)
       err.stem <- sum(wts$Stem*((Pred$Stem-TrueValues$Stem)^2)/(TrueValues$Stem+0.1))/length(Pred$Stem)
       err.pod <- sum(wts$Pod*((Pred$Pod-TrueValues$Pod)^2)/(TrueValues$Pod+0.1))/length(Pred$Pod)

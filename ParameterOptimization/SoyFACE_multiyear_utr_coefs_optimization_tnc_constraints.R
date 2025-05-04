@@ -82,8 +82,8 @@ wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 5, "Root" = 0.75, "Cummulativ
 
 # cost function
 cost_func <- function(x){
-  multiyear_BioCro_optim(x, soybean_optsolver[c(1,2)], ExpBiomass[c(1,2)], 
-                         numrows[c(1,2)], weights[c(1,2)], wts2, RootVals[c(1,2)])
+  multiyear_BioCro_optim(x, soybean_optsolver[c(1,3)], ExpBiomass[c(1,3)], 
+                         numrows[c(1,3)], weights[c(1,3)], wts2, RootVals[c(1,3)])
 }
 
 cost_func(optim_params_short_SoyFACE)
@@ -110,6 +110,28 @@ lowerlim <- c(# 0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
               0.0,
               0.8, 1.8)
 
+
+# Parameter ranges
+upperlim <- c(
+  0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
+  0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
+  0.8, # 10: respiration factor [/]
+  1.0, 1.0, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
+  0.01, 0.01, 0.01, # 14,15,16: senescence rate max, LSR
+  10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
+  2.5, 2.5, 2.5,  # 20, 21, 22: senescence beta, LSR [DVI^-1]
+  1.0,
+  1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
+lowerlim <- c(
+  0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
+  0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
+  0.05, # 10: respiration factor [dimensionless]
+  0.0, 0.0 ,0.0, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta] 0.005, 0.005 ,0.01
+  0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
+  0.0, 0.0, 0.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
+  1.5, 1.5, 1.5,
+  0.0,
+  0.8, 1.8)
 
 rng.seed <- 1234 # seed for random number generator
 set.seed(rng.seed)
