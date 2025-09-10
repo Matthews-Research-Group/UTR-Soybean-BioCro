@@ -45,6 +45,8 @@ lai.figs <- list()
 pod_sensitivity <- data.frame()
 
 # Define functions to create plots
+plot_all_tissues <- function(res, year, biomass) {
+}
 plot_amb_elev_lai <- function(res, elev_res, year, lai, elev_lai) {
   
   # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
@@ -76,7 +78,7 @@ plot_amb_elev_lai <- function(res, elev_res, year, lai, elev_lai) {
   f <- f + geom_errorbar(data=r.exp.std.lai, aes(x=DOY, ymin=ymin, ymax=ymax), width=3.5, size=0.25, show.legend = FALSE)
   f <- f + geom_point(data=r.exp.lai, aes(x=DOY, y=value, fill=variable), shape=22, size=2, show.legend = FALSE, stroke=.5)
   f <- f + coord_cartesian(ylim = c(0,10)) + scale_x_continuous(breaks = seq(150,275,30))
-  f <- f + labs(x=paste0('Day of Year (',year,')') ,y=bquote("LAI"~(m^2~"/"~m^2)))
+  f <- f + labs(x='Day of Year' ,y=bquote("LAI"~(m^2~"/"~m^2)))
   f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
                  axis.text=element_text(size=size.axis),
                  axis.title=element_text(size=size.axislabel),
@@ -135,24 +137,9 @@ for (i in 1:length(years)) {
   
   result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE)) 
   results[[i]] <- result
-  # check when the simulation stops if not running till the end
-  if (dim(result)[1] < dim(weather.growingseason[[i]])[1]){
-    print(max(result$DVI))
-    print(result$Stem_substrate_carbon[which.max(result$DVI)])
-    print(result$Pod_substrate_carbon[which.max(result$DVI)])
-    
-    print(result$Pod_utilization_rate[which.max(result$DVI)])
-    print(result$substrate_transport_Stem_to_Pod[which.max(result$DVI)])
-    
-    print(result$Stem_substrate_carbon[which.max(result$DVI)]/result$Stem[which.max(result$DVI)])
-    print(result$Pod_substrate_carbon[which.max(result$DVI)]/result$Pod[which.max(result$DVI)])
-    
-    print(result$Pod[which.max(result$DVI)])
-  }
   
   # organize simulated data
   r.lsrp.doy <- reshape2::melt(result[,c("time","Root","Leaf","Stem","Pod")],id.vars="time")
-  r.lsrp.doy$value<-r.lsrp.doy$value
   
   # Leaf
   # organize the experimental data (mean and std)
@@ -195,25 +182,26 @@ for (i in 1:length(years)) {
   r.all <- rbind(r.lsrp.doy, r.exp.ls)
   # Reverse the order as follow
   r.all$Organ <- factor(r.all$variable, levels = rev(levels(r.all$variable)))
-  
   # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
-  col.palette.muted <- c("#882255", "#999933", "#117733", "#332288")
-  
+  col.palette.muted.organs <- c("Leaf"="#117733", 
+                                "Stem"= "#999933", 
+                                "Root"="#332288", 
+                                "Pod"= "#882255")
   size.title <- 12
   size.axislabel <- 10
   size.axis <- 10
   size.legend <- 12
   
   f <- ggplot() + theme_classic()
+  f <- f +
+    geom_line(data = subset(r.all, Source == "Simulated"),  
+                aes(x=time,y=value, color=Organ), size=0.8, alpha = 0.8) +
+    geom_point(data = subset(r.all, Source == "Observed"), 
+                 aes(x=time, y=value, color=Organ), shape=15, size=2, stroke=.5) +
   
-  f <- f + geom_point(data=r.all, aes(x=time, y=value,
-                                      color=Organ,
-                                      size = Source, shape = Source),
-                      show.legend = TRUE, stroke=0.5) +
     scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
-    scale_shape_manual(values = c(15, 16)) +
-    scale_size_manual(values = c(2, 0.25)) +
-    scale_color_manual(values = col.palette.muted)
+    scale_color_manual(values = col.palette.muted.organs)
+
   
   # for leaf
   f <- f + geom_errorbar(data=r.exp.std.leaf, aes(x=time, ymin=ymin, ymax=ymax),  # DOY renamed as time
@@ -228,8 +216,8 @@ for (i in 1:length(years)) {
   
   # change the plot labels and theme
   print(years[i])
-  f <- f + labs(title=element_blank(), x=paste0('Day of Year (',years[i],')'),y=NULL)
-  if (years[i] == '2002' || years[i] == '2005'){
+  f <- f + labs(title=years[i], x='Day of Year', y=NULL)
+  if (years[i] == '2002' || years[i] == '2004'){
     f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
                    axis.text=element_text(size=size.axis),
                    axis.title=element_text(size=size.axislabel),
@@ -249,21 +237,6 @@ for (i in 1:length(years)) {
   figs[[i]] <- f
 }
 
-canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), FUN=sum) * 10 / 3
-leaf_export_daily <- aggregate(result$substrate_transport_Leaf_to_Stem,list(result$doy), FUN=sum)
-leaf_utilization_daily <- aggregate(result$Leaf_utilization_rate,list(result$doy), FUN=sum)
-stem_utilization_daily <- aggregate(result$Stem_utilization_rate,list(result$doy), FUN=sum)
-df <- data.frame(DOY = leaf_export_daily$Group.1, 
-                 Canopy_Assimilation_mol_per_day = canopy_assim_daily$x,
-                 Leaf_Export_mol_per_day = leaf_export_daily$x,
-                 Leaf_Utilization_mol_per_day = leaf_utilization_daily$x,
-                 Stem_Utilization_mol_per_day = stem_utilization_daily$x)
-xyplot(data = df,
-       Canopy_Assimilation_mol_per_day+
-         Leaf_Export_mol_per_day+
-         Leaf_Utilization_mol_per_day+
-         Stem_Utilization_mol_per_day~
-         DOY, type = c('p','l'), auto=TRUE)
 sum(result$substrate_transport_Leaf_to_Stem)
 sum(result$Stem_utilization_rate)
 
@@ -379,16 +352,26 @@ for (i in 1:length(years)) {
   # Reverse the order as follow
   r.all$Organ <- factor(r.all$variable, levels = rev(levels(r.all$variable)))
   
-  # combine the simulated and experimental data
+  # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
+  col.palette.muted.organs <- c("Leaf"="#117733", 
+                                "Stem"= "#999933", 
+                                "Root"="#332288", 
+                                "Pod"= "#882255")
+  size.title <- 12
+  size.axislabel <- 10
+  size.axis <- 10
+  size.legend <- 12
+  
   f <- ggplot() + theme_classic()
-  f <- f + geom_point(data=r.all, aes(x=time, y=value,
-                                      color=Organ,
-                                      size = Source, shape = Source),
-                      show.legend = TRUE, stroke=0.5) +
+  f <- f +
+    geom_line(data = subset(r.all, Source == "Simulated"),  
+              aes(x=time,y=value, color=Organ), size=0.8, alpha = 0.8) +
+    geom_point(data = subset(r.all, Source == "Observed"), 
+               aes(x=time, y=value, color=Organ), shape=15, size=2, stroke=.5) +
+    
     scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
-    scale_shape_manual(values = c(15, 16)) +
-    scale_size_manual(values = c(2, 0.25)) +
-    scale_color_manual(values = col.palette.muted)
+    scale_color_manual(values = col.palette.muted.organs)
+  
   # for leaf
   f <- f + geom_errorbar(data=r.exp.std.leaf, aes(x=time, ymin=ymin, ymax=ymax),  # DOY renamed as time
                          width=3.5, size=0.25, show.legend = FALSE)
@@ -401,12 +384,12 @@ for (i in 1:length(years)) {
   
   # change the plot labels and theme
   print(years[i])
-  f <- f + labs(title=element_blank(), x=paste0('Day of Year (',years[i],')'),y=NULL)
+  f <- f + labs(title=years[i], x='Day of Year' ,y=NULL)
   f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
                  axis.text=element_text(size=size.axis),
                  axis.title=element_text(size=size.axislabel),
                  # legend.position = c(.15,.8), legend.title = element_blank(),
-                 # legend.text=element_text(size=size.legend),
+                 legend.text=element_text(size=size.legend),
                  # legend.background = element_rect(fill = "transparent",colour = NA),
                  panel.grid.major = element_blank(),
                  panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
@@ -424,25 +407,43 @@ g_legend <-function(a.gplot){
   return(legend)}
 
 common_legend <- g_legend(figs[[1]])
-
+heights <- c(0.8, 1)
 combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
-                               arrangeGrob(arrangeGrob(figs[[1]] + theme(legend.position="none"),
-                                                        figs[[3]] + theme(legend.position="none"),
-                                                        nrow = 2, top = 'Fitting'),
-                                            arrangeGrob(figs[[2]] + theme(legend.position="none"),
+                               arrangeGrob(arrangeGrob(figs[[1]] + theme(axis.title.x = element_blank(),
+                                                                         axis.text.x = element_blank(),
+                                                                         legend.position="none"),
+                                                        figs[[2]] + theme(legend.position="none"),
+                                                       nrow = 2, 
+                                                       heights = heights),
+                                            arrangeGrob(figs[[3]] + theme(axis.title.x = element_blank(),
+                                                                          axis.text.x = element_blank(),
+                                                                          legend.position="none"),
                                                         figs[[4]] + theme(legend.position="none"),
-                                                        nrow = 2), # top = 'Testing'),
+                                                        nrow = 2, 
+                                                        heights = heights), # top = 'Testing'),
                                             ncol = 2, top = 'Ambient CO2'),
-                                arrangeGrob(arrangeGrob(figs.elevCO2[[1]] + theme(legend.position="none"),
-                                                        figs.elevCO2[[3]] + theme(legend.position="none"),
-                                                        nrow = 2), # top = 'Testing'),
-                                            arrangeGrob(figs.elevCO2[[2]] + theme(legend.position="none"),
+                                arrangeGrob(arrangeGrob(figs.elevCO2[[1]] + theme(axis.title.x = element_blank(),
+                                                                                  axis.text.x = element_blank(),
+                                                                                  legend.position="none"),
+                                                        figs.elevCO2[[2]] + theme(legend.position="none"),
+                                                        nrow = 2, 
+                                                        heights = heights), # top = 'Testing'),
+                                            arrangeGrob(figs.elevCO2[[3]] + theme(axis.title.x = element_blank(),
+                                                                                  axis.text.x = element_blank(),
+                                                                                  legend.position="none"),
                                                         figs.elevCO2[[4]] + theme(legend.position="none"),
-                                                        nrow = 2), # top = 'Testing'),
+                                                        nrow = 2,
+                                                        heights = heights), # top = 'Testing'),
                                             ncol = 2, top = 'Elevated CO2'),
                                 common_legend,
-                                ncol=4, widths=c(0.3, 5,5,1.2))
-
+                                ncol=4, widths=c(0.3, 5,5,1.5))
+ggsave('SoyFACE_UTR_model_biomass_graph.png', 
+       plot = combined_graph, 
+       width = 8,
+       height = 4,
+       units = "in",
+       dpi = 300
+)
 
 # day_result <- result[1210:1233,c('hour',
 #                                  'Leaf_substrate_carbon',
@@ -498,7 +499,7 @@ source('plot_partitioning.R')
 
 for (i in 2:4){
   lai.figs[[i-1]] <- plot_amb_elev_lai(results[[i]], results.elevCO2[[i]], years[[i]], LAI[[i]], LAI.elevCO2[[i]])
-  print(lai.figs[[i-1]])
+  # print(lai.figs[[i-1]])
 }
 library(grid)
 combined_graph.lai <- grid.arrange(arrangeGrob(textGrob(bquote("LAI"~(m^2~"/"~m^2)), rot = 90, gp=gpar(fontsize=12))),

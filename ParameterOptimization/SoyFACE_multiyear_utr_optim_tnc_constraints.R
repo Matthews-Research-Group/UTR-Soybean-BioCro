@@ -50,6 +50,7 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
                           (TrueValues$CummulativeLitter+0.1))/length(Pred$CummulativeLitter)
       
       cost <- cost + wts2$CummulativeLitter * err.litter
+      
       print(paste0('err.leaf: ', err.leaf))
       print(paste0('err.stem: ', err.stem))
       print(paste0('err.pod: ', err.pod))
@@ -60,11 +61,6 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       if(is.nan(cost)){
         cost.avg <- 1e10
         print('is nan')
-        break
-      }
-      else if(max(result$Leaf_substrate_carbon/result$Leaf > 2.0)){
-        # print(paste0('high substrate, cost: ', cost))
-        cost.avg <- 1e10
         break
       }
       

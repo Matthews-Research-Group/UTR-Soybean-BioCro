@@ -78,7 +78,7 @@ for (i in 1:length(year)) {   # Remember to change back
 }
 
 # Optimization
-wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 5, "Root" = 0.75, "CummulativeLitter" = 0.5)
+wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 2, "Root" = 0.75, "CummulativeLitter" = 0.5)
 
 # cost function
 cost_func <- function(x){
@@ -117,7 +117,7 @@ upperlim <- c(
   0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
   0.8, # 10: respiration factor [/]
   1.0, 1.0, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
-  0.01, 0.01, 0.01, # 14,15,16: senescence rate max, LSR
+  0.1, 0.01, 0.01, # 14,15,16: senescence rate max, LSR
   10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
   2.5, 2.5, 2.5,  # 20, 21, 22: senescence beta, LSR [DVI^-1]
   1.0,

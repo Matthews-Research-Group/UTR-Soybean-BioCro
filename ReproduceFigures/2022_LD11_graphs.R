@@ -52,7 +52,7 @@ full_soybean_ld11$differential_modules <- derivative_module_names
 full_soybean_ld11$ode_solver <- solver
 
 # Set UTR parameters
-fitted.utr.params <- optim_params_conversion(optim_params_short)
+fitted.utr.params <- optim_params_conversion(optim_params_short_SoyFACE)
 names(fitted.utr.params) <- arg_names
 parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters), 
                                                                  names(fitted.utr.params)), 
@@ -172,7 +172,7 @@ soybean_optsolver <- with(full_soybean_ld11, {partial_run_biocro(
   verbose = FALSE
 )})
 
-biocro_result <- soybean_optsolver(optim_params_conversion(optim_params_short))
+biocro_result <- soybean_optsolver(optim_params_conversion(optim_params_short_SoyFACE))
 biocro_result$Leaf_substrate_carbon <- biocro_result$Leaf_substrate_carbon / 6
 biocro_result$Leaf_structural_carbon <- biocro_result$Leaf_structural_carbon / 6
 biocro_result$Stem_substrate_carbon <- biocro_result$Stem_substrate_carbon / 6
@@ -513,18 +513,23 @@ Leaf.carb.data <- rbind(sim_leaf_tnc_by_mass[,c('time','TNC','Source')],
                         leaf.tnc.mean[, c('time','TNC','Source')],
                         leaf.tnc.long[, c('time', 'TNC', 'Source')] )
 
-ggplot(Leaf.carb.data, aes(time, TNC, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  scale_shape_manual(values=c(3, 18, 16)) +
-  scale_size_manual(values=c(1, 4, 0.5)) +
+
+ggplot(Leaf.carb.data, aes(time, TNC, group = Source)) +
+  geom_point(aes(shape=Source, color=Source, size=Source, alpha = Source))+
+  scale_shape_manual(values=c(17, 18, 16)) +
+  scale_size_manual(values=c(2, 4, 1)) +
+  scale_alpha_manual(values=c(0.6, 1, 0.4)) +
   theme_classic() +
-  theme(legend.position = c(0.85, 0.85),
+  theme(plot.title=element_text(size=size.title, hjust=0.5),
+        axis.text=element_text(size=size.axis),
+        axis.title=element_text(size=size.axislabel),
+        legend.position = c(0.85, 0.85),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
         plot.background = element_rect(fill = "transparent", colour = NA))+
   #scale_y_continuous(limits = c(0, 6), breaks = seq(0, 6, 1)) +
   scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), 
+  labs(title=element_blank(),
        x='Day of Year (2022)',
        y='Leaf Substrate C (mol glucose eq./Mg)')
 
@@ -543,10 +548,11 @@ Stem.carb.data <- rbind(sim_stem_tnc_by_mass[,c('time','TNC','Source')],
                         stem.tnc.mean[, c('time','TNC','Source')],
                         stem.tnc.long[, c('time', 'TNC', 'Source')] )
 
-ggplot(Stem.carb.data, aes(time, TNC, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  scale_shape_manual(values=c(3, 18, 16)) +
-  scale_size_manual(values=c(1, 4, 0.5)) +
+ggplot(Stem.carb.data, aes(time, TNC, group = Source)) +
+  geom_point(aes(shape=Source, color=Source, size=Source, alpha = Source))+
+  scale_shape_manual(values=c(17, 18, 16)) +
+  scale_size_manual(values=c(2, 4, 1)) +
+  scale_alpha_manual(values=c(0.6, 1, 0.4)) +
   theme_classic() +
   theme(plot.title=element_text(size=size.title, hjust=0.5),
         axis.text=element_text(size=size.axis),
@@ -557,11 +563,11 @@ ggplot(Stem.carb.data, aes(time, TNC, group = Source)) +
         plot.background = element_rect(fill = "transparent", colour = NA))+
   # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
   scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), 
+  labs(title=element_blank(),
        x='Day of Year (2022)',
        y='Stem Substrate C (mol glucose eq./Mg)')
 
-# diurnal changes of substrate C
+# Diurnal changes of substrate C
 # take out the last TNC data because in simulation the crop has stopped growing
 sim_leaf_tnc_by_mass$DOY <- as.integer(sim_leaf_tnc_by_mass$time)
 leaf.tnc.mean$DOY <- as.integer(leaf.tnc.mean$time)
@@ -570,7 +576,7 @@ sim_leaf_tnc_sampling_days <- sim_leaf_tnc_by_mass[ind.sampling.days,]
 
 date.list <- data.frame(
   DOY = c(186, 187, 209, 236, 258),
-  DOY_date = c('DOY 186: 07/05/22', 'DOY 187: 07/06/22', 'DOY 209: 07/28/22', 'DOY 236: 08/24/22', 'DOY 258: 09/15/22'))
+  DOY_date = c('DOY 186: 07/05', 'DOY 187: 07/06', 'DOY 209: 07/28', 'DOY 236: 08/24', 'DOY 258: 09/15'))
 
 sim_leaf_tnc_sampling_days <- left_join(sim_leaf_tnc_sampling_days, date.list, by = 'DOY')
 
@@ -582,7 +588,7 @@ leaf.tnc.sampling.days <- rbind(sim_leaf_tnc_sampling_days[,col.names],
 ggplot(leaf.tnc.sampling.days, aes(hour, TNC, group = Source)) + 
   geom_point(aes(shape=Source, color=Source, size=Source))+
   facet_wrap("DOY_date") +
-  scale_shape_manual(values=c(3, 18, 16)) +
+  scale_shape_manual(values=c(17, 18, 16)) +
   scale_size_manual(values=c(1, 2.5, 0.5)) +
   theme_classic() +
   theme(legend.position = c(0.85, 0.2),
@@ -602,9 +608,9 @@ sim_stem_tnc_sampling_days <- sim_stem_tnc_by_mass[ind.sampling.days,]
 
 date.list <- data.frame(
   DOY = c(186, 187, 209, 236, 258, 278),
-  DOY_date = c('DOY 186: 07/05/22', 'DOY 187: 07/06/22', 
-               'DOY 209: 07/28/22', 'DOY 236: 08/24/22', 
-               'DOY 258: 09/15/22', 'DOY 278: 10/05/22'))
+  DOY_date = c('DOY 186: 07/05', 'DOY 187: 07/06', 
+               'DOY 209: 07/28', 'DOY 236: 08/24', 
+               'DOY 258: 09/15', 'DOY 278: 10/05'))
 
 sim_stem_tnc_sampling_days <- left_join(sim_stem_tnc_sampling_days, date.list, by = 'DOY')
 
@@ -616,7 +622,7 @@ stem.tnc.sampling.days <- rbind(sim_stem_tnc_sampling_days[,col.names],
 ggplot(stem.tnc.sampling.days, aes(hour, TNC, group = Source)) + 
   geom_point(aes(shape=Source, color=Source, size=Source))+
   facet_wrap("DOY_date") +
-  scale_shape_manual(values=c(3, 18, 16)) +
+  scale_shape_manual(values=c(17, 18, 16)) +
   scale_size_manual(values=c(1, 2.5, 0.5)) +
   theme_classic() +
   theme(legend.position = c(0.85, 0.2),
@@ -633,13 +639,16 @@ leaf.tnc.sampling.days$Organ <- 'Leaf'
 stem.tnc.sampling.days$Organ <- 'Stem'
 
 TNC.sampling.days <- rbind(leaf.tnc.sampling.days, stem.tnc.sampling.days)
-TNC.sampling.days <- TNC.sampling.days[-which(TNC.sampling.days$DOY_date=='DOY 278: 10/05/22'),]
+TNC.sampling.days <- TNC.sampling.days[-which(TNC.sampling.days$DOY_date=='DOY 278: 10/05'),]
 ggplot(TNC.sampling.days, aes(hour, TNC, group = Source)) + 
-  geom_point(aes(shape=Source, color=Organ, size=Source))+
+  geom_point(data=subset(TNC.sampling.days, Source != 'Simulated'), aes(shape=Source, color=Organ, size=Source, alpha = Source))+
+  geom_line(data=subset(TNC.sampling.days, Source == 'Simulated' & Organ == 'Leaf'), aes(color=Organ))+
+  geom_line(data=subset(TNC.sampling.days, Source == 'Simulated' & Organ == 'Stem'), aes(color=Organ))+
   facet_wrap("DOY_date") +
-  scale_shape_manual(values=c(3, 18, 16)) +
-  scale_size_manual(values=c(1, 2.5, 0.5)) +
-  scale_color_manual(values = col.palette.muted)+
+  scale_shape_manual(values=c(17, 18)) +
+  scale_size_manual(values=c(2, 4)) +
+  scale_color_manual(values = c('#06D6A0', '#26547C'))+
+  scale_alpha_manual(values=c(0.5, 1)) +
   theme_classic() +
   theme(legend.position = c(0.84, 0.18),
         panel.grid.major = element_blank(),
@@ -651,62 +660,4 @@ ggplot(TNC.sampling.days, aes(hour, TNC, group = Source)) +
        x='Hour',
        y='Substrate C (mol glucose eq./Mg)')
 
-source('plot_partitioning.R')
-allocation_percentage_tall <- plot_partitioning(biocro_result, '2022')
-allocation_percentage_tall$Sunlight <- 'Measured'
-allocation_percentage_lowlight_tall <- plot_partitioning(biocro_result_lowlight, '2022')
-allocation_percentage_lowlight_tall$Sunlight <- 'Measured -20%'
-allocation_percentage_tall_combined <- rbind(allocation_percentage_tall, allocation_percentage_lowlight_tall)
 
-ggplot() + theme_classic() +
-  geom_point(data = allocation_percentage_tall_combined, aes(x = DOY, y = Percentage, color = Sunlight), size = 1) +
-  facet_wrap("Organ") +
-  theme(plot.title=element_text(size=size.title, hjust=0.5),
-        axis.text=element_text(size=8),
-        axis.title=element_text(size=8),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  scale_y_continuous(limits = c(-20, 140), breaks = seq(-20, 140, 20)) +
-  scale_x_continuous(breaks = seq(180,280,30))+
-  labs(title=element_blank(), x='Day of Year (2022)',y='Allocation %')
-
-# copied
-result <- biocro_result
-year <- '2022'
-canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), 
-                                FUN=sum) * 0.6 / 180.156e-3
-leaf_reuse_daily <- aggregate(result$Leaf_senescence_rate * 
-                                parameters$Leaf_senescence_reuse_factor,
-                              list(result$doy), FUN=sum)
-stem_reuse_daily <- aggregate(result$Stem_senescence_rate * 
-                                parameters$Stem_senescence_reuse_factor,
-                              list(result$doy), FUN=sum)
-root_reuse_daily <- aggregate(result$Root_senescence_rate * 
-                                parameters$Root_senescence_reuse_factor,
-                              list(result$doy), FUN=sum)
-net_subC_input <- data.frame(Group.1 = canopy_assim_daily$Group.1,
-                             x = canopy_assim_daily$x + 
-                               leaf_reuse_daily$x + 
-                               stem_reuse_daily$x + 
-                               root_reuse_daily$x)
-leaf_export_daily <- aggregate(result$substrate_transport_Leaf_to_Stem,
-                               list(result$doy), FUN=sum)
-pod_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Pod,
-                                  list(result$doy), FUN=sum) 
-root_allocation_daily <- aggregate(result$substrate_transport_Stem_to_Root,
-                                   list(result$doy), FUN=sum) + root_reuse_daily
-stem_allocation_daily <- leaf_export_daily + stem_reuse_daily - 
-  pod_allocation_daily - root_allocation_daily
-leaf_allocation_daily <- canopy_assim_daily + leaf_reuse_daily - leaf_export_daily
-
-allocation_percentage <- data.frame(DOY = leaf_export_daily$Group.1, 
-                                    Leaf = 100 * leaf_allocation_daily$x / net_subC_input$x,
-                                    Stem = 100 * stem_allocation_daily$x / net_subC_input$x,
-                                    Root = 100 * root_allocation_daily$x / net_subC_input$x,
-                                    Pod = 100 * pod_allocation_daily$x / net_subC_input$x)
-# To check if the sum is 100%
-# allocation_percentage$tot_percentage <- allocation_percentage$Leaf+
-#                                         allocation_percentage$Stem+
-#                                         allocation_percentage$Root+
-#                                         allocation_percentage$Pod

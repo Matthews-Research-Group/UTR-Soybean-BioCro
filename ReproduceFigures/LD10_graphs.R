@@ -72,6 +72,24 @@ loadRData <- function(fileName){
   get(ls()[ls() != "fileName"])
 }
 
+# A function to format decimal places
+specify_decimal <- function(x, k) trimws(format(round(x, k), nsmall=k))
+# A function to calculate msqe
+calculate_msqe <- function(year, biocro_organ_biomass_tall, field_organ_biomass_tall){
+  sampling.times <- unique(field_organ_biomass_tall$time)
+  # delete the first data because the error is 0 for both models
+  sampling.times <- sampling.times[-1]
+  field_organ_biomass_tall <- field_organ_biomass_tall[-which(field_organ_biomass_tall$time==field_organ_biomass_tall$time[1]),]
+  simulation.results <- biocro_organ_biomass_tall[which(biocro_organ_biomass_tall$time %in% sampling.times), ]
+  
+  merged.t <- merge(field_organ_biomass_tall, simulation.results, by = c("time", "Organ"), all = T)
+  # print(merged.t)
+  merged.t$diff = merged.t$biomass.x - merged.t$biomass.y
+  msqe <- mean((merged.t$diff)^2)
+  print(paste0(year,' msqe:' , specify_decimal(msqe, 2)))
+  # print(paste0(year,' rmsqe:' , specify_decimal(sqrt(msqe),2)))
+  # print(merged.t[ ,c('time','Organ', 'diff')])
+}
 for (i in 1:length(years)){
 # for (i in 1:1){
   ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld10_biomass_', years[i],'/soybean_ld10_biomass_', years[i], '.RData'))
@@ -167,6 +185,8 @@ for (i in 1:length(years)){
   full_soybean_ld10$parameters$timestep <- 1
   full_soybean_ld10$parameters$time_zone_offset <- NULL
   full_soybean_ld10$parameters$Rd <- 1.28
+  # $parameters$Leaf_senescence_beta <- full_soybean_ld10$parameters$Leaf_senescence_beta + 0.2
+  
   # full_soybean_ld10$parameters$Stem_utilization_km <- full_soybean_ld10$parameters$Stem_utilization_km * 1.1
   # full_soybean_ld10$parameters$Stem_senescence_beta <- 2.1
   # full_soybean_ld10$parameters$StomataWS <- 0.2
@@ -247,6 +267,8 @@ for (i in 1:length(years)){
   print(lai.figs[[i]])
   
   allocation.figs[[i]] <- plot_partitioning(result, years[i])
+  
+  calculate_msqe(years[[i]],biocro_organ_biomass_tall, field_organ_biomass_tall)
 }
 library(grid)
 library(gridExtra)

@@ -201,9 +201,9 @@ f <- ggplot() + theme_classic()
 f <- f + geom_point(data=r.all, aes(x=time, y=value,
                                     color=Organ,
                                     size = Source, shape = Source),
-                    show.legend = TRUE, stroke=0.5) +
+                    show.legend = FALSE, stroke=0.5) +
   scale_shape_manual(values = c(15, 16)) +
-  scale_size_manual(values = c(2, 0.5)) +
+  scale_size_manual(values = c(3, 0.5)) +
   scale_color_manual(values = col.palette.muted)
 
 # for leaf

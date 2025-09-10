@@ -54,6 +54,8 @@ figs <- list()
 lai.figs <- list()
 allocation.figs <- list()
 pod_change <- data.frame()
+leaf_change <- data.frame()
+root_change <- data.frame()
 pod_change_utilization_rate <- data.frame()
 
 loadRData <- function(fileName){
@@ -206,43 +208,12 @@ for (i in 1:length(years)){
   results[[i]] <- result
   figs[[i]] <- plot_biomass(result, ExpBiomass[[i]], years[i])
   
-  # # change the parameters by 10%
-  # for (j in 1:length(arg_names)){
-  #   lower_params <- full_soybean_ld11$parameters
-  #   lower_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 0.9
-  #   higher_params <- full_soybean_ld11$parameters
-  #   higher_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 1.1
-  #   
-  #   result_lower_param <- with(full_soybean_ld11, {run_biocro(
-  #     initial_values,
-  #     lower_params,
-  #     weather.afteremergence[[i]],
-  #     direct_modules,
-  #     differential_modules,
-  #     ode_solver
-  #   )})
-  #   lower_param_pod_change <- (max(result_lower_param$Pod)-max(result$Pod))/max(result$Pod)
-  #   
-  #   result_higher_param <- with(full_soybean_ld11, {run_biocro(
-  #     initial_values,
-  #     higher_params,
-  #     weather.afteremergence[[i]],
-  #     direct_modules,
-  #     differential_modules,
-  #     ode_solver
-  #   )})
-  #   higher_param_pod_change <- (max(result_higher_param$Pod)-max(result$Pod))/max(result$Pod)
-  #   pod_change[arg_names[j],paste0(years[i],' -10%')] <- paste0(round(lower_param_pod_change*100, 2), "%")
-  #   pod_change[arg_names[j],paste0(years[i],' +10%')] <- paste0(round(higher_param_pod_change*100, 2), "%")
-  # }
-  # print(pod_change)
-  # write.csv(pod_change, "LD11_pod_sensitivity_10percent.csv")
-  # 
-  for (j in c(1:4,12:14)){
+  # change the parameters by 10%
+  for (j in 1:length(arg_names)){
     lower_params <- full_soybean_ld11$parameters
-    lower_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 0.5
+    lower_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 0.9
     higher_params <- full_soybean_ld11$parameters
-    higher_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 2
+    higher_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 1.1
 
     result_lower_param <- with(full_soybean_ld11, {run_biocro(
       initial_values,
@@ -252,7 +223,6 @@ for (i in 1:length(years)){
       differential_modules,
       ode_solver
     )})
-    lower_param_pod_change <- (max(result_lower_param$Pod)-max(result$Pod))/max(result$Pod)
 
     result_higher_param <- with(full_soybean_ld11, {run_biocro(
       initial_values,
@@ -262,10 +232,62 @@ for (i in 1:length(years)){
       differential_modules,
       ode_solver
     )})
+    lower_param_pod_change <- (max(result_lower_param$Pod)-max(result$Pod))/max(result$Pod)
     higher_param_pod_change <- (max(result_higher_param$Pod)-max(result$Pod))/max(result$Pod)
-    pod_change_utilization_rate[arg_names[j],paste0(years[i],' x0.01')] <- paste0(round(lower_param_pod_change*100, 2), "%")
-    pod_change_utilization_rate[arg_names[j],paste0(years[i],' x100')] <- paste0(round(higher_param_pod_change*100, 2), "%")
+    pod_change[arg_names[j],paste0(years[i],' -10%')] <- paste0(round(lower_param_pod_change*100, 2), "%")
+    pod_change[arg_names[j],paste0(years[i],' +10%')] <- paste0(round(higher_param_pod_change*100, 2), "%")
+    
+    lower_param_leaf_change <- (max(result_lower_param$Leaf)-max(result$Leaf))/max(result$Leaf)
+    higher_param_leaf_change <- (max(result_higher_param$Leaf)-max(result$Leaf))/max(result$Leaf)
+    leaf_change[arg_names[j],paste0(years[i],' -10%')] <- paste0(round(lower_param_leaf_change*100, 2), "%")
+    leaf_change[arg_names[j],paste0(years[i],' +10%')] <- paste0(round(higher_param_leaf_change*100, 2), "%")
+    
+    lower_param_root_change <- (max(result_lower_param$Root)-max(result$Root))/max(result$Root)
+    higher_param_root_change <- (max(result_higher_param$Root)-max(result$Root))/max(result$Root)
+    root_change[arg_names[j],paste0(years[i],' -10%')] <- paste0(round(lower_param_root_change*100, 2), "%")
+    root_change[arg_names[j],paste0(years[i],' +10%')] <- paste0(round(higher_param_root_change*100, 2), "%")
   }
-  print(pod_change_utilization_rate)
-  write.csv(pod_change_utilization_rate, "LD11_pod_sensitivity_10000percent.csv")
+  print(pod_change)
+  print(leaf_change)
+  write.csv(pod_change, "LD11_pod_sensitivity_10percent_0307.csv")
+  write.csv(leaf_change, "LD11_leaf_sensitivity_10percent_0307.csv")
+  write.csv(root_change, "LD11_root_sensitivity_10percent_0307.csv")
+
+  # for (j in c(1:4,12:14)){
+  #   lower_params <- full_soybean_ld11$parameters
+  #   lower_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 0.5
+  #   higher_params <- full_soybean_ld11$parameters
+  #   higher_params[[arg_names[j]]] <- full_soybean_ld11$parameters[[arg_names[j]]] * 2
+  # 
+  #   result_lower_param <- with(full_soybean_ld11, {run_biocro(
+  #     initial_values,
+  #     lower_params,
+  #     weather.afteremergence[[i]],
+  #     direct_modules,
+  #     differential_modules,
+  #     ode_solver
+  #   )})
+  # 
+  #   result_higher_param <- with(full_soybean_ld11, {run_biocro(
+  #     initial_values,
+  #     higher_params,
+  #     weather.afteremergence[[i]],
+  #     direct_modules,
+  #     differential_modules,
+  #     ode_solver
+  #   )})
+  #   lower_param_pod_change <- (max(result_lower_param$Pod)-max(result$Pod))/max(result$Pod)
+  #   lower_param_leaf_change <- (max(result_lower_param$Leaf)-max(result$Leaf))/max(result$Leaf)
+  #   
+  #   higher_param_pod_change <- (max(result_higher_param$Pod)-max(result$Pod))/max(result$Pod)
+  #   higher_param_leaf_change <- (max(result_higher_param$Leaf)-max(result$Leaf))/max(result$Leaf)
+  #   
+  #   pod_change_utilization_rate[arg_names[j],paste0(years[i],' x0.01')] <- paste0(round(lower_param_pod_change*100, 2), "%")
+  #   pod_change_utilization_rate[arg_names[j],paste0(years[i],' x100')] <- paste0(round(higher_param_pod_change*100, 2), "%")
+  #   
+  #   leaf_change_utilization_rate[arg_names[j],paste0(years[i],' x0.01')] <- paste0(round(lower_param_pod_change*100, 2), "%")
+  #   leaf_change_utilization_rate[arg_names[j],paste0(years[i],' x100')] <- paste0(round(higher_param_pod_change*100, 2), "%")
+  # }
+  # print(pod_change_utilization_rate)
+  # write.csv(pod_change_utilization_rate, "LD11_pod_sensitivity_10000percent.csv")
 }

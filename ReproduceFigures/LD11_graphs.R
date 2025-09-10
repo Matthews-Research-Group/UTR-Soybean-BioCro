@@ -60,13 +60,30 @@ loadRData <- function(fileName){
   load(fileName)
   get(ls()[ls() != "fileName"])
 }
+# A function to format decimal places
+specify_decimal <- function(x, k) trimws(format(round(x, k), nsmall=k))
+# A function to calculate msqe
+calculate_msqe <- function(year, biocro_organ_biomass_tall, field_organ_biomass_tall){
+  sampling.times <- unique(field_organ_biomass_tall$time)
+  # delete the first data because the error is 0 for both models
+  sampling.times <- sampling.times[-1]
+  field_organ_biomass_tall <- field_organ_biomass_tall[-which(field_organ_biomass_tall$time==field_organ_biomass_tall$time[1]),]
+  simulation.results <- biocro_organ_biomass_tall[which(biocro_organ_biomass_tall$time %in% sampling.times), ]
+  
+  merged.t <- merge(field_organ_biomass_tall, simulation.results, by = c("time", "Organ"), all = T)
+  # print(merged.t)
+  merged.t$diff = merged.t$biomass.x - merged.t$biomass.y
+  msqe <- mean((merged.t$diff)^2)
+  print(paste0(year,' msqe:' , specify_decimal(msqe, 2)))
+  # print(paste0(year,' rmsqe:' , specify_decimal(sqrt(msqe),2)))
+  # print(merged.t[ ,c('time','Organ', 'diff')])
+}
 
 for (i in 1:length(years)){
 # for (i in 1:1){
   ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld11_biomass_', years[i],'/soybean_ld11_biomass_', years[i], '.RData'))
   weather <- loadRData(paste0('../../energy-farm-biocro/weather_', years[i], '/weather', years[i], '_hourly.RData'))
   full_soybean_ld11$parameters$Catm <- Catms[i]
-  
   # update initial values
   sub_frac <- 0.1           # substrate_fraction
   str_frac <- 1 - sub_frac  # structural_fraction
@@ -189,7 +206,7 @@ for (i in 1:length(years)){
   col.palette.muted <- c( "#117733", "#999933", "#332288", "#882255")
   
   figs[[i]] <- ggplot() + theme_classic() +
-    geom_line(data = biocro_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), linewidth = 1) +
+    geom_line(data = biocro_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), linewidth = 1, alpha=0.8) +
     geom_point(data = field_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), shape = 15, size = 3)+
     theme(plot.title=element_text(size=size.title, hjust=0.5),
           axis.text=element_text(size=size.axis),
@@ -236,6 +253,8 @@ for (i in 1:length(years)){
   print(lai.figs[[i]])
   
   allocation.figs[[i]] <- plot_partitioning(result, years[i])
+  
+  calculate_msqe(years[[i]],biocro_organ_biomass_tall, field_organ_biomass_tall)
 }
 library(grid)
 library(gridExtra)
@@ -255,6 +274,7 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
                                common_legend, 
                                ncol=3, widths=c(0.3, 5, 1.1))
 
+common_legend <- g_legend(allocation.figs[[1]])
 combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
                                           arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
                                                                   allocation.figs[[2]] + theme(legend.position="none"),
@@ -326,7 +346,7 @@ plot <- ggplot(layer_assim, aes(x = layer_number, y = layer_assimilation)) +
   geom_line() +
   facet_wrap(~ DOY, nrow = 1, scales = "fixed") +
   labs(# title = "Layer Assimilation by Layer Number on Different DOYs",
-       x = "Layer Number",
+       x = "Layer Number (Top:1 - Bottom: 9)",
        y = "Layer Assimilation (micromol / s)") +
   theme_minimal() +
   theme(
@@ -352,3 +372,51 @@ print(plot)
 #        Leaf+Stem+Root+Pod~DVI,
 #        ylab = "Substrate C concentration",
 #        auto=TRUE)
+
+sap_flow_measured <- read.csv('sapflow_sensor4_ring1_2023.csv')
+
+sap_flow_measured$time <- as.POSIXct(sap_flow_measured$TIMESTAMP, 
+                                     tryFormats = c("%d/%m/%Y %H:%M", 
+                                                    "%d/%m/%y %H:%M",
+                                                    "%m/%d/%y %H:%M",
+                                                    "%m/%d/%Y %H:%M"),
+                                     tz="UTC")
+
+sap_flow_measured$time <- sap_flow_measured$JDAY+ 
+  as.integer(sap_flow_measured$JHM/100)/24+
+  (sap_flow_measured$JHM%%100)/60/24
+
+# sap_flow_measured <- sap_flow_measured[which(sap_flow_measured$time>224 &
+#                                                sap_flow_measured$time < 240), ]
+
+sap_flow_measured$flow <- sap_flow_measured$Flow_4 
+
+measured_sap_flow_fig <- xyplot(data=sap_flow_measured, Flow_4~time, 
+                                type='l', col = "green", alpha = 0.5)
+r <- results[[3]]
+r <- soybean_biocro_result
+library(latticeExtra)
+
+sap_flow_simulated_fig <- xyplot(data=r[which((r$time > sap_flow_measured$time[1]) & 
+                      (r$time < sap_flow_measured$time[length(sap_flow_measured$time)])),], 
+       type="l",canopy_transpiration_rate*100/29.5~time)
+
+precip_fig <- xyplot(data=r[which((r$time > sap_flow_measured$time[1]) & 
+                                   (r$time < sap_flow_measured$time[length(sap_flow_measured$time)])),], 
+                                 type="p",precip~time)
+
+rh_fig <- xyplot(data=r[which((r$time > sap_flow_measured$time[1]) & 
+                                    (r$time < sap_flow_measured$time[length(sap_flow_measured$time)])),], 
+                     type="l",rh~time)
+solar_fig <- xyplot(data=r[which((r$time > sap_flow_measured$time[1]) & 
+                                (r$time < sap_flow_measured$time[length(sap_flow_measured$time)])),], 
+                 type="l",solar/100~time,
+                 col='red')
+
+measured_sap_flow_fig + 
+  as.layer(sap_flow_simulated_fig) # + 
+#  as.layer(solar_fig)
+
+xyplot(data=r, canopy_transpiration_rate*100/29.5 ~ time, type='l', ylim = c(0,30)) +
+  as.layer(measured_sap_flow_fig)
+
