@@ -22,6 +22,10 @@ load('../../energy-farm-biocro/soybean_ld11_biomass_2022/soybean_ld11_biomass_20
 load('../../energy-farm-biocro/weather_2022/weather2022_hourly.RData')
 load('../Data/Weather_data/weather2022supplement.RData')
 
+# change time
+weather2022_hourly$time <- weather2022_hourly$doy + weather2022_hourly$hour/24
+soybean_ld11_biomass_2022$time <- soybean_ld11_biomass_2022$doy + soybean_ld11_biomass_2022$hour/24
+
 load('../Data/Soybean-BioCro_Parameters/full_soybean_ld11.RData') 
 leaf.carbs <- read.csv('../Data/2022_Carb_data/LD11_Leaf_Carbs.csv')
 TNC.data <- read.csv('../Data/2022_Carb_data/2022_LD11_TNC_new.csv')
@@ -159,7 +163,7 @@ full_soybean_ld11$parameters$timestep <- 1
 full_soybean_ld11$parameters$time_zone_offset <- NULL
 # optim_params_short[19] = 1.6
 full_soybean_ld11$parameters$Rd = 1.28
-
+full_soybean_ld11$parameters$par_energy_content = 0.219
 # Run the soybean simulation starting at noon on June 17 (DOY 168)
 soybean_optsolver <- with(full_soybean_ld11, {partial_run_biocro(
   initial_values,
@@ -513,12 +517,15 @@ Leaf.carb.data <- rbind(sim_leaf_tnc_by_mass[,c('time','TNC','Source')],
                         leaf.tnc.mean[, c('time','TNC','Source')],
                         leaf.tnc.long[, c('time', 'TNC', 'Source')] )
 
+# Added to convert TNC from mol glucose eq./Mg to to mol C eq./kg
+Leaf.carb.data$TNC <- Leaf.carb.data$TNC * 6 / 1000
 
 ggplot(Leaf.carb.data, aes(time, TNC, group = Source)) +
   geom_point(aes(shape=Source, color=Source, size=Source, alpha = Source))+
-  scale_shape_manual(values=c(17, 18, 16)) +
-  scale_size_manual(values=c(2, 4, 1)) +
+  scale_shape_manual(values=c(8, 18, 16)) +
+  scale_size_manual(values=c(1.2, 4, 1)) +
   scale_alpha_manual(values=c(0.6, 1, 0.4)) +
+  scale_color_manual(values=c('#D81B60','#117733','grey')) +
   theme_classic() +
   theme(plot.title=element_text(size=size.title, hjust=0.5),
         axis.text=element_text(size=size.axis),
@@ -527,11 +534,12 @@ ggplot(Leaf.carb.data, aes(time, TNC, group = Source)) +
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
         plot.background = element_rect(fill = "transparent", colour = NA))+
-  #scale_y_continuous(limits = c(0, 6), breaks = seq(0, 6, 1)) +
+  scale_y_continuous(limits=c(0, 10), n.breaks=6)+
   scale_x_continuous(breaks = seq(180,280,30))+
   labs(title=element_blank(),
        x='Day of Year (2022)',
-       y='Leaf Substrate C (mol glucose eq./Mg)')
+       y='Leaf Substrate C (mol C / kg)')
+       # y='Leaf Substrate C (mol glucose eq./Mg)')
 
 # Stem
 sim_stem_tnc_by_mass <- sim_substrate_C_by_mass[, c('time','Stem','hour')]
@@ -547,12 +555,16 @@ stem.tnc.long$Source <- 'Measured (individual)'
 Stem.carb.data <- rbind(sim_stem_tnc_by_mass[,c('time','TNC','Source')], 
                         stem.tnc.mean[, c('time','TNC','Source')],
                         stem.tnc.long[, c('time', 'TNC', 'Source')] )
+# Added to convert TNC from mol glucose eq./Mg back to mol C eq./Mg
+Stem.carb.data$TNC <- Stem.carb.data$TNC * 6 / 1000
 
 ggplot(Stem.carb.data, aes(time, TNC, group = Source)) +
   geom_point(aes(shape=Source, color=Source, size=Source, alpha = Source))+
-  scale_shape_manual(values=c(17, 18, 16)) +
-  scale_size_manual(values=c(2, 4, 1)) +
+  scale_shape_manual(values=c(8, 18, 16)) +
+  scale_size_manual(values=c(1, 4, 1)) +
   scale_alpha_manual(values=c(0.6, 1, 0.4)) +
+  scale_color_manual(values=c('#D81B60','#999933','grey')) +
+  scale_y_continuous(limits=c(0, 10), n.breaks=6)+
   theme_classic() +
   theme(plot.title=element_text(size=size.title, hjust=0.5),
         axis.text=element_text(size=size.axis),
@@ -565,7 +577,8 @@ ggplot(Stem.carb.data, aes(time, TNC, group = Source)) +
   scale_x_continuous(breaks = seq(180,280,30))+
   labs(title=element_blank(),
        x='Day of Year (2022)',
-       y='Stem Substrate C (mol glucose eq./Mg)')
+       y='Stem Substrate C (mol C / kg)')
+       # y='Stem Substrate C (mol glucose eq./Mg)')
 
 # Diurnal changes of substrate C
 # take out the last TNC data because in simulation the crop has stopped growing
@@ -639,15 +652,17 @@ leaf.tnc.sampling.days$Organ <- 'Leaf'
 stem.tnc.sampling.days$Organ <- 'Stem'
 
 TNC.sampling.days <- rbind(leaf.tnc.sampling.days, stem.tnc.sampling.days)
+# Convert from mol glucose eq./Mg to mol C / kg
+TNC.sampling.days$TNC <- TNC.sampling.days$TNC * 6 / 1000
 TNC.sampling.days <- TNC.sampling.days[-which(TNC.sampling.days$DOY_date=='DOY 278: 10/05'),]
 ggplot(TNC.sampling.days, aes(hour, TNC, group = Source)) + 
   geom_point(data=subset(TNC.sampling.days, Source != 'Simulated'), aes(shape=Source, color=Organ, size=Source, alpha = Source))+
   geom_line(data=subset(TNC.sampling.days, Source == 'Simulated' & Organ == 'Leaf'), aes(color=Organ))+
   geom_line(data=subset(TNC.sampling.days, Source == 'Simulated' & Organ == 'Stem'), aes(color=Organ))+
   facet_wrap("DOY_date") +
-  scale_shape_manual(values=c(17, 18)) +
+  scale_shape_manual(values=c(8, 18)) +
   scale_size_manual(values=c(2, 4)) +
-  scale_color_manual(values = c('#06D6A0', '#26547C'))+
+  scale_color_manual(values = c('#117733', '#999933'))+
   scale_alpha_manual(values=c(0.5, 1)) +
   theme_classic() +
   theme(legend.position = c(0.84, 0.18),
@@ -658,6 +673,74 @@ ggplot(TNC.sampling.days, aes(hour, TNC, group = Source)) +
   scale_x_continuous(breaks = seq(0,24,6))+
   labs(title=element_blank(), 
        x='Hour',
-       y='Substrate C (mol glucose eq./Mg)')
+       y='Substrate C (mol C / kg)')
+       # y='Substrate C (mol glucose eq./Mg)')
 
+r <- biocro_result
+utilization_df <- with(r, data.frame(
+  time = time,
+  Leaf = Leaf_utilization_rate / Leaf_structural_carbon,
+  Stem = Stem_utilization_rate / Stem_structural_carbon,
+  Root = Root_utilization_rate / Root_structural_carbon,
+  Pod = Pod_utilization_rate / Pod_structural_carbon,
+  Leaf_substrate_concentration = Leaf_substrate_carbon/Leaf_structural_carbon,
+  Stem_substrate_concentration = Stem_substrate_carbon/Leaf_structural_carbon,
+  Root_substrate_concentration = Root_substrate_carbon/Leaf_structural_carbon,
+  Pod_substrate_concentration = Pod_substrate_carbon/Leaf_structural_carbon))
+
+util_transport_df <- with(r, data.frame(
+  time = time,
+  Assimilation = canopy_assimilation_rate,
+  Leaf_util = Leaf_utilization_rate,
+  Stem_util = Stem_utilization_rate,
+  Root_util = Root_utilization_rate,
+  Pod_util = Pod_utilization_rate,
+  Leaf_to_Stem = substrate_transport_Leaf_to_Stem,
+  Stem_to_Root = substrate_transport_Stem_to_Root,
+  Stem_to_Pod = substrate_transport_Stem_to_Pod
+  ))
+
+
+library(latticeExtra)
+# Create two separate plots
+# Define colors for each variable
+my_colors <- c("#117733", "#999933", "#882255", "#332288")
+
+# Create two separate plots
+utl_plot1 <- xyplot(Leaf + Stem ~ time, data = utilization_df, 
+                auto.key = list(space = "top", columns = 2),
+                cex = 0.5,
+                ylab = "Leaf & Stem Utilization (mol substrate C / structural C)",
+                par.settings = list(superpose.symbol = list(col = my_colors[c(1, 2)])))
+
+substrateC_plot1 <- xyplot(Leaf_substrate_concentration + Stem_substrate_concentration ~ time, data = utilization_df, 
+                    auto.key = list(space = "top", columns = 2),
+                    cex = 0.5,
+                    type = 'l',
+                    ylab = "Leaf and Stem substrate concentration",
+                    par.settings = list(superpose.line = list(col = my_colors[c(1, 2)])))
+
+transport_plot1 <- xyplot(Leaf_to_Stem ~ time, data = util_transport_df, 
+                           auto.key = list(space = "top", columns = 2),
+                           cex = 0.5,
+                           type = 'l',
+                           ylab = "Leaf and Stem substrate concentration")
+
+doubleYScale(utl_plot1, substrateC_plot1, add.ylab2 = TRUE)
+
+utl_plot2 <- xyplot(Root + Pod ~ time, data = utilization_df,
+                auto.key = list(space = "top", columns = 2),
+                cex = 0.5,
+                ylab = "Root & Pod",
+                par.settings = list(superpose.line = list(col = my_colors[c(3, 4)])))
+
+leaf_dynamics_df <- xyplot(data=util_transport_df,
+                           Assimilation + Leaf_util + Leaf_to_Stem ~ time, 
+                           auto.key=TRUE,
+                           ylab="Utilization / Tranport Rate (mol C / m^2 / hr)")
+
+
+  
+# Combine them with doubleYScale
+# doubleYScale(plot1, plot2, add.ylab2 = TRUE)
 

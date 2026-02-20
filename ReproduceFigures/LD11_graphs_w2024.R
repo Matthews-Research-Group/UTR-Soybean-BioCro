@@ -1,4 +1,3 @@
-library(BioCroWater)
 # Clear the workspace
 rm(list=ls())
 
@@ -8,8 +7,8 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 # Source files
 source('../ParameterOptimization/soybean_parameter_expansion.R')
 co2_opt = '_tbd_'
-years <- c('2021', '2022', '2023')
-Catms <- c(414.7, 417.2, 419.3) # from NOAA
+years <- c('2021', '2022', '2023', '2024')
+Catms <- c(414.7, 417.2, 419.3, 422.8) # from NOAA
 source('../Data/Soybean-BioCro_Parameters/soybean_parameters.R')
 source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 source('../Data/Soybean-BioCro_Parameters/soybean_modules.R')
@@ -51,6 +50,7 @@ if (update_parameters){
 ExpBiomass <- list()
 weather.afteremergence <- list()
 results <- list()
+results_235 <- list()
 figs <- list()
 lai.figs <- list()
 allocation.figs <- list()
@@ -82,9 +82,9 @@ calculate_msqe <- function(year, biocro_organ_biomass_tall, field_organ_biomass_
 for (i in 1:length(years)){
 # for (i in 1:1){
   ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld11_biomass_', years[i],'/soybean_ld11_biomass_', years[i], '.RData'))
-  ExpBiomass[[i]]$time <- ExpBiomass[[i]]$doy + ExpBiomass[[i]]$hour/24
+  ExpBiomass[[i]]$time <- ExpBiomass[[i]]$doy+ExpBiomass[[i]]$hour/24
   weather <- loadRData(paste0('../../energy-farm-biocro/weather_', years[i], '/weather', years[i], '_hourly.RData'))
-  weather$time <- weather$doy + weather$hour/24
+  weather$time <- weather$doy + weather$hour / 24
   full_soybean_ld11$parameters$Catm <- Catms[i]
   # update initial values
   sub_frac <- 0.1           # substrate_fraction
@@ -175,11 +175,15 @@ for (i in 1:length(years)){
   full_soybean_ld11$parameters$timestep <- 1
   full_soybean_ld11$parameters$time_zone_offset <- NULL
   full_soybean_ld11$parameters$Rd <- 1.28
+  # full_soybean_ld11$parameters$electrons_per_carboxylation <- 4.5
+  # full_soybean_ld11$parameters$electrons_per_oxygenation <- 5.25
   # full_soybean_ld11$parameters$Stem_utilization_km <- full_soybean_ld11$parameters$Stem_utilization_km * 1.1
   # full_soybean_ld11$parameters$Stem_senescence_beta <- 2.1
   # full_soybean_ld11$parameters$StomataWS <- 0.2
   # Set soil water module
   # source('set_modules_for_soil_water.R')
+  full_soybean_ld11$parameters$par_energy_content <- 0.235
+  print(full_soybean_ld11$parameters$par_energy_content)
   result <- with(full_soybean_ld11, {run_biocro(
     initial_values,
     parameters,
@@ -188,6 +192,7 @@ for (i in 1:length(years)){
     differential_modules,
     ode_solver
   )})
+  
   results[[i]] <- result
   
   # Save plot into the list
@@ -218,7 +223,7 @@ for (i in 1:length(years)){
           panel.grid.minor = element_blank(), 
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
-    scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
+    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
     scale_x_continuous(breaks = seq(180,280,30))+
     labs(title=element_blank(), 
          x=paste0('Day of Year (', years[i], ')'), 
@@ -272,7 +277,8 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
                                arrangeGrob(arrangeGrob(figs[[1]] + theme(legend.position="none"), top = "Testing"),
                                            arrangeGrob(figs[[2]] + theme(legend.position="none"), top = "Testing"),
                                            arrangeGrob(figs[[3]] + theme(legend.position="none"), top = "Testing"),
-                                           ncol = 3, top = "LD11 at Energy Farm (Ambient CO2)"),
+                                           arrangeGrob(figs[[4]] + theme(legend.position="none"), top = "Testing"),
+                                           ncol = 4, top = "LD11 at Energy Farm (Ambient CO2)"),
                                common_legend, 
                                ncol=3, widths=c(0.3, 5, 1.1))
 
@@ -295,13 +301,13 @@ combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', r
 #                                                       ncol = 1),
 #                                           ncol=2, widths=c(0.3, 5))
 
-combined_graph.lai <- grid.arrange(arrangeGrob(textGrob('LAI', rot = 90, gp=gpar(fontsize=12))),
-                                          arrangeGrob(arrangeGrob(lai.figs[[1]] + theme(legend.position="none"),
-                                                                  lai.figs[[2]] + theme(legend.position="none"),
-                                                                  lai.figs[[3]] + theme(legend.position="none"),
-                                                                  ncol = 3),
-                                                      ncol = 1),
-                                          ncol=2, widths=c(0.3, 5))
+# combined_graph.lai <- grid.arrange(arrangeGrob(textGrob('LAI', rot = 90, gp=gpar(fontsize=12))),
+#                                           arrangeGrob(arrangeGrob(lai.figs[[1]] + theme(legend.position="none"),
+#                                                                   lai.figs[[2]] + theme(legend.position="none"),
+#                                                                   lai.figs[[3]] + theme(legend.position="none"),
+#                                                                   ncol = 3),
+#                                                       ncol = 1),
+#                                           ncol=2, widths=c(0.3, 5))
 
 # for(i in 1:3){
 #   print(xyplot(data=weather.afteremergence[[i]], temp~time,
@@ -319,106 +325,31 @@ combined_graph.lai <- grid.arrange(arrangeGrob(textGrob('LAI', rot = 90, gp=gpar
 #                }))
 # }
 
-r <- results[[2]]
-times <- c(186.5, 209.5, 236.5, 258.5)
-doys <- c(186, 209, 236, 258)
-layer_assim <- data.frame(DOY=numeric(),
-                          layer_number=numeric(),
-                          layer_assimilation=numeric())
-for (t in 1:length(times)){
-  time <- times[t]
-  doy <- doys[t]
-  idx <- which(r$time==time)
-  for (i in 1:9){
-    assim <- (r[idx, paste0('sunlit_Assim_layer_', i)]*
-              r[idx, paste0('sunlit_fraction_layer_', i)] +
-              r[idx, paste0('shaded_Assim_layer_', i)]*
-              r[idx, paste0('shaded_fraction_layer_', i)]) *
-      r[idx, 'lai'] /10 
-    new_row <- data.frame(
-      DOY = doy,
-      layer_number = i,
-      layer_assimilation = assim)
-    layer_assim <- rbind(layer_assim, new_row)
-  }
-}
+library(ggplot2)
+library(dplyr)
 
-plot <- ggplot(layer_assim, aes(x = layer_number, y = layer_assimilation)) +
-  geom_point() +
-  geom_line() +
-  facet_wrap(~ DOY, nrow = 1, scales = "fixed") +
-  labs(# title = "Layer Assimilation by Layer Number on Different DOYs",
-       x = "Layer Number (Top:1 - Bottom: 9)",
-       y = "Layer Assimilation (micromol / s)") +
-  theme_minimal() +
-  theme(
-    strip.background = element_rect(fill = "lightgrey"),
-    strip.text = element_text(face = "bold"),
-    panel.grid.minor.x = element_blank(),
-    panel.grid.major.x = element_line(color = "grey90")
+# Combine all four data frames with year labels and calculate cumulative precip
+combined_data <- bind_rows(
+  weather.afteremergence[[1]] %>% mutate(Year = year[1]),
+  weather.afteremergence[[2]] %>% mutate(Year = year[2]),
+  weather.afteremergence[[3]] %>% mutate(Year = year[3]),
+  weather.afteremergence[[4]] %>% mutate(Year = year[4])
+) %>%
+  group_by(Year) %>%
+  arrange(time) %>%
+  mutate(cumulative_precip = cumsum(precip)) %>%
+  ungroup()
+
+# Create the plot
+ggplot(combined_data, aes(x = time, y = cumulative_precip, color = factor(Year))) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Cumulative Precipitation vs Time Across Years",
+    x = "Time",
+    y = "Cumulative Precipitation",
+    color = "Year"
   ) +
-  scale_x_continuous(breaks = unique(layer_assim$layer_number), 
-                     labels = as.integer(unique(layer_assim$layer_number)))
-
-# Display the plot
-print(plot)
-
-# substrate_carbon_concentrations <- data.frame(
-#   time = result$time,
-#   DVI = result$DVI,
-#   Leaf = 0.3 * result$Leaf_substrate_carbon/result$Leaf,
-#   Stem = 0.3 * result$Stem_substrate_carbon/result$Stem,
-#   Root = 0.3 * result$Root_substrate_carbon/result$Root,
-#   Pod = 0.3 * result$Pod_substrate_carbon/result$Pod)
-# xyplot(data=substrate_carbon_concentrations,
-#        Leaf+Stem+Root+Pod~DVI,
-#        ylab = "Substrate C concentration",
-#        auto=TRUE)
-
-sap_flow_measured <- read.csv('sapflow_sensor4_ring1_2023.csv')
-
-sap_flow_measured$time <- as.POSIXct(sap_flow_measured$TIMESTAMP, 
-                                     tryFormats = c("%d/%m/%Y %H:%M", 
-                                                    "%d/%m/%y %H:%M",
-                                                    "%m/%d/%y %H:%M",
-                                                    "%m/%d/%Y %H:%M"),
-                                     tz="UTC")
-
-sap_flow_measured$time <- sap_flow_measured$JDAY+ 
-  as.integer(sap_flow_measured$JHM/100)/24+
-  (sap_flow_measured$JHM%%100)/60/24
-
-# sap_flow_measured <- sap_flow_measured[which(sap_flow_measured$time>224 &
-#                                                sap_flow_measured$time < 240), ]
-
-sap_flow_measured$flow <- sap_flow_measured$Flow_4 
-
-measured_sap_flow_fig <- xyplot(data=sap_flow_measured, Flow_4~time, 
-                                type='l', col = "green", alpha = 0.5)
-r <- results[[3]]
-r <- soybean_biocro_result
-library(latticeExtra)
-
-sap_flow_simulated_fig <- xyplot(data=r[which((r$time > sap_flow_measured$time[1]) & 
-                      (r$time < sap_flow_measured$time[length(sap_flow_measured$time)])),], 
-       type="l",canopy_transpiration_rate*100/29.5~time)
-
-precip_fig <- xyplot(data=r[which((r$time > sap_flow_measured$time[1]) & 
-                                   (r$time < sap_flow_measured$time[length(sap_flow_measured$time)])),], 
-                                 type="p",precip~time)
-
-rh_fig <- xyplot(data=r[which((r$time > sap_flow_measured$time[1]) & 
-                                    (r$time < sap_flow_measured$time[length(sap_flow_measured$time)])),], 
-                     type="l",rh~time)
-solar_fig <- xyplot(data=r[which((r$time > sap_flow_measured$time[1]) & 
-                                (r$time < sap_flow_measured$time[length(sap_flow_measured$time)])),], 
-                 type="l",solar/100~time,
-                 col='red')
-
-measured_sap_flow_fig + 
-  as.layer(sap_flow_simulated_fig) # + 
-#  as.layer(solar_fig)
-
-xyplot(data=r, canopy_transpiration_rate*100/29.5 ~ time, type='l', ylim = c(0,30)) +
-  as.layer(measured_sap_flow_fig)
+  theme_minimal() +
+  theme(legend.position = "right")
 

@@ -22,13 +22,13 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       RootValues <- RootVals[[i]]
       # Predicted values at DOY equal the DOYs in experimental data
       Pred <- data.frame("DOY"=TrueValues$DOY)
-      doy_inds <- which(result$time %in% TrueValues$DOY)
+      doy_inds <- which(result$fractional_doy %in% TrueValues$DOY) #time for older BioCro or fractional_doy for new BioCro
       Pred$Stem <- result$Stem[doy_inds]
       Pred$Leaf <- result$Leaf[doy_inds]
       Pred$Pod <- result$Pod[doy_inds]
       
       Pred.Root <- data.frame("DOY"=RootValues$DOY)
-      doy_inds.Root <- which(result$time %in% RootValues$DOY)
+      doy_inds.Root <- which(result$fractional_doy %in% RootValues$DOY) #time for older BioCro or fractional_doy for new BioCro
       Pred.Root$Vals <- result$Root[doy_inds.Root]
       
       cf <- optim_params_short[1]

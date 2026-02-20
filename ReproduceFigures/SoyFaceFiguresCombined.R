@@ -509,3 +509,17 @@ combined_graph.lai <- grid.arrange(arrangeGrob(textGrob(bquote("LAI"~(m^2~"/"~m^
                                                            ncol = 3),
                                                ncol = 1),
                                    ncol=2, widths=c(0.3, 5))
+
+# for (i in 1:4){
+#   percentage_change = (max(results.elevCO2[[i]]$Pod)-max(results[[i]]$Pod))/max(results[[i]]$Pod) * 100
+#   print(percentage_change)
+# }
+
+for (i in 1:4){
+  shoot_root_ratio = data.frame(
+    time = results[[i]]$time,
+    ambient_ratio = with(results[[i]], (Leaf+Stem+Pod)/Root),
+    elevated_ratio = with(results.elevCO2[[i]], (Leaf+Stem+Pod)/Root))
+  print(years[i])
+  print(xyplot(data=shoot_root_ratio, ambient_ratio + elevated_ratio ~ time, auto.key = TRUE))
+}

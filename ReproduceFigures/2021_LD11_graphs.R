@@ -24,7 +24,6 @@ load('../../energy-farm-biocro/weather_2021/weather2021_hourly.RData')
 load('../Data/Weather_data/weather2021supplement.RData')
 # Set working directory to location of this file
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-
 # Modify the modules
 full_soybean_ld11$direct_modules <- steady_state_module_names
 full_soybean_ld11$differential_modules <- derivative_module_names

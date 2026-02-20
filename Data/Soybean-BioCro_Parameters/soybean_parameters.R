@@ -104,7 +104,7 @@ parameters <- list(
   
   # incident_shortwave_from_ground_par module
   par_energy_fraction            =        0.5,
-  par_energy_content             =        0.235,
+  par_energy_content             =        0.219, # 0.219, # 0.235,
   
   # height_from_lai module
   heightf                     = 6,           # m^-1; LAI of 6 when canopy is 1 m tall
@@ -136,8 +136,8 @@ parameters <- list(
   
   # shortwave_atmospheric_scattering module
   atmospheric_pressure  =                  101325,
-  atmospheric_transmittance =              0.85,
   atmospheric_scattering  =                0.3,
+  atmospheric_transmittance =              0.6, # Campbell and Norman, An Introduction to Environmental Biophysics, 2nd Edition, Pg 173
   
   # ten_layer_canopy_properties module
   chil                        = 0.81,        # Campbell and Norman, An Introduction to Environmental Biophysics, 2nd Edition, Table 15.1, pg 253
