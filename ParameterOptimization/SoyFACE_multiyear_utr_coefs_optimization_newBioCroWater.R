@@ -88,8 +88,6 @@ for (i in 1:length(year)) {
   ExpBiomass.std[[i]] <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt, 'biomass_std.csv'))
   colnames(ExpBiomass.std[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CummulativeLitter")
   
-  # RootVals[[i]] <- data.frame("DOY"=ExpBiomass[[i]]$DOY[3], 
-  #                             "Root"=0.17*sum(ExpBiomass[[i]][5,2:4])) 
   RootVals[[i]] <- data.frame("DOY"=ExpBiomass[[i]]$DOY[-c(1,2)], 
                               "Root"=0.17*sum(ExpBiomass[[i]][5,2:4])) 
   # See Ordonez et al. 2020, https://doi.org/10.1016/j.eja.2020.126130
@@ -110,7 +108,7 @@ for (i in 1:length(year)) {
 }
 
 # Optimization
-wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 2, "Root" = 0.75, "CummulativeLitter" = 0.5)
+wts2 <- data.frame("Stem" = 1, "Leaf" = 1, "Pod" = 2, "Root" = 1, "CummulativeLitter" = 0.5)
 
 # cost function
 cost_func <- function(x){
@@ -122,28 +120,6 @@ r <- soybean_optsolver[[1]](optim_params_conversion(optim_params_short))
 xyplot(data=r, Leaf+Stem+Root+Pod~fractional_doy)
 
 cost_func(optim_params_short_SoyFACE)
-
-# Parameter ranges
-upperlim <- c(# 0.35,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.1, 0.1, 0.1, 1.0, # 2，3，4，5： utilization rate constant [/hr]
-              0.5, 0.5, 0.5, 0.5, # 6，7, 8, 9： Km [/]
-              0.8, # 10: respiration factor [/]
-              0.5, 0.5, 5, # 11, 12, 13: substrate conductance [Mg / hr / [Mg / ha]^beta]
-              0.1, 0.1, 0.1, # 14,15,16: senescence rate max, LSR
-              10.0, 10.0, 2.0, # 17,18,19: senescence alpha, LSR [dimensionless]
-              2.0, 2.0, 2.0,  # 20, 21, 22: senescence beta, LSR [DVI^-1]
-              1.0,
-              1.2, 2.2) # 20,21,22: senescence beta, LSR [/dvi]
-lowerlim <- c(# 0.25,  # 1: carbon to mass factor [(Mg / ha) / (mol / m^2)]
-              0.0, 0.0, 0.0, 0.1, # 2，3，4，5： utilization rate constant [/hr]
-              0.0, 0.0, 0.0, 0.0, # 6，7, 8, 9： Km [mol / Mg]
-              0.1, # 10: respiration factor [dimensionless]
-              0.0, 0.0 ,0.0, # 11，12，13:substrate conductance [Mg / hr / [Mg / ha]^beta] 0.005, 0.005 ,0.01
-              0.0, 0.0, 0.0, # 14,15,16: senescence rate max, LSR
-              0.0, 0.0, 0.0,# 17, 18, 19: senescence alpha, LSR [dimensionless]
-              1.5, 1.5, 1.5,
-              0.0,
-              0.8, 1.8)
 
 
 # Parameter ranges
@@ -168,7 +144,7 @@ lowerlim <- c(
   0.0,
   0.8, 1.8)
 
-rng.seed <- 1234 # seed for random number generator
+rng.seed <- 123 # seed for random number generator
 set.seed(rng.seed)
 # maximum number of iterations
 max.iter <- 1000

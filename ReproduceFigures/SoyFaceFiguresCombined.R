@@ -45,8 +45,6 @@ lai.figs <- list()
 pod_sensitivity <- data.frame()
 
 # Define functions to create plots
-plot_all_tissues <- function(res, year, biomass) {
-}
 plot_amb_elev_lai <- function(res, elev_res, year, lai, elev_lai) {
   
   # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
@@ -413,8 +411,7 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
                                                                          axis.text.x = element_blank(),
                                                                          legend.position="none"),
                                                         figs[[2]] + theme(legend.position="none"),
-                                                       nrow = 2, 
-                                                       heights = heights),
+                                                       nrow = 2, heights = heights),
                                             arrangeGrob(figs[[3]] + theme(axis.title.x = element_blank(),
                                                                           axis.text.x = element_blank(),
                                                                           legend.position="none"),
@@ -437,6 +434,7 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
                                             ncol = 2, top = 'Elevated CO2'),
                                 common_legend,
                                 ncol=4, widths=c(0.3, 5,5,1.5))
+
 ggsave('SoyFACE_UTR_model_biomass_graph.png', 
        plot = combined_graph, 
        width = 8,
@@ -445,56 +443,9 @@ ggsave('SoyFACE_UTR_model_biomass_graph.png',
        dpi = 300
 )
 
-# day_result <- result[1210:1233,c('hour',
-#                                  'Leaf_substrate_carbon',
-#                                  'Stem_substrate_carbon', 
-#                                  'Root_substrate_carbon')]
-# colnames(day_result) = c('hour', 'Leaf', 'Stem', 'Root')
-# 
-# day_result <- reshape2::melt(day_result, 
-#                             id.vars = "hour")
-# colnames(day_result) = c('Hour', 'Organ', 'Value')
-# ggplot(data = day_result, aes(x=Hour, y=Value)) + 
-#   theme_classic() +
-#   ylab('Substrate C (mol / m^2 / hr)') +
-#   geom_point(aes(col=Organ)) +
-#   theme(legend.position="top")
-
-# canopy_assim_daily <- aggregate(result$canopy_assimilation_rate,list(result$doy), FUN=sum) * 10 / 3
-# leaf_export_daily <- aggregate(result$substrate_transport_Leaf_to_Stem,list(result$doy), FUN=sum)
-# leaf_utilization_daily <- aggregate(result$Leaf_utilization_rate,list(result$doy), FUN=sum)
-# stem_utilization_daily <- aggregate(result$Stem_utilization_rate,list(result$doy), FUN=sum)
-# df <- data.frame(DOY = leaf_export_daily$Group.1, 
-#                  Canopy_Assimilation_mol_per_day = canopy_assim_daily$x,
-#                  Leaf_Export_mol_per_day = leaf_export_daily$x,
-#                  Leaf_Utilization_mol_per_day = leaf_utilization_daily$x,
-#                  Stem_Utilization_mol_per_day = stem_utilization_daily$x)
-# xyplot(data = df,
-#        Canopy_Assimilation_mol_per_day+
-#          Leaf_Export_mol_per_day+
-#          Leaf_Utilization_mol_per_day+
-#          Stem_Utilization_mol_per_day~
-#          DOY, type = c('p','l'), auto=TRUE)
-# sum(result$substrate_transport_Leaf_to_Stem)
-# sum(result$Stem_utilization_rate)
 setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 save(results, results.elevCO2, ExpBiomass, ExpBiomass.elevCO2, file = 'SoyFACE_results_and_measurements.RData')
 
-# i <- 2
-# sDVI <- parameters$stop_growth_dvi
-# xyplot(results.elevCO2[[i]]$Leaf_substrate_carbon[which(results.elevCO2[[i]]$DVI<sDVI)]+
-#          results[[i]]$Leaf_substrate_carbon[which(results[[1]]$DVI<sDVI)]
-#        ~results[[i]]$time[which(results.elevCO2[[i]]$DVI<sDVI)])
-# 
-# for (i in 1:4){
-#   print(xyplot(data = results[[i]],
-#                Leaf_substrate_carbon/Leaf+
-#                  Stem_substrate_carbon/Stem~
-#                  time,
-#                auto=TRUE,
-#                ylim = c(0,1),
-#                main = years[i]))
-# }
 source('plot_partitioning.R')
 
 for (i in 2:4){

@@ -86,9 +86,13 @@ calculate_msqe <- function(year, biocro_organ_biomass_tall, field_organ_biomass_
 for (i in 1:length(years)){
 # for (i in 1:1){
   ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld11_biomass_', years[i],'/soybean_ld11_biomass_', years[i], '.RData'))
-  ExpBiomass[[i]]$time <- ExpBiomass[[i]]$doy+ExpBiomass[[i]]$hour/24
+  # ExpBiomass[[i]]$time <- ExpBiomass[[i]]$doy+ExpBiomass[[i]]$hour/24
   weather <- loadRData(paste0('../../energy-farm-biocro/weather_', years[i], '/weather', years[i], '_hourly.RData'))
-  weather$time <- weather$doy + weather$hour / 24
+  # weather$time <- weather$doy + weather$hour / 24
+  weather$time <- 24*(weather$doy-1) + weather$hour
+  weather$doy <- NULL
+  weather$hour <- NULL
+  
   full_soybean_ld11$parameters$Catm <- Catms[i]
   # update initial values
   sub_frac <- 0.1           # substrate_fraction
