@@ -24,15 +24,15 @@ plot_partitioning <- function(result, year){
                                       Stem = 100 * stem_allocation_daily$x / net_subC_input$x,
                                       Root = 100 * root_allocation_daily$x / net_subC_input$x,
                                       Pod = 100 * pod_allocation_daily$x / net_subC_input$x)
-  print(paste0("Average Leaf allocation:", mean(allocation_percentage$Leaf)))
-  print(paste0("Min Leaf allocation DVI:", allocation_percentage$DVI[which.min(allocation_percentage$Leaf)]))
-  print(paste0("Average Stem allocation:", mean(allocation_percentage$Stem)))
-  print(paste0("Average Root allocation:", mean(allocation_percentage$Root)))
-  print(paste0("Average Pod allocation:", mean(allocation_percentage$Pod)))
-  print(paste0("Average total allocation:", mean(allocation_percentage$Leaf+
-                                                      allocation_percentage$Stem+
-                                                      allocation_percentage$Root+
-                                                      allocation_percentage$Pod)))
+  # print(paste0("Average Leaf allocation:", mean(allocation_percentage$Leaf)))
+  # print(paste0("Min Leaf allocation DVI:", allocation_percentage$DVI[which.min(allocation_percentage$Leaf)]))
+  # print(paste0("Average Stem allocation:", mean(allocation_percentage$Stem)))
+  # print(paste0("Average Root allocation:", mean(allocation_percentage$Root)))
+  # print(paste0("Average Pod allocation:", mean(allocation_percentage$Pod)))
+  # print(paste0("Average total allocation:", mean(allocation_percentage$Leaf+
+  #                                                     allocation_percentage$Stem+
+  #                                                     allocation_percentage$Root+
+  #                                                     allocation_percentage$Pod)))
   # To check if the sum is 100%
   # allocation_percentage$tot_percentage <- allocation_percentage$Leaf+
   #                                         allocation_percentage$Stem+

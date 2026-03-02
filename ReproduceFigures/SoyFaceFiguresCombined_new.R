@@ -16,6 +16,10 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 source('../ParameterOptimization/soybean_parameter_expansion.R')
 source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 
+# Source mse calculation and partitioning plotting functions
+source('calculate_mse.R')
+source('plot_partitioning.R')
+
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 years <- c('2002', '2004', '2005', '2006')
 sow.date <- c(152, 149, 148, 148)
@@ -53,6 +57,7 @@ parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters),
 
 # Minor adjustments
 parameters$time_zone_offset <- -6
+initial_values$DVI <- 0
 
 # Initialize lists
 results <- list()
@@ -69,6 +74,8 @@ numrows <- vector()
 figs <- list()
 lai.figs <- list()
 pod_sensitivity <- data.frame()
+allocation.figs <- list()
+allocation.elevCO2.figs <- list()
 
 # Define functions to create plots
 plot_amb_elev_lai <- function(res, elev_res, year, lai, elev_lai) {
@@ -235,7 +242,6 @@ for (i in 1:length(years)) {
                          width=3.5, size=0.25, show.legend = FALSE)
   
   # change the plot labels and theme
-  print(years[i])
   f <- f + labs(title=years[i], x='Day of Year', y=NULL)
   if (years[i] == '2002' || years[i] == '2005'){
     f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
@@ -255,6 +261,11 @@ for (i in 1:length(years)) {
   }
   f <- f + scale_x_continuous(breaks = seq(150,280,30))
   figs[[i]] <- f
+  
+  names(r.lsrp.doy) <- c('time', 'Organ', 'biomass', 'Source')
+  names(r.exp.ls) <- c('time', 'Organ', 'biomass', 'Source')
+  calculate_mse_soyFACE(years[[i]],r.lsrp.doy, r.exp.ls)
+  allocation.figs[[i]] <- plot_partitioning(result, years[i])
 }
 
 
@@ -271,7 +282,6 @@ RootVals <- list()
 numrows <- vector()
 
 for (i in 1:length(years)) {  
-# for (i in c(1,3)) { 
   yr <- years[i]
   weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength_wDVI.csv'))
   # sd.ind <- which(weather$doy == sow.date[i])[1]
@@ -394,7 +404,6 @@ for (i in 1:length(years)) {
                          width=3.5, size=0.25, show.legend = FALSE)
   
   # change the plot labels and theme
-  print(years[i])
   f <- f + labs(title=years[i], x='Day of Year' ,y=NULL)
   f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
                  axis.text=element_text(size=size.axis),
@@ -407,6 +416,11 @@ for (i in 1:length(years)) {
                  plot.background = element_rect(fill = "transparent", colour = NA))
   f <- f + scale_x_continuous(breaks = seq(150,280,30))
   figs.elevCO2[[i]] <- f
+  
+  names(r.lsrp.doy) <- c('time', 'Organ', 'biomass', 'Source')
+  names(r.exp.ls) <- c('time', 'Organ', 'biomass', 'Source')
+  calculate_mse_soyFACE(years[[i]],r.lsrp.doy, r.exp.ls)
+  allocation.elevCO2.figs[[i]] <- plot_partitioning(result, years[i])
 }
 
 #extract legend
@@ -493,8 +507,6 @@ combined_graph_v2 <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot 
 # setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 save(results, results.elevCO2, ExpBiomass, ExpBiomass.elevCO2, file = 'SoyFACE_results_and_measurements.RData')
 
-source('plot_partitioning.R')
-
 
 for (i in 2:4){
   lai.figs[[i-1]] <- plot_amb_elev_lai(results[[i]], results.elevCO2[[i]], years[[i]], LAI[[i]], LAI.elevCO2[[i]])
@@ -525,6 +537,8 @@ for (i in 1:4){
 
 
 
+
+
 # Plot LD11
 years <- c('2021', '2022', '2023', '2024')
 Catms <- c(414.7, 417.2, 419.3, 422.8) # from NOAA
@@ -546,30 +560,12 @@ loadRData <- function(fileName){
   load(fileName)
   get(ls()[ls() != "fileName"])
 }
-# A function to format decimal places
-specify_decimal <- function(x, k) trimws(format(round(x, k), nsmall=k))
-# A function to calculate msqe
-calculate_msqe <- function(year, biocro_organ_biomass_tall, field_organ_biomass_tall){
-  sampling.times <- unique(field_organ_biomass_tall$time)
-  # delete the first data because the error is 0 for both models
-  sampling.times <- sampling.times[-1]
-  field_organ_biomass_tall <- field_organ_biomass_tall[-which(field_organ_biomass_tall$time==field_organ_biomass_tall$time[1]),]
-  simulation.results <- biocro_organ_biomass_tall[which(biocro_organ_biomass_tall$time %in% sampling.times), ]
-  simulation.results$time <- simulation.results$time
-  
-  merged.t <- merge(field_organ_biomass_tall, simulation.results, by = c("time", "Organ"), all = T)
-  # print(merged.t)
-  merged.t$diff = merged.t$biomass.x - merged.t$biomass.y
-  msqe <- mean((merged.t$diff)^2)
-  print(paste0(year,' msqe:' , specify_decimal(msqe, 2)))
-  # print(paste0(year,' rmsqe:' , specify_decimal(sqrt(msqe),2)))
-  # print(merged.t[ ,c('time','Organ', 'diff')])
-}
+
 
 for (i in 1:length(years)){
   # for (i in 1:1){
   ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld11_biomass_', years[i],'/soybean_ld11_biomass_', years[i], '.RData'))
-  # ExpBiomass[[i]]$time <- ExpBiomass[[i]]$doy+ExpBiomass[[i]]$hour/24
+  harv.doy <- max(ExpBiomass[[i]]$doy)
   weather <- loadRData(paste0('../../energy-farm-biocro/weather_', years[i], '/weather', years[i], '_hourly.RData'))
   parameters$Catm <- Catms[i]
   # update initial values
@@ -595,7 +591,7 @@ for (i in 1:length(years)){
   initial_values[names(updated_utr_initial_values)] <- updated_utr_initial_values
   
   first_data_time <- ExpBiomass[[i]]$time[1]
-  weather.aftersowing <- weather[((weather$doy-1)*24 + weather$hour) >= first_data_time, ]
+  weather.aftersowing <- weather[(((weather$doy-1)*24 + weather$hour) >= first_data_time) & weather$doy <= harv.doy, ]
   
   # Obtain DVI from the original Soybean-BioCro
   soybean_biocro_result <- run_biocro(soybean$initial_values,
@@ -640,8 +636,8 @@ for (i in 1:length(years)){
   col.palette.muted <- c( "#117733", "#999933", "#332288", "#882255")
   
   ld11.figs[[i]] <- ggplot() + theme_classic() +
-    geom_line(data = biocro_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), linewidth = 1, alpha=0.8) +
-    geom_point(data = field_organ_biomass_tall, aes(x = time, y = biomass, color = Organ), shape = 15, size = 3)+
+    geom_line(data = biocro_organ_biomass_tall, aes(x = time/24 + 1, y = biomass, color = Organ), linewidth = 1, alpha=0.8) +
+    geom_point(data = field_organ_biomass_tall, aes(x = time/24 + 1, y = biomass, color = Organ), shape = 15, size = 3)+
     theme(plot.title=element_text(size=size.title, hjust=0.5),
           axis.text=element_text(size=size.axis),
           axis.title.x =element_text(size=size.axislabel),
@@ -650,14 +646,14 @@ for (i in 1:length(years)){
           panel.grid.minor = element_blank(), 
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
-    # scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
+    scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2)) +
     # scale_x_continuous(breaks = seq(180,280,30))+
-    labs(title=element_blank(), 
-         x=paste0('Day of Year (', years[i], ')'), 
+    labs(title=years[i], 
+         x=paste0('Day of Year'), 
          y='Biomass (Mg/ha)')+
     scale_color_manual(values = col.palette.muted)
   
-  print(ld11.figs[[i]])
+  # print(ld11.figs[[i]])
   save(biocro_organ_biomass_tall, file = paste0('organ_biomass_sim_', years[i],'_ld11.RData'))
   save(field_organ_biomass_tall, file = paste0('organ_biomass_mea_', years[i],'_ld11.RData'))
   
@@ -670,21 +666,21 @@ for (i in 1:length(years)){
           axis.title.x =element_text(size=size.axislabel),
           axis.title.y = element_blank(),
           panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(), 
+          panel.grid.minor = element_blank(),
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
     # scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
     # scale_x_continuous(breaks = seq(180,280,30))+
-    labs(title=element_blank(), 
-         x=paste0('Day of Year (', years[i], ')'), 
+    labs(title=element_blank(),
+         x=paste0('Day of Year (', years[i], ')'),
          y='LAI')+
     scale_color_manual(values = col.palette.muted)
-  
-  print(lai.ld11.figs[[i]])
+
+  # print(lai.ld11.figs[[i]])
   
   allocation.ld11.figs[[i]] <- plot_partitioning(result, years[i])
   
-  calculate_msqe(years[[i]],biocro_organ_biomass_tall, field_organ_biomass_tall)
+  calculate_mse(years[[i]],biocro_organ_biomass_tall, field_organ_biomass_tall)
 }
 
 # extract the common legend
@@ -715,3 +711,334 @@ combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', r
                                                       ncol = 1),
                                           common_legend,
                                           ncol=3, widths=c(0.3, 5, 1.1))
+
+combined_graph.allocation_v2 <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
+                                            arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
+                                                                    allocation.figs[[2]] + theme(legend.position="none"),
+                                                                    allocation.figs[[3]] + theme(legend.position="none"),
+                                                                    allocation.figs[[4]] + theme(legend.position="none"),
+                                                                    ncol = 4, top = 'Pioneer 93B15 at ambient CO2'),
+                                                        arrangeGrob(allocation.elevCO2.figs[[1]] + theme(legend.position="none"),
+                                                                    allocation.elevCO2.figs[[2]] + theme(legend.position="none"),
+                                                                    allocation.elevCO2.figs[[3]] + theme(legend.position="none"),
+                                                                    allocation.elevCO2.figs[[4]] + theme(legend.position="none"),
+                                                                    ncol = 4, top = 'Pioneer 93B15 at elevated CO2'),
+                                                        arrangeGrob(allocation.ld11.figs[[1]] + theme(legend.position="none"),
+                                                                    allocation.ld11.figs[[2]] + theme(legend.position="none"),
+                                                                    allocation.ld11.figs[[3]] + theme(legend.position="none"),
+                                                                    allocation.ld11.figs[[4]] + theme(legend.position="none"),
+                                                                    ncol = 4, top = 'LD11-2170 at ambient CO2'),
+                                                        nrow = 3),
+                                            common_legend,
+                                            ncol=3, widths=c(0.2, 5, 0.8))
+
+ggsave('Fig3-allocation.png', 
+       plot = combined_graph.allocation_v2, 
+       width = 10,
+       height = 7,
+       units = "in",
+       dpi = 600
+)
+
+combined_graph_v3 <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+                                  arrangeGrob(
+                                    arrangeGrob(arrangeGrob(figs[[1]] + theme(legend.position="none"),
+                                                            figs[[3]] + theme(legend.position="none"),
+                                                            ncol = 2),
+                                                top = textGrob("(A) Parameterization - Pioneer 93B15 at Ambient CO2", 
+                                                               gp=gpar(fontface="bold", fontsize=12))),
+                                    
+                                    arrangeGrob(arrangeGrob(figs[[2]] + theme(axis.title.x = element_blank(),
+                                                                              axis.text.x = element_blank(),
+                                                                              legend.position="none"),
+                                                            figs[[4]] + theme(legend.position="none"),
+                                                            nrow = 2, 
+                                                            heights = heights, top = 'Ambient CO2'),
+                                                
+                                                arrangeGrob(figs.elevCO2[[1]] + theme(axis.title.x = element_blank(),
+                                                                                      axis.text.x = element_blank(),
+                                                                                      legend.position="none"),
+                                                            figs.elevCO2[[2]] + theme(legend.position="none"),
+                                                            nrow = 2, 
+                                                            heights = heights, top = 'Elevated CO2'),
+                                                arrangeGrob(figs.elevCO2[[3]] + theme(axis.title.x = element_blank(),
+                                                                                      axis.text.x = element_blank(),
+                                                                                      legend.position="none"),
+                                                            figs.elevCO2[[4]] + theme(legend.position="none"),
+                                                            nrow = 2,
+                                                            heights = heights, top = 'Elevated CO2'),
+                                                ncol = 3, 
+                                                top = textGrob("(B) Pioneer 93B15 at SoyFACE", 
+                                                               gp=gpar(fontface="bold", fontsize=12))), 
+                                    
+                                    arrangeGrob(arrangeGrob(ld11.figs[[1]] + theme(axis.title.x = element_blank(),
+                                                                                      axis.text.x = element_blank(),
+                                                                                      legend.position="none"),
+                                                            ld11.figs[[3]] + theme(legend.position="none"),
+                                                            nrow = 2, 
+                                                            heights = heights),
+                                                arrangeGrob(ld11.figs[[2]] + theme(axis.title.x = element_blank(),
+                                                                                      axis.text.x = element_blank(),
+                                                                                      legend.position="none"),
+                                                            ld11.figs[[4]] + theme(legend.position="none"),
+                                                            nrow = 2,
+                                                            heights = heights),
+                                                ncol = 2, 
+                                                top = textGrob("(C) LD11-2170 at Ambient CO2", 
+                                                               gp=gpar(fontface="bold", fontsize=12))),
+                                    
+                                    nrow = 3, heights = c(1.3, 2, 2)),
+                                  common_legend,
+                                  ncol=3, widths=c(0.3, 10, 1.1))
+
+ggsave('Fig2-biomass.png', 
+       plot = combined_graph_v3, 
+       width = 7.5,
+       height = 12,
+       units = "in",
+       dpi = 600
+)
+
+library(dplyr)
+total_precip <- sapply(1:4, function(i) {
+  results[[i]] %>%
+    filter(DVI >= 0 & DVI <= 1) %>%
+    summarise(total = sum(precip, na.rm = TRUE)) %>%
+    pull(total)
+})
+
+names(total_precip) <- years
+print(total_precip)
+
+
+# Plot substrate C concentration
+TNC.data <- read.csv('../Data/2022_Carb_data/2022_LD11_TNC_new.csv')
+leaf.tnc.all <- read.csv('../Data/2022_Carb_data/Leaf_all.csv')
+stem.tnc.all <- read.csv('../Data/2022_Carb_data/Stem_all.csv')
+
+# convert to long format
+convert_data_long <- function(tnc.all){
+  tnc.long <- data.frame()
+  col.names <- colnames(tnc.all)[1:7]
+  for (i in 1:nrow(tnc.all)){
+    for (j in 1:4){
+      if (tnc.all[i, paste0('Valid_',j)]==1){
+        new_row <- c(tnc.all[i, col.names], TNC = tnc.all[i, paste0('Carb_tot_',j)])
+        tnc.long <- rbind(tnc.long, new_row)
+      }
+    }
+  }
+  return (tnc.long)
+}
+leaf.tnc.long <- convert_data_long(leaf.tnc.all)
+stem.tnc.long <- convert_data_long(stem.tnc.all)
+# convert unit from nmol glucose / mg (mol glucose / Mg) to mol C / kg
+leaf.tnc.long$TNC <- leaf.tnc.long$TNC * 6 / 1000
+stem.tnc.long$TNC <- stem.tnc.long$TNC * 6 / 1000
+
+# Simulated
+r <- results[[2]]
+sim_substrate_C_by_mass <- data.frame(
+  time = r$fractional_doy,
+  hour = r$hour,
+  Leaf = 10 * r$Leaf_substrate_carbon / r$Leaf, # convert from (mol/m2) / (Mg/ha) = 10^4 * mol / Mg = 10 mol / kg
+  Stem = 10 * r$Stem_substrate_carbon / r$Stem
+)
+data_long_per_mass <- tidyr::gather(sim_substrate_C_by_mass[1:2600,
+                                                            c('time', 'Leaf', 'Stem')], 
+                                    key="Type", value="Value", -time)
+
+
+# Simulated + Measured
+# Leaf
+sim_leaf_tnc_by_mass <- sim_substrate_C_by_mass[, c('time','Leaf','hour')]
+colnames(sim_leaf_tnc_by_mass)[which(colnames(sim_leaf_tnc_by_mass)=='Leaf')] <- 'TNC'
+sim_leaf_tnc_by_mass$Source <- 'Simulated'
+
+leaf.tnc.mean <- leaf.tnc.all[,c('time','Carb_total_mean', 'hour','DOY_date')]
+colnames(leaf.tnc.mean)[which(colnames(leaf.tnc.mean)=='Carb_total_mean')] <- 'TNC'
+leaf.tnc.mean$Source <- 'Measured (mean)'
+# convert unit from nmol glucose / mg (mol glucose / Mg) to mol C / kg
+leaf.tnc.mean$TNC <- leaf.tnc.mean$TNC * 6 / 1000
+
+leaf.tnc.long$Source <- 'Measured (individual)'
+
+Leaf.carb.data <- rbind(sim_leaf_tnc_by_mass[,c('time','TNC','Source')], 
+                        leaf.tnc.mean[, c('time','TNC','Source')],
+                        leaf.tnc.long[, c('time', 'TNC', 'Source')] )
+
+
+leaf_tnc_plot <- ggplot(Leaf.carb.data, aes(time, TNC, group = Source)) +
+  geom_point(aes(shape=Source, color=Source, size=Source, alpha = Source))+
+  scale_shape_manual(values=c(8, 18, 16)) +
+  scale_size_manual(values=c(1.2, 4, 1)) +
+  scale_alpha_manual(values=c(0.6, 1, 0.4)) +
+  scale_color_manual(values=c('#D81B60','#117733','grey')) +
+  theme_classic() +
+  theme(plot.title=element_text(size=size.title, hjust=0.5),
+        axis.text=element_text(size=size.axis),
+        axis.title=element_text(size=size.axislabel),
+        legend.position = c(0.85, 0.85),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  scale_y_continuous(limits = c(0, 15), breaks = seq(0, 15, 5)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(),
+       x='Day of Year (2022)',
+       y = NULL)
+# y='Leaf Substrate C (mol glucose eq./Mg)')
+
+# Stem
+sim_stem_tnc_by_mass <- sim_substrate_C_by_mass[, c('time','Stem','hour')]
+colnames(sim_stem_tnc_by_mass)[which(colnames(sim_stem_tnc_by_mass)=='Stem')] <- 'TNC'
+sim_stem_tnc_by_mass$Source <- 'Simulated'
+
+stem.tnc.mean <- stem.tnc.all[,c('time','Carb_total_mean', 'hour','DOY_date')]
+colnames(stem.tnc.mean)[which(colnames(stem.tnc.mean)=='Carb_total_mean')] <- 'TNC'
+stem.tnc.mean$Source <- 'Measured (mean)'
+# convert unit from nmol glucose / mg (mol glucose / Mg) to mol C / kg
+stem.tnc.mean$TNC <- stem.tnc.mean$TNC * 6 / 1000
+stem.tnc.long$Source <- 'Measured (individual)'
+
+Stem.carb.data <- rbind(sim_stem_tnc_by_mass[,c('time','TNC','Source')], 
+                        stem.tnc.mean[, c('time','TNC','Source')],
+                        stem.tnc.long[, c('time', 'TNC', 'Source')] )
+
+stem_tnc_plot <- ggplot(Stem.carb.data, aes(time, TNC, group = Source)) +
+  geom_point(aes(shape=Source, color=Source, size=Source, alpha = Source))+
+  scale_shape_manual(values=c(8, 18, 16)) +
+  scale_size_manual(values=c(1, 4, 1)) +
+  scale_alpha_manual(values=c(0.6, 1, 0.4)) +
+  scale_color_manual(values=c('#D81B60','#999933','grey')) +
+  scale_y_continuous(limits=c(0, 10), n.breaks=6)+
+  theme_classic() +
+  theme(plot.title=element_text(size=size.title, hjust=0.5),
+        axis.text=element_text(size=size.axis),
+        axis.title=element_text(size=size.axislabel),
+        legend.position = c(0.85, 0.85),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  scale_y_continuous(limits = c(0, 15), breaks = seq(0, 15, 5)) +
+  scale_x_continuous(breaks = seq(180,280,30))+
+  labs(title=element_blank(),
+       x='Day of Year (2022)',
+       y = NULL)
+# y='Stem Substrate C (mol glucose eq./Mg)')
+
+tnc_growingseasion_plot <- grid.arrange(arrangeGrob(textGrob('Substrate C (mol C / kg)', rot = 90, gp=gpar(fontsize=12))),
+                                             arrangeGrob(arrangeGrob(leaf_tnc_plot, top = '(A) Leaf'),
+                                                         arrangeGrob(stem_tnc_plot, top = '(B) Stem'),
+                                                                     ncol = 2, top = 'Pioneer 93B15 (2022) Leaf and Stem Substrate C Concentrations'),
+                                             ncol=2, widths=c(0.2, 10))
+
+ggsave('Fig4-substrate-annual.png', 
+       plot = tnc_growingseasion_plot, 
+       width = 9,
+       height = 3.5,
+       units = "in",
+       dpi = 600
+)
+
+# Diurnal changes of substrate C
+# take out the last TNC data because in simulation the crop has stopped growing
+sim_leaf_tnc_by_mass$DOY <- as.integer(sim_leaf_tnc_by_mass$time)
+leaf.tnc.mean$DOY <- as.integer(leaf.tnc.mean$time)
+ind.sampling.days <- which(sim_leaf_tnc_by_mass$DOY %in% leaf.tnc.all$DOY)
+sim_leaf_tnc_sampling_days <- sim_leaf_tnc_by_mass[ind.sampling.days,]
+
+date.list <- data.frame(
+  DOY = c(186, 187, 209, 236, 258),
+  DOY_date = c('DOY 186: 07/05', 'DOY 187: 07/06', 'DOY 209: 07/28', 'DOY 236: 08/24', 'DOY 258: 09/15'))
+
+sim_leaf_tnc_sampling_days <- left_join(sim_leaf_tnc_sampling_days, date.list, by = 'DOY')
+
+col.names <- c('DOY_date','hour','TNC', 'Source')
+leaf.tnc.sampling.days <- rbind(sim_leaf_tnc_sampling_days[,col.names],
+                                leaf.tnc.long[,col.names],
+                                leaf.tnc.mean[,col.names])
+
+ggplot(leaf.tnc.sampling.days, aes(hour, TNC, group = Source)) + 
+  geom_point(aes(shape=Source, color=Source, size=Source))+
+  facet_wrap("DOY_date") +
+  scale_shape_manual(values=c(17, 18, 16)) +
+  scale_size_manual(values=c(1, 2.5, 0.5)) +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.2),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+  scale_x_continuous(breaks = seq(0,24,6))+
+  labs(title=element_blank(), 
+       x='Hour of the Day',
+       y='Leaf Substrate C (mol glucose eq./Mg)')
+
+sim_stem_tnc_by_mass$DOY <- as.integer(sim_stem_tnc_by_mass$time)
+stem.tnc.mean$DOY <- as.integer(stem.tnc.mean$time)
+ind.sampling.days <- which(sim_stem_tnc_by_mass$DOY %in% stem.tnc.all$DOY)
+sim_stem_tnc_sampling_days <- sim_stem_tnc_by_mass[ind.sampling.days,]
+
+date.list <- data.frame(
+  DOY = c(186, 187, 209, 236, 258, 278),
+  DOY_date = c('DOY 186: 07/05', 'DOY 187: 07/06', 
+               'DOY 209: 07/28', 'DOY 236: 08/24', 
+               'DOY 258: 09/15', 'DOY 278: 10/05'))
+
+sim_stem_tnc_sampling_days <- left_join(sim_stem_tnc_sampling_days, date.list, by = 'DOY')
+
+col.names <- c('DOY_date','hour','TNC', 'Source')
+stem.tnc.sampling.days <- rbind(sim_stem_tnc_sampling_days[,col.names],
+                                stem.tnc.long[,col.names],
+                                stem.tnc.mean[,col.names])
+
+ggplot(stem.tnc.sampling.days, aes(hour, TNC, group = Source)) + 
+  geom_point(aes(shape=Source, color=Source, size=Source))+
+  facet_wrap("DOY_date") +
+  scale_shape_manual(values=c(17, 18, 16)) +
+  scale_size_manual(values=c(1, 2.5, 0.5)) +
+  theme_classic() +
+  theme(legend.position = c(0.85, 0.2),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+  scale_x_continuous(breaks = seq(0,24,6))+
+  labs(title=element_blank(), 
+       x='Hour',
+       y='Stem Substrate C (mol glucose eq./Mg)')
+
+leaf.tnc.sampling.days$Organ <- 'Leaf'
+stem.tnc.sampling.days$Organ <- 'Stem'
+
+TNC.sampling.days <- rbind(leaf.tnc.sampling.days, stem.tnc.sampling.days)
+
+TNC.sampling.days <- TNC.sampling.days[-which(TNC.sampling.days$DOY_date=='DOY 278: 10/05'),]
+tnc_diurnal_plot <- ggplot(TNC.sampling.days, aes(hour, TNC, group = Source)) + 
+  geom_point(data=subset(TNC.sampling.days, Source != 'Simulated'), aes(shape=Source, color=Organ, size=Source, alpha = Source))+
+  geom_line(data=subset(TNC.sampling.days, Source == 'Simulated' & Organ == 'Leaf'), aes(color=Organ))+
+  geom_line(data=subset(TNC.sampling.days, Source == 'Simulated' & Organ == 'Stem'), aes(color=Organ))+
+  facet_wrap("DOY_date") +
+  scale_shape_manual(values=c(8, 18)) +
+  scale_size_manual(values=c(2, 4)) +
+  scale_color_manual(values = c('#117733', '#999933'))+
+  scale_alpha_manual(values=c(0.5, 1)) +
+  theme_classic() +
+  theme(legend.position = c(0.84, 0.18),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent", colour = NA))+
+  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+  scale_x_continuous(breaks = seq(0,24,6))+
+  labs(title=element_blank(), 
+       x='Hour',
+       y='Substrate C (mol C / kg)')
+# y='Substrate C (mol glucose eq./Mg)')
+ggsave('Fig5-substrate-diurnal.png', 
+       plot = tnc_diurnal_plot, 
+       width = 9,
+       height = 3.5,
+       units = "in",
+       dpi = 600
+)

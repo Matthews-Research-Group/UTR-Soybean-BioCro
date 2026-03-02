@@ -11,7 +11,8 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
     gc()
     gro.opt <- match.fun(biocro.fun[[i]])
     result <- biocro.fun[[i]](optim_params)
-    if (nrow(result) < num_rows[i]) {
+    if (nrow(result) < num_rows[i] || 
+        max(result$Leaf_substrate_carbon/result$Leaf) > 1.3) { # TNC constraint
       cost.avg <- 1e10
       # print('simulation did not finish')
       break

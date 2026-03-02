@@ -69,17 +69,21 @@ names(fitted.utr.params) <- arg_names
 parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters), 
                                                             names(fitted.utr.params)), 
                                                           fromLast = TRUE)]
-
+# initial_values$DVI <- 0 # simulate after emergence
 # Minor adjustments
 parameters$time_zone_offset <- -6
 
 for (i in 1:length(year)) {
   yr <- year[i]
-  weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength_wDVI.csv'))
-  emergence.idx <- which(weather$DVI>0)[1]
+  # weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength_wDVI.csv'))
+  weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength.csv'))
+  # emergence.idx <- which(weather$DVI>0)[1]
+  sow.idx <- which(weather$doy == sow.date[i])[12]
   hd.ind <- which(weather$doy == harv.date[i])[24]
   
-  weather.growingseason[[i]] <- weather[emergence.idx:hd.ind,]
+  # weather.growingseason[[i]] <- weather[emergence.idx:hd.ind,]
+  weather.growingseason[[i]] <- weather[sow.idx:hd.ind,]
+  
   weather.growingseason[[i]]$DVI <- NULL
   
   ExpBiomass[[i]] <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt, 'biomass.csv'))

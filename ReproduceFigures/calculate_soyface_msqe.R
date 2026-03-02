@@ -16,7 +16,7 @@ calculate_msqe <- function(year, r, mea, model = 'Thornley'){ # r: biocro result
 # year <- '2002'
 # r <- results[[1]]
 # mea <- ExpBiomass[[1]]
-  # unify the colume names
+  # unify the column names
   mea$DOY <- mea$DOY
   names(mea)[names(mea) == "DOY"] <- "time"
   mea <- mea[,c('time', 'Leaf', 'Stem', 'Pod')]
