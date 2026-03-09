@@ -72,7 +72,7 @@ parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters),
 # initial_values$DVI <- 0 # simulate after emergence
 # Minor adjustments
 parameters$time_zone_offset <- -6
-
+parameters$iSp <- parameters$iSp * 1.12
 for (i in 1:length(year)) {
   yr <- year[i]
   # weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength_wDVI.csv'))

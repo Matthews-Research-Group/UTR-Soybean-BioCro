@@ -11,8 +11,7 @@ calculate_mse <- function(year, biocro_organ_biomass_tall, field_organ_biomass_t
   merged.t <- merge(field_organ_biomass_tall, simulation.results, by = c("time", "Organ"), all = T)
   merged.t$diff = merged.t$biomass.x - merged.t$biomass.y
   msqe <- mean((merged.t$diff)^2)
-  print(paste0(year,' msqe:' , specify_decimal(msqe, 2)))
-  # print(merged.t)
+  print(paste0(year,' mse:' , specify_decimal(msqe, 2)))
 }
 
 # A function to calculate msqe
@@ -27,7 +26,7 @@ calculate_mse_soyFACE <- function(year, biocro_organ_biomass_tall, field_organ_b
   merged.t <- merge(field_organ_biomass_tall, simulation.results, by = c("time", "Organ"), all = T)
   merged.t$diff = merged.t$biomass.x - merged.t$biomass.y
   msqe <- mean((merged.t$diff)^2)
-  print(paste0(year,' msqe:' , specify_decimal(msqe, 2)))
+  print(paste0(year,' mse:' , specify_decimal(msqe, 2)))
   # print(merged.t)
   # print(paste0(year,' rmsqe:' , specify_decimal(sqrt(msqe),2)))
   # print(merged.t[ ,c('time','Organ', 'diff')])

@@ -5,6 +5,8 @@ library(ggplot2)
 library(grid)
 library(gridExtra)
 library(lattice)
+library(dplyr)
+library(grid)
 
 # Clear workspace
 rm(list=ls())
@@ -19,6 +21,8 @@ source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 # Source mse calculation and partitioning plotting functions
 source('calculate_mse.R')
 source('plot_partitioning.R')
+source('plot_lai_comparison.R')
+source('plot_biomass.R')
 
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 years <- c('2002', '2004', '2005', '2006')
@@ -57,7 +61,7 @@ parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters),
 
 # Minor adjustments
 parameters$time_zone_offset <- -6
-initial_values$DVI <- 0
+initial_values$DVI <- -1
 
 # Initialize lists
 results <- list()
@@ -69,72 +73,23 @@ ExpBiomass.elevCO2 <- list()
 LAI <- list()
 LAI.elevCO2 <- list()
 ExpBiomass.std <- list()
+ExpBiomass.elevCO2.std <- list()
 RootVals <- list()
 numrows <- vector()
 figs <- list()
+figs.elevCO2 <- list()
 lai.figs <- list()
 pod_sensitivity <- data.frame()
 allocation.figs <- list()
 allocation.elevCO2.figs <- list()
 
-# Define functions to create plots
-plot_amb_elev_lai <- function(res, elev_res, year, lai, elev_lai) {
-  
-  # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
-  col.palette.muted <- c("#332288", "#117733", "#999933", "#882255")
-  
-  size.title <- 12
-  size.axislabel <-10
-  size.axis <- 10
-  size.legend <- 12
-  
-  res$lai_tot <- (res$Leaf_substrate_carbon+res$Leaf_structural_carbon)* 0.3 * parameters$iSp
-  elev_res$lai_tot <- (elev_res$Leaf_substrate_carbon+elev_res$Leaf_structural_carbon)* 0.3 * parameters$iSp
-  s.lai <- cbind(res[,c("fractional_doy","lai_tot")],elev_res[,"lai_tot"])
-  colnames(s.lai) <- c("fractional_doy","Amb","Elev")
-  r.lai <- reshape2::melt(s.lai, id.vars = "fractional_doy")
-  
-  s.exp.lai <- cbind(lai[,c("DOY","LAI_mean")],elev_lai[,"LAI_mean"])
-  colnames(s.exp.lai) <- c("DOY","Amb","Elev")
-  r.exp.lai <- reshape2::melt(s.exp.lai, id.vars = "DOY")
-  
-  s.exp.std.lai <- cbind(lai[,c("DOY","LAI_std")],elev_lai[,"LAI_std"])
-  colnames(s.exp.std.lai) <- c("DOY","Amb","Elev")
-  r.exp.std.lai <- reshape2::melt(s.exp.std.lai, id.vars = "DOY")
-  r.exp.std.lai$ymin <- r.exp.lai$value - r.exp.std.lai$value
-  r.exp.std.lai$ymax <- r.exp.lai$value + r.exp.std.lai$value
-  
-  f <- ggplot() + theme_classic()
-  f <- f + geom_point(data=r.lai, aes(x=fractional_doy, y=value, colour=variable),show.legend = FALSE,size=0.25)
-  f <- f + geom_errorbar(data=r.exp.std.lai, aes(x=DOY, ymin=ymin, ymax=ymax), width=3.5, size=0.25, show.legend = FALSE)
-  f <- f + geom_point(data=r.exp.lai, aes(x=DOY, y=value, fill=variable), shape=22, size=2, show.legend = FALSE, stroke=.5)
-  f <- f + coord_cartesian(ylim = c(0,10)) + scale_x_continuous(breaks = seq(150,275,30))
-  f <- f + labs(x='Day of Year' ,y=bquote("LAI"~(m^2~"/"~m^2)))
-  f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
-                 axis.text=element_text(size=size.axis),
-                 axis.title=element_text(size=size.axislabel),
-                 axis.title.y = element_blank(),
-                 legend.position = c(.25,.85), legend.title = element_blank(),
-                 legend.text=element_text(size=size.legend),
-                 legend.background = element_rect(fill = "transparent",colour = NA),
-                 panel.grid.major = element_blank(),
-                 panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-                 plot.background = element_rect(fill = "transparent", colour = NA))
-  f <- f + guides(colour = guide_legend(override.aes = list(size=2)))
-  f <- f + scale_fill_manual(values = col.palette.muted[2:3], guide = "none")
-  f <- f + scale_colour_manual(values = col.palette.muted[2:3],labels=c('Ambient',bquote(Elevated~CO[2])))
-  
-  return(f)
-}
-
 for (i in 1:length(years)) {   
   yr <- years[i]
-  weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength_wDVI.csv'))
-  em.ind <- which(weather$DVI > 0)[1] # emergence doy
+  weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength.csv'))
+  sd.idx <- which(weather$doy == sow.date[i])[12]
   hd.ind <- which(weather$doy == harv.date[i])[24]
   
-  weather.growingseason[[i]] <- weather[em.ind:hd.ind,]
-  weather.growingseason[[i]]$DVI <- NULL
+  weather.growingseason[[i]] <- weather[sd.idx: hd.ind,]
   
   ExpBiomass[[i]] <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt, 'biomass.csv'))
   colnames(ExpBiomass[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
@@ -165,137 +120,31 @@ for (i in 1:length(years)) {
   result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE)) 
   results[[i]] <- result
   
-  # organize simulated data
-  r.lsrp.doy <- reshape2::melt(result[,c("fractional_doy","Root","Leaf","Stem","Pod")],id.vars="fractional_doy")
+  # plot simulation vs observation biomass and calculate mse
+  figs[[i]] <- plot_SoyFACE_biomass(result, ExpBiomass[[i]], ExpBiomass.std[[i]], co2_opt, years[i])
   
-  # Leaf
-  # organize the experimental data (mean and std)
-  s.exp.leaf <- cbind(ExpBiomass[[i]][,c("DOY","Leaf")])
-  colnames(s.exp.leaf) <- c("fractional_doy","Leaf") # DOY renamed as fractional_doy
-  r.exp.leaf <- reshape2::melt(s.exp.leaf, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  
-  s.exp.std.leaf <- cbind(ExpBiomass.std[[i]][,c("DOY","Leaf")])
-  colnames(s.exp.std.leaf) <- c("fractional_doy","Leaf") # DOY renamed as fractional_doy
-  r.exp.std.leaf <- reshape2::melt(s.exp.std.leaf, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  r.exp.std.leaf$ymin <- r.exp.leaf$value - r.exp.std.leaf$value
-  r.exp.std.leaf$ymax <- r.exp.leaf$value + r.exp.std.leaf$value
-  
-  # Stem
-  s.exp.stem <- cbind(ExpBiomass[[i]][,c("DOY","Stem")]) # DOY renamed as fractional_doy
-  colnames(s.exp.stem) <- c("fractional_doy","Stem") # DOY renamed as fractional_doy
-  r.exp.stem <- reshape2::melt(s.exp.stem, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  
-  s.exp.std.stem <- cbind(ExpBiomass.std[[i]][,c("DOY","Stem")]) # DOY renamed as fractional_doy
-  colnames(s.exp.std.stem) <- c("fractional_doy","Stem") # DOY renamed as fractional_doy
-  r.exp.std.stem <- reshape2::melt(s.exp.std.stem, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  r.exp.std.stem$ymin <- r.exp.stem$value - r.exp.std.stem$value
-  r.exp.std.stem$ymax <- r.exp.stem$value + r.exp.std.stem$value
-  
-  # Pod
-  s.exp.pod <- cbind(ExpBiomass[[i]][,c("DOY","Pod")]) # DOY renamed as fractional_doy
-  colnames(s.exp.pod) <- c("fractional_doy","Pod") # DOY renamed as fractional_doy
-  r.exp.pod <- reshape2::melt(s.exp.pod, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  
-  s.exp.std.pod <- cbind(ExpBiomass.std[[i]][,c("DOY","Pod")]) # DOY renamed as fractional_doy
-  colnames(s.exp.std.pod) <- c("fractional_doy","Pod") # DOY renamed as fractional_doy
-  r.exp.std.pod <- reshape2::melt(s.exp.std.pod, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  r.exp.std.pod$ymin <- r.exp.pod$value - r.exp.std.pod$value
-  r.exp.std.pod$ymax <- r.exp.pod$value + r.exp.std.pod$value
-  
-  # Combine
-  r.exp.ls <- rbind(r.exp.leaf, r.exp.stem, r.exp.pod)
-  r.exp.ls$Source = "Observed"
-  r.lsrp.doy$Source = "Simulated"
-  r.all <- rbind(r.lsrp.doy, r.exp.ls)
-  # Reverse the order as follow
-  r.all$Organ <- factor(r.all$variable, levels = rev(levels(r.all$variable)))
-  # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
-  col.palette.muted.organs <- c("Leaf"="#117733", 
-                                "Stem"= "#999933", 
-                                "Root"="#332288", 
-                                "Pod"= "#882255")
-  size.title <- 12
-  size.axislabel <- 10
-  size.axis <- 10
-  size.legend <- 12
-  
-  f <- ggplot() + theme_classic()
-  f <- f +
-    geom_line(data = subset(r.all, Source == "Simulated"),  
-                aes(x=fractional_doy,y=value, color=Organ), size=0.8, alpha = 0.8) +
-    geom_point(data = subset(r.all, Source == "Observed"), 
-                 aes(x=fractional_doy, y=value, color=Organ), shape=15, size=2, stroke=.5) +
-  
-    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
-    scale_color_manual(values = col.palette.muted.organs)
-
-  
-  # for leaf
-  f <- f + geom_errorbar(data=r.exp.std.leaf, aes(x=fractional_doy, ymin=ymin, ymax=ymax),  # DOY renamed as fractional_doy
-                         width=3.5, size=0.25, show.legend = FALSE)
-  # for stem
-  f <- f + geom_errorbar(data=r.exp.std.stem, aes(x=fractional_doy, ymin=ymin, ymax=ymax),   # DOY renamed as fractional_doy
-                         width=3.5, size=0.25, show.legend = FALSE)
-  
-  # for pod
-  f <- f + geom_errorbar(data=r.exp.std.pod, aes(x=fractional_doy, ymin=ymin, ymax=ymax),   # DOY renamed as fractional_doy
-                         width=3.5, size=0.25, show.legend = FALSE)
-  
-  # change the plot labels and theme
-  f <- f + labs(title=years[i], x='Day of Year', y=NULL)
-  if (years[i] == '2002' || years[i] == '2005'){
-    f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
-                   axis.text=element_text(size=size.axis),
-                   axis.title=element_text(size=size.axislabel),
-                   panel.grid.major = element_blank(),
-                   panel.grid.minor = element_blank(), 
-                   panel.background = element_rect(fill = "transparent",colour = NA),
-                   plot.background = element_rect(fill = "grey90", colour = NA))
-  }else{
-    f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
-                 axis.text=element_text(size=size.axis),
-                 axis.title=element_text(size=size.axislabel),
-                 panel.grid.major = element_blank(),
-                 panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-                 plot.background = element_rect(fill = "transparent", colour = NA))
-  }
-  f <- f + scale_x_continuous(breaks = seq(150,280,30))
-  figs[[i]] <- f
-  
-  names(r.lsrp.doy) <- c('time', 'Organ', 'biomass', 'Source')
-  names(r.exp.ls) <- c('time', 'Organ', 'biomass', 'Source')
-  calculate_mse_soyFACE(years[[i]],r.lsrp.doy, r.exp.ls)
+  # plot partitioning
   allocation.figs[[i]] <- plot_partitioning(result, years[i])
 }
 
 
 # initialize lists for figures
-figs.elevCO2 <- list()
 co2_opt = '_co2_'
 parameters$Catm      <- 550
 
 # Initialize lists
-weather.growingseason <- list()
 soybean_optsolver <- list()
-ExpBiomass.std <- list()
 RootVals <- list()
 numrows <- vector()
 
 for (i in 1:length(years)) {  
   yr <- years[i]
-  weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength_wDVI.csv'))
-  # sd.ind <- which(weather$doy == sow.date[i])[1]
-  em.ind <- which(weather$DVI > 0)[1] # emergence doy
-  hd.ind <- which(weather$doy == harv.date[i])[24]
-  
-  weather.growingseason[[i]] <- weather[em.ind:hd.ind,]
-  weather.growingseason[[i]]$DVI <- NULL
   
   ExpBiomass.elevCO2[[i]] <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt, 'biomass.csv'))
   colnames(ExpBiomass.elevCO2[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
   
-  ExpBiomass.std[[i]] <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt, 'biomass_std.csv'))
-  colnames(ExpBiomass.std[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
+  ExpBiomass.elevCO2.std[[i]] <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt, 'biomass_std.csv'))
+  colnames(ExpBiomass.elevCO2.std[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
   
   RootVals[[i]] <- data.frame("DOY"=ExpBiomass.elevCO2[[i]]$DOY[3], "Root"=0.17*sum(ExpBiomass.elevCO2[[i]][5,2:4])) # See Ordonez et al. 2020, https://doi.org/10.1016/j.eja.2020.126130
   
@@ -313,113 +162,11 @@ for (i in 1:length(years)) {
   
   result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE)) 
   results.elevCO2[[i]] <- result
-  # check when the simulation stops if not running till the end
-  if (dim(result)[1] < dim(weather.growingseason[[i]])[1]){
-    print(max(result$DVI))
-    print(result$Stem_substrate_carbon[which.max(result$DVI)])
-    print(result$Pod_substrate_carbon[which.max(result$DVI)])
-    
-    print(result$Pod_utilization_rate[which.max(result$DVI)])
-    print(result$substrate_transport_Stem_to_Pod[which.max(result$DVI)])
-    
-    print(result$Stem_substrate_carbon[which.max(result$DVI)]/result$Stem[which.max(result$DVI)])
-    print(result$Pod_substrate_carbon[which.max(result$DVI)]/result$Pod[which.max(result$DVI)])
-    
-    print(result$Pod[which.max(result$DVI)])
-  }
-  # organize simulated data
-  r.lsrp.doy <- reshape2::melt(result[,c("fractional_doy","Root","Leaf","Stem","Pod")],id.vars="fractional_doy")
-  r.lsrp.doy$value<-r.lsrp.doy$value
   
-  # Leaf
-  # organize the expirimental data (mean and std)
-  s.exp.leaf <- cbind(ExpBiomass.elevCO2[[i]][,c("DOY","Leaf")])
-  colnames(s.exp.leaf) <- c("fractional_doy","Leaf") # DOY renamed as fractional_doy
-  r.exp.leaf <- reshape2::melt(s.exp.leaf, id.vars = "fractional_doy") # DOY renamed as fractional_doy
+  # plot simulation vs observation biomass and calculate mse
+  figs.elevCO2[[i]] <- plot_SoyFACE_biomass(result, ExpBiomass.elevCO2[[i]], ExpBiomass.elevCO2.std[[i]], co2_opt, years[i])
   
-  s.exp.std.leaf <- cbind(ExpBiomass.std[[i]][,c("DOY","Leaf")])
-  colnames(s.exp.std.leaf) <- c("fractional_doy","Leaf") # DOY renamed as fractional_doy
-  r.exp.std.leaf <- reshape2::melt(s.exp.std.leaf, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  r.exp.std.leaf$ymin <- r.exp.leaf$value - r.exp.std.leaf$value
-  r.exp.std.leaf$ymax <- r.exp.leaf$value + r.exp.std.leaf$value
-  
-  # Stem
-  s.exp.stem <- cbind(ExpBiomass.elevCO2[[i]][,c("DOY","Stem")]) # DOY renamed as fractional_doy
-  colnames(s.exp.stem) <- c("fractional_doy","Stem") # DOY renamed as fractional_doy
-  r.exp.stem <- reshape2::melt(s.exp.stem, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  
-  s.exp.std.stem <- cbind(ExpBiomass.std[[i]][,c("DOY","Stem")]) # DOY renamed as fractional_doy
-  colnames(s.exp.std.stem) <- c("fractional_doy","Stem") # DOY renamed as fractional_doy
-  r.exp.std.stem <- reshape2::melt(s.exp.std.stem, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  r.exp.std.stem$ymin <- r.exp.stem$value - r.exp.std.stem$value
-  r.exp.std.stem$ymax <- r.exp.stem$value + r.exp.std.stem$value
-  
-  # Pod
-  s.exp.pod <- cbind(ExpBiomass.elevCO2[[i]][,c("DOY","Pod")]) # DOY renamed as fractional_doy
-  colnames(s.exp.pod) <- c("fractional_doy","Pod") # DOY renamed as fractional_doy
-  r.exp.pod <- reshape2::melt(s.exp.pod, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  
-  s.exp.std.pod <- cbind(ExpBiomass.std[[i]][,c("DOY","Pod")]) # DOY renamed as fractional_doy
-  colnames(s.exp.std.pod) <- c("fractional_doy","Pod") # DOY renamed as fractional_doy
-  r.exp.std.pod <- reshape2::melt(s.exp.std.pod, id.vars = "fractional_doy") # DOY renamed as fractional_doy
-  r.exp.std.pod$ymin <- r.exp.pod$value - r.exp.std.pod$value
-  r.exp.std.pod$ymax <- r.exp.pod$value + r.exp.std.pod$value
-  
-  # Combine
-  r.exp.ls <- rbind(r.exp.leaf, r.exp.stem, r.exp.pod)
-  r.exp.ls$Source = "Observed"
-  r.lsrp.doy$Source = "Simulated"
-  r.all <- rbind(r.lsrp.doy, r.exp.ls)
-  # Reverse the order as follow
-  r.all$Organ <- factor(r.all$variable, levels = rev(levels(r.all$variable)))
-  
-  # Colorblind friendly color palette (https://personal.sron.nl/~pault/)
-  col.palette.muted.organs <- c("Leaf"="#117733", 
-                                "Stem"= "#999933", 
-                                "Root"="#332288", 
-                                "Pod"= "#882255")
-  size.title <- 12
-  size.axislabel <- 10
-  size.axis <- 10
-  size.legend <- 12
-  
-  f <- ggplot() + theme_classic()
-  f <- f +
-    geom_line(data = subset(r.all, Source == "Simulated"),  
-              aes(x=fractional_doy,y=value, color=Organ), size=0.8, alpha = 0.8) +
-    geom_point(data = subset(r.all, Source == "Observed"), 
-               aes(x=fractional_doy, y=value, color=Organ), shape=15, size=2, stroke=.5) +
-    
-    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
-    scale_color_manual(values = col.palette.muted.organs)
-  
-  # for leaf
-  f <- f + geom_errorbar(data=r.exp.std.leaf, aes(x=fractional_doy, ymin=ymin, ymax=ymax),  # DOY renamed as fractional_doy
-                         width=3.5, size=0.25, show.legend = FALSE)
-  # for stem
-  f <- f + geom_errorbar(data=r.exp.std.stem, aes(x=fractional_doy, ymin=ymin, ymax=ymax),   # DOY renamed as fractional_doy
-                         width=3.5, size=0.25, show.legend = FALSE)
-  # for pod
-  f <- f + geom_errorbar(data=r.exp.std.pod, aes(x=fractional_doy, ymin=ymin, ymax=ymax),   # DOY renamed as fractional_doy
-                         width=3.5, size=0.25, show.legend = FALSE)
-  
-  # change the plot labels and theme
-  f <- f + labs(title=years[i], x='Day of Year' ,y=NULL)
-  f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
-                 axis.text=element_text(size=size.axis),
-                 axis.title=element_text(size=size.axislabel),
-                 # legend.position = c(.15,.8), legend.title = element_blank(),
-                 legend.text=element_text(size=size.legend),
-                 # legend.background = element_rect(fill = "transparent",colour = NA),
-                 panel.grid.major = element_blank(),
-                 panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-                 plot.background = element_rect(fill = "transparent", colour = NA))
-  f <- f + scale_x_continuous(breaks = seq(150,280,30))
-  figs.elevCO2[[i]] <- f
-  
-  names(r.lsrp.doy) <- c('time', 'Organ', 'biomass', 'Source')
-  names(r.exp.ls) <- c('time', 'Organ', 'biomass', 'Source')
-  calculate_mse_soyFACE(years[[i]],r.lsrp.doy, r.exp.ls)
+  # plot partitioning
   allocation.elevCO2.figs[[i]] <- plot_partitioning(result, years[i])
 }
 
@@ -433,45 +180,7 @@ g_legend <-function(a.gplot){
 
 common_legend <- g_legend(figs[[1]])
 heights <- c(0.8, 1)
-combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
-                               arrangeGrob(arrangeGrob(figs[[1]] + theme(axis.title.x = element_blank(),
-                                                                         axis.text.x = element_blank(),
-                                                                         legend.position="none"),
-                                                        figs[[2]] + theme(legend.position="none"),
-                                                       nrow = 2, heights = heights),
-                                            arrangeGrob(figs[[3]] + theme(axis.title.x = element_blank(),
-                                                                          axis.text.x = element_blank(),
-                                                                          legend.position="none"),
-                                                        figs[[4]] + theme(legend.position="none"),
-                                                        nrow = 2, 
-                                                        heights = heights), # top = 'Testing'),
-                                            ncol = 2, top = 'Ambient CO2'),
-                                arrangeGrob(arrangeGrob(figs.elevCO2[[1]] + theme(axis.title.x = element_blank(),
-                                                                                  axis.text.x = element_blank(),
-                                                                                  legend.position="none"),
-                                                        figs.elevCO2[[2]] + theme(legend.position="none"),
-                                                        nrow = 2, 
-                                                        heights = heights), # top = 'Testing'),
-                                            arrangeGrob(figs.elevCO2[[3]] + theme(axis.title.x = element_blank(),
-                                                                                  axis.text.x = element_blank(),
-                                                                                  legend.position="none"),
-                                                        figs.elevCO2[[4]] + theme(legend.position="none"),
-                                                        nrow = 2,
-                                                        heights = heights), # top = 'Testing'),
-                                            ncol = 2, top = 'Elevated CO2'),
-                                common_legend,
-                                ncol=4, widths=c(0.3, 5,5,1.5))
-
-ggsave('SoyFACE_UTR_model_biomass_graph.png', 
-       plot = combined_graph, 
-       width = 8,
-       height = 4,
-       units = "in",
-       dpi = 300
-)
-
-
-combined_graph_v2 <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+combined_graph_SoyFACE <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
                                   arrangeGrob(
                                     arrangeGrob(arrangeGrob(figs[[1]] + theme(axis.title.x = element_blank(),
                                                                               axis.text.x = element_blank(),
@@ -504,15 +213,14 @@ combined_graph_v2 <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot 
                                   common_legend,
                                   ncol=3, widths=c(0.3, 10, 1.5))
 
-# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-save(results, results.elevCO2, ExpBiomass, ExpBiomass.elevCO2, file = 'SoyFACE_results_and_measurements.RData')
-
-
+# Plot lai
 for (i in 2:4){
+  # results[[i]]$lai <- results[[i]]$lai * 1.12
+  # results.elevCO2[[i]]$lai <- results.elevCO2[[i]]$lai * 1.12
   lai.figs[[i-1]] <- plot_amb_elev_lai(results[[i]], results.elevCO2[[i]], years[[i]], LAI[[i]], LAI.elevCO2[[i]])
   # print(lai.figs[[i-1]])
 }
-library(grid)
+
 combined_graph.lai <- grid.arrange(arrangeGrob(textGrob(bquote("LAI"~(m^2~"/"~m^2)), rot = 90, gp=gpar(fontsize=12))),
                                    arrangeGrob(arrangeGrob(lai.figs[[1]] + theme(legend.position="none"),
                                                            lai.figs[[2]] + theme(legend.position="none"),
@@ -522,24 +230,371 @@ combined_graph.lai <- grid.arrange(arrangeGrob(textGrob(bquote("LAI"~(m^2~"/"~m^
                                    ncol=2, widths=c(0.3, 5))
 
 # for (i in 1:4){
-#   percentage_change = (max(results.elevCO2[[i]]$Pod)-max(results[[i]]$Pod))/max(results[[i]]$Pod) * 100
-#   print(percentage_change)
+#   shoot_root_ratio = data.frame(
+#     fractional_doy = results[[i]]$fractional_doy,
+#     ambient_ratio = with(results[[i]], (Leaf+Stem+Pod)/Root),
+#     elevated_ratio = with(results.elevCO2[[i]], (Leaf+Stem+Pod)/Root))
+#   print(years[i])
+#   print(xyplot(data=shoot_root_ratio, ambient_ratio + elevated_ratio ~ fractional_doy, auto.key = TRUE))
 # }
 
-for (i in 1:4){
-  shoot_root_ratio = data.frame(
-    fractional_doy = results[[i]]$fractional_doy,
-    ambient_ratio = with(results[[i]], (Leaf+Stem+Pod)/Root),
-    elevated_ratio = with(results.elevCO2[[i]], (Leaf+Stem+Pod)/Root))
-  print(years[i])
-  print(xyplot(data=shoot_root_ratio, ambient_ratio + elevated_ratio ~ fractional_doy, auto.key = TRUE))
+
+
+#################################### Plot hail event ####################################
+yr <- '2003'
+co2_opt <- '_ambient_'
+parameters$Catm <- 372
+weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength.csv'))
+
+ExpBiomass <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt , 'biomass.csv'))
+colnames(ExpBiomass)<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
+
+ExpBiomass.std <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt, 'biomass_std.csv'))
+colnames(ExpBiomass.std)<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
+
+sd.idx <- which(weather$doy == 147)[12] # Morgan et al. 2005
+hd.ind <- which(weather$doy == max(ExpBiomass$DOY))[24]
+defoliation.ind <- which(weather$doy == 198)[14]
+
+weather.growingseason <- weather[sd.idx: hd.ind,]
+weather.growingseason_1 <- weather[sd.idx:defoliation.ind,]
+weather.growingseason_2 <- weather[defoliation.ind:hd.ind,]
+
+RootVals<- data.frame("DOY"=ExpBiomass$DOY[3], "Root"=0.17*sum(ExpBiomass[5,2:4])) # See Ordonez et al. 2020, https://doi.org/10.1016/j.eja.2020.126130
+
+numrows<- nrow(weather.growingseason)
+invwts <- ExpBiomass.std
+
+soybean_utr_optsolver_no_hail <- partial_run_biocro(initial_values,
+                                        parameters,
+                                        weather.growingseason,
+                                        direct_modules,
+                                        differential_modules,
+                                        solver,
+                                        arg_names,
+                                        verbose = FALSE)
+
+result_utr_no_hail <- soybean_utr_optsolver_no_hail(optim_params_conversion(optim_params_short_SoyFACE)) 
+soybean$parameters$time_zone_offset <- -6
+result_partitioning_no_hail <- with(soybean, run_biocro(initial_values,
+                                                        parameters,
+                                                        weather.growingseason,
+                                                        direct_modules,
+                                                        differential_modules,
+                                                        solver,
+                                                        verbose = FALSE))
+
+# plot simulation vs observation biomass and calculate mse
+fig_2003_utr_no_hail <- plot_SoyFACE_biomass(result_utr_no_hail, ExpBiomass, ExpBiomass.std, co2_opt, yr)
+result_partitioning_no_hail$Pod <- result_partitioning_no_hail$Grain + result_partitioning_no_hail$Shell
+fig_2003_partitioning_no_hail <- plot_SoyFACE_biomass(result_partitioning_no_hail, ExpBiomass, ExpBiomass.std, co2_opt, yr)
+combined_no_hail <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+                                 arrangeGrob(fig_2003_partitioning_no_hail + theme(legend.position="none"), top = 'Partitioning Model'),
+                                 arrangeGrob(fig_2003_utr_no_hail + theme(legend.position="none"), top = 'UTR model'),
+                                 common_legend,
+                                 ncol = 4, widths = c(0.1, 5, 5, 1))
+
+soybean_utr_optsolver_hail1 <- partial_run_biocro(initial_values,
+                                          parameters,
+                                          weather.growingseason_1,
+                                          direct_modules,
+                                          differential_modules,
+                                          solver,
+                                          arg_names,
+                                          verbose = FALSE)
+result_utr_hail1 <- soybean_utr_optsolver_hail1(optim_params_conversion(optim_params_short_SoyFACE))
+result_partitioning__hail1 <- with(soybean, run_biocro(initial_values,
+                                                        parameters,
+                                                       weather.growingseason_1,
+                                                        direct_modules,
+                                                        differential_modules,
+                                                        solver,
+                                                        verbose = FALSE))
+# update parameters
+differential_quantities_just_before_defoliation <-
+  as.list(result_utr_hail1[nrow(result_utr_hail1), names(initial_values)])
+
+differential_quantities_just_after_defoliation <-
+  differential_quantities_just_before_defoliation
+# Reduce the leaf mass
+remaining_leaf_percent <- 0.4
+# differential_quantities_just_after_defoliation$Leaf <-
+#   differential_quantities_just_before_defoliation$Leaf * remaining_leaf_percent
+
+differential_quantities_just_after_defoliation$Leaf_substrate_carbon <-
+  differential_quantities_just_before_defoliation$Leaf_substrate_carbon * remaining_leaf_percent
+differential_quantities_just_after_defoliation$Leaf_structural_carbon <-
+  differential_quantities_just_before_defoliation$Leaf_structural_carbon * remaining_leaf_percent # Could be changed to a different percentage
+
+# leaf_C_before_defoliation <- differential_quantities_just_before_defoliation$Leaf_substrate_carbon+
+#   differential_quantities_just_before_defoliation$Leaf_structural_carbon
+# stem_C_before_defoliation <- differential_quantities_just_before_defoliation$Stem_substrate_carbon+
+#   differential_quantities_just_before_defoliation$Stem_structural_carbon
+# abg_C_before_defoliation <- leaf_C_before_defoliation + stem_C_before_defoliation
+# 
+# leaf_C_after_defoliation <- differential_quantities_just_after_defoliation$Leaf_substrate_carbon+
+#   differential_quantities_just_after_defoliation$Leaf_structural_carbon
+# 
+# remaining_stem_percent <- (abg_C_before_defoliation*(1-0.21) -
+#                           leaf_C_after_defoliation)/
+#   stem_C_before_defoliation
+
+remaining_stem_percent <- 0.5
+
+
+differential_quantities_just_after_defoliation$Stem_substrate_carbon <-
+    differential_quantities_just_before_defoliation$Stem_substrate_carbon * remaining_stem_percent
+differential_quantities_just_after_defoliation$Stem_structural_carbon <-
+    differential_quantities_just_before_defoliation$Stem_structural_carbon * remaining_stem_percent
+
+differential_quantities_just_after_defoliation$DVI <-
+  differential_quantities_just_before_defoliation$DVI - 0.2
+
+orignal_utr_params <- data.frame(optim_params_conversion(optim_params_short_SoyFACE))
+rownames(orignal_utr_params) <- arg_names
+colnames(orignal_utr_params) <- "Value"
+parameters_after_hail <- orignal_utr_params
+
+CHANGE_PARAMETERS <- FALSE
+if(CHANGE_PARAMETERS){
+  parameters_after_hail['Stem_respiration_factor', 'Value'] <- orignal_utr_params['Stem_respiration_factor', 'Value'] * 2
+  # parameters_after_hail['Pod_start_dvi', 'Value'] <- orignal_utr_params['Pod_start_dvi', 'Value'] + 0.1
 }
 
+soybean_utr_optsolver_hail2 <- partial_run_biocro(differential_quantities_just_after_defoliation,
+                                          parameters,
+                                          weather.growingseason_2,
+                                          direct_modules,
+                                          differential_modules,
+                                          solver,
+                                          arg_names,
+                                          verbose = TRUE)
+result_utr_hail2 <- soybean_utr_optsolver_hail2(parameters_after_hail$Value)
+# Get the final values of the differential quantities; these will be the
+# values just before defoliation
+differential_quantities_just_before_defoliation <-
+  as.list(result_partitioning__hail1[nrow(result_partitioning__hail1), names(soybean$initial_values)])
+
+# Now reduce the leaf mass
+differential_quantities_just_after_defoliation <-
+  differential_quantities_just_before_defoliation
+
+differential_quantities_just_after_defoliation[['Leaf']] <-
+  differential_quantities_just_before_defoliation[['Leaf']] * remaining_leaf_percent
+
+differential_quantities_just_after_defoliation[['Stem']] <-
+  differential_quantities_just_before_defoliation[['Stem']] * remaining_stem_percent
+
+differential_quantities_just_after_defoliation[['DVI']] <-
+  differential_quantities_just_before_defoliation[['DVI']] - 0.2
+
+soybean$parameters$mrc_stem <- soybean$parameters$mrc_stem *2 
+result_partitioning__hail2 <- run_biocro(differential_quantities_just_after_defoliation,
+                                         soybean$parameters,
+                                         weather.growingseason_2,
+                                         soybean$direct_modules,
+                                         soybean$differential_modules,
+                                         soybean$ode_solver,
+                                         verbose = FALSE)
+
+result_utr_hail <- rbind(result_utr_hail1[seq_len(nrow(result_utr_hail1) - 1), ], result_utr_hail2)
+result_partitioning_hail <- rbind(result_partitioning__hail1[seq_len(nrow(result_partitioning__hail2) - 1), ], result_partitioning__hail2)
+result_partitioning_hail$Pod <- result_partitioning_hail$Grain + result_partitioning_hail$Shell
+fig_2003_utr_with_hail <- plot_SoyFACE_biomass(result_utr_hail, ExpBiomass, ExpBiomass.std, co2_opt, yr)
+fig_2003_partitioning_with_hail <- plot_SoyFACE_biomass(result_partitioning_hail, ExpBiomass, ExpBiomass.std, co2_opt, yr)
 
 
+### elevated CO2
+co2_opt <- '_CO2_'
+parameters$Catm <- 550
+soybean$parameters$Catm <- 550
+
+ExpBiomass.elevCO2 <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt , 'biomass.csv'))
+colnames(ExpBiomass.elevCO2)<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
+
+ExpBiomass.elevCO2.std <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, co2_opt, 'biomass_std.csv'))
+colnames(ExpBiomass.elevCO2.std)<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
+
+RootVals<- data.frame("DOY"=ExpBiomass.elevCO2$DOY[3], "Root"=0.17*sum(ExpBiomass.elevCO2[5,2:4])) # See Ordonez et al. 2020, https://doi.org/10.1016/j.eja.2020.126130
+
+numrows<- nrow(weather.growingseason)
+invwts <- ExpBiomass.elevCO2.std
+
+soybean_utr_optsolver_no_hail_eCO2 <- partial_run_biocro(initial_values,
+                                                    parameters,
+                                                    weather.growingseason,
+                                                    direct_modules,
+                                                    differential_modules,
+                                                    solver,
+                                                    arg_names,
+                                                    verbose = FALSE)
+
+result_utr_no_hail_eCO2 <- soybean_utr_optsolver_no_hail_eCO2(optim_params_conversion(optim_params_short_SoyFACE)) 
+
+result_partitioning_no_hail_eCO2 <- with(soybean, run_biocro(initial_values,
+                                                        parameters,
+                                                        weather.growingseason,
+                                                        direct_modules,
+                                                        differential_modules,
+                                                        solver,
+                                                        verbose = FALSE))
+
+# plot simulation vs observation biomass and calculate mse
+fig_2003_utr_no_hail_eCO2 <- plot_SoyFACE_biomass(result_utr_no_hail_eCO2, ExpBiomass.elevCO2, ExpBiomass.elevCO2.std, co2_opt, yr)
+result_partitioning_no_hail_eCO2$Pod <- result_partitioning_no_hail_eCO2$Grain + result_partitioning_no_hail_eCO2$Shell
+result_partitioning_no_hail_eCO2 <- plot_SoyFACE_biomass(result_partitioning_no_hail_eCO2, ExpBiomass.elevCO2, ExpBiomass.elevCO2.std, co2_opt, yr)
+combined_no_hail_eCO2 <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+                                 arrangeGrob(result_partitioning_no_hail_eCO2 + theme(legend.position="none"), top = 'Partitioning Model'),
+                                 arrangeGrob(fig_2003_utr_no_hail_eCO2 + theme(legend.position="none"), top = 'UTR model'),
+                                 common_legend,
+                                 ncol = 4, widths = c(0.1, 5, 5, 1))
+
+soybean_utr_optsolver_eCO2_hail1 <- partial_run_biocro(initial_values,
+                                                  parameters,
+                                                  weather.growingseason_1,
+                                                  direct_modules,
+                                                  differential_modules,
+                                                  solver,
+                                                  arg_names,
+                                                  verbose = FALSE)
+result_utr_eCO2_hail1 <- soybean_utr_optsolver_eCO2_hail1(optim_params_conversion(optim_params_short_SoyFACE))
+result_partitioning_eCO2_hail1 <- with(soybean, run_biocro(initial_values,
+                                                       parameters,
+                                                       weather.growingseason_1,
+                                                       direct_modules,
+                                                       differential_modules,
+                                                       solver,
+                                                       verbose = FALSE))
+# update parameters
+differential_quantities_just_before_defoliation <-
+  as.list(result_utr_eCO2_hail1[nrow(result_utr_eCO2_hail1), names(initial_values)])
+
+differential_quantities_just_after_defoliation <-
+  differential_quantities_just_before_defoliation
+# Reduce the leaf mass
+remaining_leaf_percent <- 0.4
+# differential_quantities_just_after_defoliation$Leaf <-
+#   differential_quantities_just_before_defoliation$Leaf * remaining_leaf_percent
+
+differential_quantities_just_after_defoliation$Leaf_substrate_carbon <-
+  differential_quantities_just_before_defoliation$Leaf_substrate_carbon * remaining_leaf_percent
+differential_quantities_just_after_defoliation$Leaf_structural_carbon <-
+  differential_quantities_just_before_defoliation$Leaf_structural_carbon * remaining_leaf_percent # Could be changed to a different percentage
+
+# leaf_C_before_defoliation <- differential_quantities_just_before_defoliation$Leaf_substrate_carbon+
+#   differential_quantities_just_before_defoliation$Leaf_structural_carbon
+# stem_C_before_defoliation <- differential_quantities_just_before_defoliation$Stem_substrate_carbon+
+#   differential_quantities_just_before_defoliation$Stem_structural_carbon
+# abg_C_before_defoliation <- leaf_C_before_defoliation + stem_C_before_defoliation
+# leaf_C_after_defoliation <- differential_quantities_just_after_defoliation$Leaf_substrate_carbon+
+#   differential_quantities_just_after_defoliation$Leaf_structural_carbon
+# 
+# remaining_stem_percent <- (abg_C_before_defoliation*(1-0.21) -
+#                              leaf_C_after_defoliation)/
+#   stem_C_before_defoliation
+
+remaining_stem_percent <- 0.5
 
 
-# Plot LD11
+differential_quantities_just_after_defoliation$Stem_substrate_carbon <-
+  differential_quantities_just_before_defoliation$Stem_substrate_carbon * remaining_stem_percent
+differential_quantities_just_after_defoliation$Stem_structural_carbon <-
+  differential_quantities_just_before_defoliation$Stem_structural_carbon * remaining_stem_percent
+
+differential_quantities_just_after_defoliation$DVI <-
+  differential_quantities_just_before_defoliation$DVI - 0.2
+
+orignal_utr_params <- data.frame(optim_params_conversion(optim_params_short_SoyFACE))
+rownames(orignal_utr_params) <- arg_names
+colnames(orignal_utr_params) <- "Value"
+parameters_after_hail <- orignal_utr_params
+
+CHANGE_PARAMETERS <- FALSE
+if(CHANGE_PARAMETERS){
+  parameters_after_hail['Stem_respiration_factor', 'Value'] <- orignal_utr_params['Stem_respiration_factor', 'Value'] * 2
+  # parameters_after_hail['Pod_start_dvi', 'Value'] <- orignal_utr_params['Pod_start_dvi', 'Value'] + 0.1
+}
+
+soybean_utr_optsolver_eCO2_hail2 <- partial_run_biocro(differential_quantities_just_after_defoliation,
+                                                  parameters,
+                                                  weather.growingseason_2,
+                                                  direct_modules,
+                                                  differential_modules,
+                                                  solver,
+                                                  arg_names,
+                                                  verbose = TRUE)
+result_utr_eCO2_hail2 <- soybean_utr_optsolver_eCO2_hail2(parameters_after_hail$Value)
+# Get the final values of the differential quantities; these will be the
+# values just before defoliation
+differential_quantities_just_before_defoliation <-
+  as.list(result_partitioning_eCO2_hail1[nrow(result_partitioning_eCO2_hail1), names(soybean$initial_values)])
+
+# Now reduce the leaf mass
+differential_quantities_just_after_defoliation <-
+  differential_quantities_just_before_defoliation
+
+differential_quantities_just_after_defoliation[['Leaf']] <-
+  differential_quantities_just_before_defoliation[['Leaf']] * remaining_leaf_percent
+
+differential_quantities_just_after_defoliation[['Stem']] <-
+  differential_quantities_just_before_defoliation[['Stem']] * remaining_stem_percent
+
+differential_quantities_just_after_defoliation[['DVI']] <-
+  differential_quantities_just_before_defoliation[['DVI']] - 0.2
+
+soybean$parameters$mrc_stem <- soybean$parameters$mrc_stem *2 
+result_partitioning_eCO2_hail2 <- run_biocro(differential_quantities_just_after_defoliation,
+                                         soybean$parameters,
+                                         weather.growingseason_2,
+                                         soybean$direct_modules,
+                                         soybean$differential_modules,
+                                         soybean$ode_solver,
+                                         verbose = FALSE)
+
+result_utr_eCO2_hail <- rbind(result_utr_eCO2_hail1[seq_len(nrow(result_utr_eCO2_hail1) - 1), ], result_utr_eCO2_hail2)
+result_partitioning_eCO2_hail <- rbind(result_partitioning_eCO2_hail1[seq_len(nrow(result_partitioning_eCO2_hail2) - 1), ], result_partitioning_eCO2_hail2)
+result_partitioning_eCO2_hail$Pod <- result_partitioning_eCO2_hail$Grain + result_partitioning_eCO2_hail$Shell
+fig_2003_utr_eCO2_with_hail <- plot_SoyFACE_biomass(result_utr_eCO2_hail, ExpBiomass.elevCO2, ExpBiomass.elevCO2.std, co2_opt, yr)
+fig_2003_partitioning_eCO2_with_hail <- plot_SoyFACE_biomass(result_partitioning_eCO2_hail, ExpBiomass.elevCO2, ExpBiomass.elevCO2.std, co2_opt, yr)
+
+
+combined_with_hail <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+                                   arrangeGrob(
+                                     arrangeGrob(  
+                                       arrangeGrob(fig_2003_partitioning_with_hail + 
+                                                     theme(axis.title.x = element_blank(),
+                                                           axis.title.y = element_blank(),
+                                                           legend.position="none"),
+                                                   top = 'Partitioning Model'),
+                                       arrangeGrob(fig_2003_utr_with_hail +
+                                                     theme(axis.title.x = element_blank(),
+                                                           axis.title.y = element_blank(),
+                                                           legend.position="none"),
+                                                   top = 'UTR model'), 
+                                       ncol = 2, top = 'Ambient CO2'),
+                                     arrangeGrob(
+                                       arrangeGrob(fig_2003_partitioning_eCO2_with_hail  + 
+                                                     theme(axis.title.x = element_blank(),
+                                                           axis.title.y = element_blank(),
+                                                           legend.position="none")),
+                                       arrangeGrob(fig_2003_utr_eCO2_with_hail  + 
+                                                     theme(axis.title.x = element_blank(),
+                                                           axis.title.y = element_blank(),
+                                                           legend.position="none")), 
+                                       ncol = 2, top = 'Elevated CO2'),
+                                     arrangeGrob(textGrob('Day of Year (2003)')),
+                                     nrow = 3, heights = c(4, 4, 0.3)),
+                                 common_legend,
+                                 ncol = 3, widths = c(0.3, 5, 1))
+ggsave('Fig7-hail.png', 
+       plot = combined_with_hail, 
+       width = 6,
+       height = 4.5,
+       units = "in",
+       dpi = 600
+)
+
+############################################# Plot LD11
 years <- c('2021', '2022', '2023', '2024')
 Catms <- c(414.7, 417.2, 419.3, 422.8) # from NOAA
 
@@ -549,8 +604,7 @@ parameters[updated_idx] <- updated_parameters$LD11
 
 ExpBiomass <- list()
 weather.afteremergence <- list()
-results <- list()
-results_wBW <- list()
+ld11.results <- list()
 ld11.figs <- list()
 lai.ld11.figs <- list()
 allocation.ld11.figs <- list()
@@ -563,9 +617,9 @@ loadRData <- function(fileName){
 
 
 for (i in 1:length(years)){
-  # for (i in 1:1){
   ExpBiomass[[i]] <- loadRData(paste0('../../energy-farm-biocro/soybean_ld11_biomass_', years[i],'/soybean_ld11_biomass_', years[i], '.RData'))
-  harv.doy <- max(ExpBiomass[[i]]$doy)
+  sow.time <- min(ExpBiomass[[i]]$time)
+  harv.time <- max(ExpBiomass[[i]]$time)
   weather <- loadRData(paste0('../../energy-farm-biocro/weather_', years[i], '/weather', years[i], '_hourly.RData'))
   parameters$Catm <- Catms[i]
   # update initial values
@@ -577,9 +631,7 @@ for (i in 1:length(years)){
   leaf_frac <- ExpBiomass[[i]]$leaf[j]/mass_t
   stem_frac <- ExpBiomass[[i]]$stem[j]/mass_t
   root_frac <- ExpBiomass[[i]]$root[j]/mass_t
-  
-  cf <- 0.3 # optim_params_short_SoyFACE[1]
-  
+  cf <- 0.3 
   updated_utr_initial_values <- list(
     Leaf_substrate_carbon = sub_frac * seed_mass * leaf_frac / cf,
     Leaf_structural_carbon = str_frac * seed_mass * leaf_frac / cf,
@@ -589,98 +641,25 @@ for (i in 1:length(years)){
     Root_structural_carbon = str_frac * seed_mass * root_frac / cf)
   
   initial_values[names(updated_utr_initial_values)] <- updated_utr_initial_values
-  
-  first_data_time <- ExpBiomass[[i]]$time[1]
-  weather.aftersowing <- weather[(((weather$doy-1)*24 + weather$hour) >= first_data_time) & weather$doy <= harv.doy, ]
-  
-  # Obtain DVI from the original Soybean-BioCro
-  soybean_biocro_result <- run_biocro(soybean$initial_values,
-                                      soybean$parameters,
-                                      weather.aftersowing,
-                                      soybean$direct_modules,
-                                      soybean$differential_modules,
-                                      soybean$ode_solver)
-  
-  weather.aftersowing$DVI <- soybean_biocro_result$DVI
-  # start from emergence time
-  weather.afteremergence[[i]] <- weather.aftersowing[-(1:which.min(abs(weather.aftersowing$DVI))),]
-  weather.afteremergence[[i]]$DVI <- NULL
-  weather.afteremergence[[i]]$time_zone_offset <- NULL
+  # weather file
+  weather.aftersowing <- weather[(((weather$doy-1)*24 + weather$hour) >= sow.time) & ((weather$doy-1)*24 + weather$hour) <= harv.time, ]
+  weather.aftersowing$time_zone_offset <- NULL
   parameters$RL_at_25 <- 1.28
   # parameters$par_energy_content <- 0.235
   result <- run_biocro(
     initial_values,
     parameters,
-    weather.afteremergence[[i]],
+    weather.aftersowing, # weather.afteremergence[[i]],
     direct_modules,#[-1],
     differential_modules,
     solver)
   
-  results[[i]] <- result
+  ld11.results[[i]] <- result
   
-  # Save plot into the list
-  biocro_organ_biomass <- result[c('time', 'Leaf', 'Stem', 'Root', 'Pod')]
-  biocro_organ_biomass_tall <- melt(biocro_organ_biomass, id.vars = 'time')
-  names(biocro_organ_biomass_tall) <- c('time','Organ', 'biomass')
-  
-  field_organ_biomass <- ExpBiomass[[i]][c('time', 'leaf', 'stem', 'root', 'pod')]
-  names(field_organ_biomass)[names(field_organ_biomass) %in% c('leaf', 'stem', 'root', 'pod')] <- c('Leaf', 'Stem', 'Root', 'Pod')
-  field_organ_biomass_tall <- melt(field_organ_biomass, id.vars = 'time')
-  names(field_organ_biomass_tall) <- c('time','Organ', 'biomass')
-  
-  size.title <- 12
-  size.axislabel <-12
-  size.axis <- 12
-  size.legend <- 8
-  
-  col.palette.muted <- c( "#117733", "#999933", "#332288", "#882255")
-  
-  ld11.figs[[i]] <- ggplot() + theme_classic() +
-    geom_line(data = biocro_organ_biomass_tall, aes(x = time/24 + 1, y = biomass, color = Organ), linewidth = 1, alpha=0.8) +
-    geom_point(data = field_organ_biomass_tall, aes(x = time/24 + 1, y = biomass, color = Organ), shape = 15, size = 3)+
-    theme(plot.title=element_text(size=size.title, hjust=0.5),
-          axis.text=element_text(size=size.axis),
-          axis.title.x =element_text(size=size.axislabel),
-          axis.title.y = element_blank(),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(), 
-          panel.background = element_rect(fill = "transparent",colour = NA),
-          plot.background = element_rect(fill = "transparent", colour = NA))+
-    scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2)) +
-    # scale_x_continuous(breaks = seq(180,280,30))+
-    labs(title=years[i], 
-         x=paste0('Day of Year'), 
-         y='Biomass (Mg/ha)')+
-    scale_color_manual(values = col.palette.muted)
-  
-  # print(ld11.figs[[i]])
-  save(biocro_organ_biomass_tall, file = paste0('organ_biomass_sim_', years[i],'_ld11.RData'))
-  save(field_organ_biomass_tall, file = paste0('organ_biomass_mea_', years[i],'_ld11.RData'))
-  
-  # lai plots
-  lai.ld11.figs[[i]] <- ggplot() + theme_classic() +
-    geom_line(data = result, aes(x = time, y = lai), linewidth = 1) +
-    geom_point(data = ExpBiomass[[i]], aes(x = time, y = LAI_from_LMA), shape = 15, size = 3)+
-    theme(plot.title=element_text(size=size.title, hjust=0.5),
-          axis.text=element_text(size=size.axis),
-          axis.title.x =element_text(size=size.axislabel),
-          axis.title.y = element_blank(),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.background = element_rect(fill = "transparent",colour = NA),
-          plot.background = element_rect(fill = "transparent", colour = NA))+
-    # scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
-    # scale_x_continuous(breaks = seq(180,280,30))+
-    labs(title=element_blank(),
-         x=paste0('Day of Year (', years[i], ')'),
-         y='LAI')+
-    scale_color_manual(values = col.palette.muted)
-
-  # print(lai.ld11.figs[[i]])
+  # plot LD11 biomass
+  ld11.figs[[i]] <- plot_ld11_biomass(result, ExpBiomass[[i]])
   
   allocation.ld11.figs[[i]] <- plot_partitioning(result, years[i])
-  
-  calculate_mse(years[[i]],biocro_organ_biomass_tall, field_organ_biomass_tall)
 }
 
 # extract the common legend
@@ -702,17 +681,8 @@ combined_graph <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 9
                                ncol=3, widths=c(0.3, 5, 1.1))
 
 common_legend <- g_legend(allocation.ld11.figs[[1]])
-combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
-                                          arrangeGrob(arrangeGrob(allocation.ld11.figs[[1]] + theme(legend.position="none"),
-                                                                  allocation.ld11.figs[[2]] + theme(legend.position="none"),
-                                                                  allocation.ld11.figs[[3]] + theme(legend.position="none"),
-                                                                  allocation.ld11.figs[[4]] + theme(legend.position="none"),
-                                                                  ncol = 4),
-                                                      ncol = 1),
-                                          common_legend,
-                                          ncol=3, widths=c(0.3, 5, 1.1))
 
-combined_graph.allocation_v2 <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
+combined_graph.allocation <- grid.arrange(arrangeGrob(textGrob('Allocation %', rot = 90, gp=gpar(fontsize=12))),
                                             arrangeGrob(arrangeGrob(allocation.figs[[1]] + theme(legend.position="none"),
                                                                     allocation.figs[[2]] + theme(legend.position="none"),
                                                                     allocation.figs[[3]] + theme(legend.position="none"),
@@ -733,7 +703,7 @@ combined_graph.allocation_v2 <- grid.arrange(arrangeGrob(textGrob('Allocation %'
                                             ncol=3, widths=c(0.2, 5, 0.8))
 
 ggsave('Fig3-allocation.png', 
-       plot = combined_graph.allocation_v2, 
+       plot = combined_graph.allocation, 
        width = 10,
        height = 7,
        units = "in",
@@ -799,9 +769,8 @@ ggsave('Fig2-biomass.png',
        dpi = 600
 )
 
-library(dplyr)
 total_precip <- sapply(1:4, function(i) {
-  results[[i]] %>%
+  ld11.results[[i]] %>%
     filter(DVI >= 0 & DVI <= 1) %>%
     summarise(total = sum(precip, na.rm = TRUE)) %>%
     pull(total)
@@ -812,7 +781,6 @@ print(total_precip)
 
 
 # Plot substrate C concentration
-TNC.data <- read.csv('../Data/2022_Carb_data/2022_LD11_TNC_new.csv')
 leaf.tnc.all <- read.csv('../Data/2022_Carb_data/Leaf_all.csv')
 stem.tnc.all <- read.csv('../Data/2022_Carb_data/Stem_all.csv')
 
@@ -837,7 +805,7 @@ leaf.tnc.long$TNC <- leaf.tnc.long$TNC * 6 / 1000
 stem.tnc.long$TNC <- stem.tnc.long$TNC * 6 / 1000
 
 # Simulated
-r <- results[[2]]
+r <- ld11.results[[2]]
 sim_substrate_C_by_mass <- data.frame(
   time = r$fractional_doy,
   hour = r$hour,
@@ -959,22 +927,6 @@ leaf.tnc.sampling.days <- rbind(sim_leaf_tnc_sampling_days[,col.names],
                                 leaf.tnc.long[,col.names],
                                 leaf.tnc.mean[,col.names])
 
-ggplot(leaf.tnc.sampling.days, aes(hour, TNC, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  facet_wrap("DOY_date") +
-  scale_shape_manual(values=c(17, 18, 16)) +
-  scale_size_manual(values=c(1, 2.5, 0.5)) +
-  theme_classic() +
-  theme(legend.position = c(0.85, 0.2),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
-  scale_x_continuous(breaks = seq(0,24,6))+
-  labs(title=element_blank(), 
-       x='Hour of the Day',
-       y='Leaf Substrate C (mol glucose eq./Mg)')
-
 sim_stem_tnc_by_mass$DOY <- as.integer(sim_stem_tnc_by_mass$time)
 stem.tnc.mean$DOY <- as.integer(stem.tnc.mean$time)
 ind.sampling.days <- which(sim_stem_tnc_by_mass$DOY %in% stem.tnc.all$DOY)
@@ -992,22 +944,43 @@ col.names <- c('DOY_date','hour','TNC', 'Source')
 stem.tnc.sampling.days <- rbind(sim_stem_tnc_sampling_days[,col.names],
                                 stem.tnc.long[,col.names],
                                 stem.tnc.mean[,col.names])
+# leaf_dirunal_plot <- ggplot(leaf.tnc.sampling.days, aes(hour, TNC, group = Source)) + 
+#   geom_point(aes(shape=Source, color=Source, size=Source))+
+#   facet_wrap("DOY_date") +
+#   scale_shape_manual(values=c(17, 18, 16)) +
+#   scale_size_manual(values=c(1, 2.5, 0.5)) +
+#   theme_classic() +
+#   theme(legend.position = c(0.85, 0.2),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+#         plot.background = element_rect(fill = "transparent", colour = NA))+
+#   # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+#   scale_x_continuous(breaks = seq(0,24,6))+
+#   labs(title=element_blank(), 
+#        x='Hour of the Day',
+#        y='Leaf Substrate C (mol glucose eq./Mg)')
+# stem_dirunal_plot <- ggplot(stem.tnc.sampling.days, aes(hour, TNC, group = Source)) + 
+#   geom_point(aes(shape=Source, color=Source, size=Source))+
+#   facet_wrap("DOY_date") +
+#   scale_shape_manual(values=c(17, 18, 16)) +
+#   scale_size_manual(values=c(1, 2.5, 0.5)) +
+#   theme_classic() +
+#   theme(legend.position = c(0.85, 0.2),
+#         panel.grid.major = element_blank(),
+#         panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
+#         plot.background = element_rect(fill = "transparent", colour = NA))+
+#   # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
+#   scale_x_continuous(breaks = seq(0,24,6))+
+#   labs(title=element_blank(), 
+#        x='Hour',
+#        y='Stem Substrate C (mol glucose eq./Mg)')
+# # common_legend <- g_legend(stem_dirunal_plot)
+# combined_graph.diurnal_C_concentration <- grid.arrange(arrangeGrob(textGrob('Substrate C Concentration (mol C / kg)', rot = 90, gp=gpar(fontsize=12))),
+#                                           arrangeGrob(arrangeGrob(leaf_dirunal_plot, top = '(A) Leaf'),
+#                                                       arrangeGrob(stem_dirunal_plot + theme(legend.position="none"), top = '(B) Stem')),
+#                                           ncol = 2, widths=c(0.1, 10))
 
-ggplot(stem.tnc.sampling.days, aes(hour, TNC, group = Source)) + 
-  geom_point(aes(shape=Source, color=Source, size=Source))+
-  facet_wrap("DOY_date") +
-  scale_shape_manual(values=c(17, 18, 16)) +
-  scale_size_manual(values=c(1, 2.5, 0.5)) +
-  theme_classic() +
-  theme(legend.position = c(0.85, 0.2),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-        plot.background = element_rect(fill = "transparent", colour = NA))+
-  # scale_y_continuous(limits = c(0, 0.6), breaks = seq(0, 0.6, 0.1)) +
-  scale_x_continuous(breaks = seq(0,24,6))+
-  labs(title=element_blank(), 
-       x='Hour',
-       y='Stem Substrate C (mol glucose eq./Mg)')
+
 
 leaf.tnc.sampling.days$Organ <- 'Leaf'
 stem.tnc.sampling.days$Organ <- 'Stem'
@@ -1042,3 +1015,71 @@ ggsave('Fig5-substrate-diurnal.png',
        units = "in",
        dpi = 600
 )
+
+
+# plot assimilation by layers
+times <- c(186.5, 209.5, 236.5, 258.5)
+doys <- c(186, 209, 236, 258)
+layer_assim <- data.frame(DOY = numeric(),
+                          layer_number = numeric(),
+                          layer_assimilation = numeric())# ,
+                          # assim_type = character())
+for (t in 1:length(times)){
+  time <- times[t]
+  doy <- doys[t]
+  idx <- which(r$fractional_doy==time)
+  for (i in 0:9){
+    total_assim <- (r[idx, paste0('sunlit_Assim_layer_', i)]*
+                r[idx, paste0('sunlit_fraction_layer_', i)] +
+                r[idx, paste0('shaded_Assim_layer_', i)]*
+                r[idx, paste0('shaded_fraction_layer_', i)]) *
+      r[idx, 'lai'] /10
+    # sunlit_assim <- r[idx, paste0('sunlit_Assim_layer_', i)]#  + 
+    # shaded_assim <- r[idx, paste0('shaded_Assim_layer_', i)]
+    # total_assim <- sunlit_assim + shaded_assim
+    # new_row_sunlit <- data.frame(
+    #   DOY = doy,
+    #   layer_number = i,
+    #   layer_assimilation = sunlit_assim,
+    #   assim_type = 'sunlit')
+    # new_row_shaded <- data.frame(
+    #   DOY = doy,
+    #   layer_number = i,
+    #   layer_assimilation = shaded_assim,
+    #   assim_type = 'shaded')
+    # new_row <- rbind(new_row_sunlit, new_row_shaded)
+    new_row <- data.frame(
+      DOY = doy,
+      layer_number = i,
+      layer_assimilation = total_assim)
+    layer_assim <- rbind(layer_assim, new_row)
+  }
+}
+
+layer_assim_plot <- ggplot(layer_assim, aes(x = layer_number, y = layer_assimilation))+ #, group = assim_type)) +
+  geom_point() + # aes(color=assim_type)) +
+  geom_line() + #aes(color=assim_type)) +
+  facet_wrap(~ DOY, nrow = 1, scales = "fixed") +
+  labs(# title = "Layer Assimilation by Layer Number on Different DOYs",
+    x = "Layer Number (Top:1 - Bottom: 9)",
+    y = "Layer Assimilation (micromol / m^2 / s )") +
+  theme_minimal() +
+  theme(
+    strip.background = element_rect(fill = "lightgrey"),
+    strip.text = element_text(face = "bold"),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.major.x = element_line(color = "grey90")
+  ) +
+  scale_x_continuous(breaks = unique(layer_assim$layer_number),
+                     labels = as.integer(unique(layer_assim$layer_number))) 
+
+# Display the plot
+print(layer_assim_plot)
+ggsave('Fig6-layer_assim.png', 
+       plot = layer_assim_plot, 
+       width = 10,
+       height = 2.5,
+       units = "in",
+       dpi = 600
+)
+
