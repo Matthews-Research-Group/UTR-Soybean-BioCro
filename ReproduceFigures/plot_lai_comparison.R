@@ -29,7 +29,7 @@ plot_amb_elev_lai <- function(res, elev_res, year, lai, elev_lai) {
   f <- f + geom_errorbar(data=r.exp.std.lai, aes(x=DOY, ymin=ymin, ymax=ymax), width=3.5, size=0.25, show.legend = FALSE)
   f <- f + geom_point(data=r.exp.lai, aes(x=DOY, y=value, fill=variable), shape=22, size=2, show.legend = FALSE, stroke=.5)
   f <- f + coord_cartesian(ylim = c(0,10)) + scale_x_continuous(breaks = seq(150,275,30))
-  f <- f + labs(x='Day of Year' ,y=bquote("LAI"~(m^2~"/"~m^2)))
+  f <- f + labs(x=paste0('Day of Year (', year, ')') ,y=bquote("LAI"~(m^2~"/"~m^2)))
   f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
                  axis.text=element_text(size=size.axis),
                  axis.title=element_text(size=size.axislabel),

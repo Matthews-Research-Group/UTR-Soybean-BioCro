@@ -86,7 +86,7 @@ optim_params_short_SoyFACE <-c(0.002595,    0.057326,    0.093132,    0.978362,
                                5.618359,    0.427995,    1.766830,    2.024509,
                                1.648755,    0.995707,    1.104793,    1.868845) # 2/27/2026
 # Read the file
-lines <- readLines("../ParameterOptimization/Optmization_output_2026-03-02.txt")
+lines <- readLines("../ParameterOptimization/Optmization_output_2026-03-02.txt") # 2026-03-02
 optim_params_short_SoyFACE <- as.numeric(strsplit(trimws(sub(".*bestmemit:", "", lines[1000])), "\\s+")[[1]])
 
 

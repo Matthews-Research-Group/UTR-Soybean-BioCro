@@ -3,7 +3,6 @@ Ball-Berry parameter intercept,b0,b0,mol / m^2 / s,0.008,0.133796276
 Ball-Berry parameter slope,b1,b1,dimensionless,10.6,5.287738658
 Maximum carboxylation velocity,vmax1,Vcmax_at_25,micromol / m^2 / s,110,117.4908357
 Light saturated potential rate of electron transport,jmax,Jmax_at_25,micromol / m^2 / s,195,215.0692431
-Dark respiration rate,Rd,RL_at_25,micromol / m^2 / s,1.28,0.272014643
 Max triose phosphate utilization rate,tpu_rate_max,Tp_at_25,micromol / m^2 / s,13,14.47915459
 Electrons per carboxylation,electrons_per_carboxylation,electrons_per_carboxylation,Self explanatory,4.5,4
 electrons_per_oxygenation,electrons_per_oxygenation,electrons_per_oxygenation,Self explanatory,5.25,4

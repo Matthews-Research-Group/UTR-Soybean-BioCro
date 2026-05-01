@@ -15,7 +15,7 @@ source('../ParameterOptimization/soybean_parameter_expansion.R')
 source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 
 # initialize lists for figures
-co2_opt = '_co2_'
+co2_opt = '_ambient_'
 
 # names of fitted parameters
 setwd('../Data/Soybean-BioCro_Parameters')

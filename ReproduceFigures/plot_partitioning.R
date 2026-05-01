@@ -40,13 +40,13 @@ plot_partitioning <- function(result, year){
   #                                         allocation_percentage$Pod
   
   allocation_percentage <- allocation_percentage[1:which.min(abs(allocation_percentage$DVI-parameters$stop_growth_dvi)),]
-  
+  # print('LSRP:')
+  # print(min(allocation_percentage$Leaf))
   allocation_percentage_tall <- melt(allocation_percentage, id.vars = 'DVI') # 'DOY')
   names(allocation_percentage_tall) <- c('DVI','Organ', 'Percentage') # DOY
   p <- ggplot() + theme_classic() +
     geom_point(data = allocation_percentage_tall, aes(x=DVI, y=Percentage, color=Organ), # x=DOY
                size = 0.8)+
-    scale_color_manual(values = col.palette.muted)+
     theme(plot.title=element_text(size=16, hjust=0.5),
           axis.text=element_text(size=10),
           axis.title=element_text(size=10),
@@ -57,8 +57,11 @@ plot_partitioning <- function(result, year){
     scale_x_continuous(breaks = seq(-1,2,1))+
     labs(title=element_blank(), 
          x= paste0('DVI (', year, ')'), # paste0('Day of Year (', year, ')'), 
-         y='Allocation %')
+         y='Allocation %') +
+    scale_color_manual(
+      values = c('Leaf' = "#117733", 'Stem' = "#999933", 'Root' = "#332288", 'Pod' = "#882255"),
+      breaks = c('Leaf', 'Stem', 'Root', 'Pod')
+    )
   ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in")
   return(p) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
 }
-
