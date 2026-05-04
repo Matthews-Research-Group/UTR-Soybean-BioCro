@@ -301,8 +301,7 @@ yield_reduction_fig <- ggplot() +
                     breaks = c(# "UTR1", "UTR2", 
                       "UTR", "Partitioning", "Proulx and Naeve (2009)")) +
   scale_x_continuous(breaks = 1:4, labels = c("20%", "40%", "60%", "70%")) +
-  labs(title = "Yield Reduction by Pod Removal Percentage",
-       x = "Pod Removal (%)",
+  labs(x = "Pod Removal (%)",
        y = "Yield Reduction (%)") +
   theme_bw() +
   theme(legend.position = "bottom")

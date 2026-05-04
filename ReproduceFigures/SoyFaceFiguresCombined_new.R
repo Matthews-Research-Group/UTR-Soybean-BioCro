@@ -263,6 +263,7 @@ root_shoot_all <- do.call(rbind, lapply(1:length(years), function(i) {
   data.frame(
     year          = years[i],
     fractional_doy = results[[i]]$fractional_doy,
+    DVI            = results[[i]]$DVI,
     ambient_ratio  = with(results[[i]],      Root / (Leaf + Stem + Pod)),
     elevated_ratio = with(results.elevCO2[[i]], Root / (Leaf + Stem + Pod))
   )
@@ -303,6 +304,46 @@ ggsave('Fig-root-shoot-ratio.png',
        units = "in",
        dpi = 600
 )
+
+
+root_shoot_mean <- root_shoot_long %>%
+  mutate(dvi_bin = round(DVI / 0.01) * 0.01) %>%   # bin on DVI instead of fractional_doy
+  group_by(dvi_bin, treatment) %>%
+  summarise(
+    mean_ratio = mean(ratio, na.rm = TRUE),
+    min_ratio  = min(ratio,  na.rm = TRUE),
+    max_ratio  = max(ratio,  na.rm = TRUE),
+    .groups = "drop"
+  )
+
+root_shoot_mean_plot <- ggplot(root_shoot_mean,
+                               aes(x = dvi_bin, colour = treatment, fill = treatment)) +
+  geom_ribbon(aes(ymin = min_ratio, ymax = max_ratio), alpha = 0.2, colour = NA) +
+  geom_line(aes(y = mean_ratio), linewidth = 0.8) +
+  scale_colour_manual(values = c("Ambient CO2"  = "steelblue",
+                                 "Elevated CO2" = "tomato"),
+                      name = "CO2 Level") +
+  scale_fill_manual(values = c("Ambient CO2"  = "steelblue",
+                               "Elevated CO2" = "tomato"),
+                    name = "CO2 Level") +
+  labs(
+    x = "DVI",
+    y = "Root - Shoot Ratio"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom",
+    legend.key.size = unit(0.4, "cm")
+  )
+
+print(root_shoot_mean_plot)
+
+ggsave('Fig-root-shoot-ratio-mean.png',
+       plot   = root_shoot_mean_plot,
+       width  = 6,
+       height = 4,
+       units  = "in",
+       dpi    = 600)
 
 ####### Plot the shoot utilization ratio ########
 # Build combined data frame across all years
