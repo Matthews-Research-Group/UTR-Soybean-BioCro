@@ -73,8 +73,8 @@ calculate_pod_reduction <- function(podrm_dvi, yr, pod_removal_pct){
                                                            verbose = FALSE))
   
   # print the DVI or DOY of seed growth
-  print(paste0("Seed Growth Start DVI: ", result_partitioning_no_podrm$DVI[which(result_partitioning_no_podrm$Grain>0.001)[1]]))
-  print(paste0("Seed Growth Start DOY: ", result_partitioning_no_podrm$doy[which(result_partitioning_no_podrm$Grain>0.001)[1]]))
+  print(paste0("Pod Growth Start DVI: ", result_partitioning_no_podrm$DVI[which(result_partitioning_no_podrm$Grain>0.001)[1]]))
+  print(paste0("Pod Growth Start DOY: ", result_partitioning_no_podrm$doy[which(result_partitioning_no_podrm$Grain>0.001)[1]]))
   
   ###### Pod Removal scenario #####
   pod.rm.ind <- which.min(abs(result_utr_no_podrm$DVI - podrm_dvi)) + sd.idx
@@ -139,10 +139,6 @@ calculate_pod_reduction <- function(podrm_dvi, yr, pod_removal_pct){
   
   result_utr_podrm <- rbind(result_utr_podrm1[seq_len(nrow(result_utr_podrm1) - 1), ], result_utr_podrm2)
   result_partitioning_podrm <- rbind(result_partitioning_podrm1[seq_len(nrow(result_partitioning_podrm1) - 1), ], result_partitioning_podrm2)
-  # result_partitioning_podrm$Pod <- result_partitioning_podrm$Grain + result_partitioning_podrm$Shell
-  # fig_utr_with_podrm <- plot_SoyFACE_biomass(result_utr_podrm, ExpBiomass, ExpBiomass.std, co2_opt, yr)
-  # fig_partitioning_with_podrm <- plot_SoyFACE_biomass(result_partitioning_podrm, ExpBiomass, ExpBiomass.std, co2_opt, yr)
-  # print(fig_partitioning_with_podrm)
   
   # Check the DOY of the assumed Pod Removal DVI
   print(paste0('DVI = ', podrm_dvi, " is on DOY = ", 
@@ -155,17 +151,25 @@ calculate_pod_reduction <- function(podrm_dvi, yr, pod_removal_pct){
   exp_first_seed_dvi <- result_utr_no_podrm$DVI[which(result_utr_no_podrm$doy==exp_first_seed_doy)[1]]
   exp_before_seed_dvi <- result_utr_no_podrm$DVI[which(result_utr_no_podrm$doy==exp_before_seed_doy)[1]]
   
-  # # Method 1: Calculate Seed by taking out the final shell
-  # final_shell <- (tail(ExpBiomass$Pod, 1) - tail(ExpBiomass$Seed, 1))
-  # no_podrm_seed <- tail(result_utr_no_podrm$Pod, 1) - final_shell
-  # podrm_seed <- tail(result_utr_podrm$Pod, 1) - final_shell * (1-pod_removal_pct)
-  # utr_yield_reduction1 <- 1 - podrm_seed/no_podrm_seed
-  # 
-  # # Method 2: Calculate Seed by taking out the shell at Pod Removal
-  # pod_at_removal_time <- tail(result_utr_podrm1$Pod, 1)
-  # no_podrm_seed <- tail(result_utr_no_podrm$Pod, 1) - pod_at_removal_time
-  # podrm_seed <- tail(result_utr_podrm$Pod, 1) - pod_at_removal_time * (1-pod_removal_pct)
-  # utr_yield_reduction2 <- 1 - podrm_seed/no_podrm_seed
+  # Method 1: Calculate Seed by taking out the final shell
+  final_shell <- (tail(ExpBiomass$Pod, 1) - tail(ExpBiomass$Seed, 1))
+  no_podrm_seed <- tail(result_utr_no_podrm$Pod, 1) - final_shell
+  podrm_seed <- tail(result_utr_podrm$Pod, 1) - final_shell * (1-pod_removal_pct)
+  utr_yield_reduction1 <- 1 - podrm_seed/no_podrm_seed
+
+  # Method 2: Calculate Seed by taking out the shell at Pod Removal
+  pod_at_removal_time <- tail(result_utr_podrm1$Pod, 1)
+  no_podrm_seed <- tail(result_utr_no_podrm$Pod, 1) - pod_at_removal_time
+  podrm_seed <- tail(result_utr_podrm$Pod, 1) - pod_at_removal_time * (1-pod_removal_pct)
+  utr_yield_reduction2 <- 1 - podrm_seed/no_podrm_seed
+  
+  # Method 2_2: Calculate Seed by taking out the shell when shading treatment started
+  if(podrm_dvi>1.45){
+    shell_at_podrm_start_time <- result_utr_podrm1$Pod[which.min(abs(result_utr_podrm1$DVI - 1.45))]
+    no_podrm_seed <- tail(result_utr_no_podrm$Pod, 1) - shell_at_podrm_start_time
+    podrm_seed <- tail(result_utr_podrm$Pod, 1) - shell_at_podrm_start_time
+    utr_yield_reduction2 <- 1 - podrm_seed/no_podrm_seed
+  }
   
   # Method 3: Assume seed:pod ratio to be fixed
   utr_yield_reduction3 <- 1 - tail(result_utr_podrm$Pod, 1)/tail(result_utr_no_podrm$Pod, 1)
@@ -178,8 +182,6 @@ calculate_pod_reduction <- function(podrm_dvi, yr, pod_removal_pct){
   return(list(year=yr, 
               exp_before_seed_dvi = exp_before_seed_dvi, 
               exp_first_seed_dvi = exp_first_seed_dvi,
-              # utr1=utr_yield_reduction1,
-              # utr2=utr_yield_reduction2,
               utr=utr_yield_reduction3, 
               partitioning=partitioning_yield_reduction))
 }
@@ -234,8 +236,7 @@ obs_df <- data.frame(
 
 # Compute per-year long format for points (Source 1 & 2)
 df_points <- df %>%
-  tidyr::pivot_longer(cols = c(# "UTR1", "UTR2", 
-                              "UTR", "Partitioning"),
+  tidyr::pivot_longer(cols = c("UTR", "Partitioning"),
                       names_to = "Source", values_to = "Yield_R")
 
 # Compute mean across years for bars (Source 1 & 2)
@@ -244,23 +245,22 @@ df_bars <- df_points %>%
   summarise(Mean_YR = mean(Yield_R), .groups = "drop")
 
 # Combine bars from all 3 sources
-all_bars <- bind_rows(df_bars, obs_df)
-all_bars$Source <- factor(all_bars$Source, 
-                          levels = c(# "UTR1", "UTR2", 
-                            "UTR", "Partitioning", "Proulx and Naeve (2009)"))
+all_depod_bars <- bind_rows(df_bars, obs_df)
+all_depod_bars$Source <- factor(all_depod_bars$Source, 
+                          levels = c("Proulx and Naeve (2009)",
+                            "UTR", "Partitioning"))
 
 # Plot
 df_points$Source <- factor(df_points$Source, 
-                           levels = c(# "UTR1", "UTR2", 
-                             "UTR", "Partitioning", "Proulx and Naeve (2009)"))
+                           levels = c("Proulx and Naeve (2009)",
+                                      "UTR", "Partitioning"))
 
 
 # Manually compute x positions to match dodged bars exactly
 # With 3 groups and dodge width 0.8, offsets are: -0.267, 0, +0.267
-# Convert Pod_RM to numeric in all_bars too
+# Convert Pod_RM to numeric in all_depod_bars too
 dodge_offset <- data.frame(
-  Source = c(# "UTR1", "UTR2", 
-    "UTR", "Partitioning", "Proulx and Naeve (2009)"),
+  Source = c("Proulx and Naeve (2009)", "UTR", "Partitioning"),
   offset = c(-0.267, 
              #-0.1335, 
              0, 
@@ -268,13 +268,13 @@ dodge_offset <- data.frame(
              0.267)
 )
 
-all_bars_pos <- all_bars %>%
+all_depod_bars_pos <- all_depod_bars %>%
   left_join(dodge_offset, by = "Source") %>%
   mutate(x_pos = as.numeric(as.character(Pod_RM)) * 10 + offset)
 # Scale Pod_RM to 1,2,3,4 index instead
 pod_levels <- c(0.2, 0.4, 0.6, 0.7)
 
-all_bars_pos <- all_bars %>%
+all_depod_bars_pos <- all_depod_bars %>%
   left_join(dodge_offset, by = "Source") %>%
   mutate(x_idx = match(as.numeric(as.character(Pod_RM)), pod_levels),
          x_pos = x_idx + offset)
@@ -285,7 +285,7 @@ df_points_pos <- df_points %>%
          x_pos = x_idx + offset)
 
 yield_reduction_fig <- ggplot() +
-  geom_bar(data = all_bars_pos,
+  geom_bar(data = all_depod_bars_pos,
            aes(x = x_pos, y = Mean_YR, fill = Source),
            stat = "identity", width = 0.25) +
   geom_jitter(data = df_points_pos,
@@ -293,13 +293,10 @@ yield_reduction_fig <- ggplot() +
               width = 0.04, height = 0,
               shape = 21, size = 2.5, color = "black") +
   scale_fill_manual(name = "Source",
-                    values = c(# "UTR1"                    = "#E69F00",
-                               # "UTR2"                    = "#E67F00",
-                               "UTR"                    = "#E65F00",
-                               "Partitioning"                = "#0072B2",
-                               "Proulx and Naeve (2009)" = "#009E73"),
-                    breaks = c(# "UTR1", "UTR2", 
-                      "UTR", "Partitioning", "Proulx and Naeve (2009)")) +
+                    values = c("Proulx and Naeve (2009)" = "#009E73",
+                               "UTR"                     = "#E65F00",
+                               "Partitioning"            = "#0072B2"),
+                    breaks = c("Proulx and Naeve (2009)", "UTR", "Partitioning")) +
   scale_x_continuous(breaks = 1:4, labels = c("20%", "40%", "60%", "70%")) +
   labs(x = "Pod Removal (%)",
        y = "Yield Reduction (%)") +

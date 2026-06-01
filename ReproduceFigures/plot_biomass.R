@@ -75,6 +75,13 @@ plot_SoyFACE_biomass <- function(result, mea, mea.std, co2_opt, yr){
   f <- f + geom_errorbar(data=r.exp.std.pod, aes(x=fractional_doy, ymin=ymin, ymax=ymax),   # DOY renamed as fractional_doy
                          width=3.5, size=0.25, show.legend = FALSE)
   
+  f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
+                 axis.text=element_text(size=size.axis),
+                 axis.title=element_text(size=size.axislabel),
+                 panel.grid.major = element_blank(),
+                 panel.grid.minor = element_blank(), 
+                 panel.background = element_rect(fill = "transparent",colour = NA))
+  
   # change the plot labels and theme
   if(yr != '2003'){
     f <- f + labs(title= yr , x='Day of Year', y=NULL)
@@ -82,20 +89,9 @@ plot_SoyFACE_biomass <- function(result, mea, mea.std, co2_opt, yr){
   
   if(co2_opt == '_ambient_'){
     if (yr == '2002' || yr == '2005'){
-      f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
-                     axis.text=element_text(size=size.axis),
-                     axis.title=element_text(size=size.axislabel),
-                     panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank(), 
-                     panel.background = element_rect(fill = "transparent",colour = NA),
-                     plot.background = element_rect(fill = "grey90", colour = NA))
+      f <- f + theme(plot.background = element_rect(fill = "grey90", colour = NA))
     }else{
-      f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
-                     axis.text=element_text(size=size.axis),
-                     axis.title=element_text(size=size.axislabel),
-                     panel.grid.major = element_blank(),
-                     panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
-                     plot.background = element_rect(fill = "transparent", colour = NA))
+      f <- f + theme(plot.background = element_rect(fill = "transparent", colour = NA))
     }
   }
   f <- f + scale_x_continuous(breaks = seq(150,280,30))
@@ -138,7 +134,7 @@ plot_ld11_biomass <- function(result, mea){
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
     scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2)) +
-    # scale_x_continuous(breaks = seq(180,280,30))+
+    scale_x_continuous(breaks = seq(150,280,30))+
     labs(title=years[i], 
          x=paste0('Day of Year'), 
          y='Biomass (Mg/ha)')+
@@ -147,27 +143,4 @@ plot_ld11_biomass <- function(result, mea){
   calculate_mse(years[[i]],biocro_organ_biomass_tall, field_organ_biomass_tall)
   
   return(f)
-  
-  # save(biocro_organ_biomass_tall, file = paste0('organ_biomass_sim_', years[i],'_ld11.RData'))
-  # save(field_organ_biomass_tall, file = paste0('organ_biomass_mea_', years[i],'_ld11.RData'))
-  # 
-  # # lai plots
-  # lai.ld11.figs[[i]] <- ggplot() + theme_classic() +
-  #   geom_line(data = result, aes(x = time, y = lai), linewidth = 1) +
-  #   geom_point(data = ExpBiomass[[i]], aes(x = time, y = LAI_from_LMA), shape = 15, size = 3)+
-  #   theme(plot.title=element_text(size=size.title, hjust=0.5),
-  #         axis.text=element_text(size=size.axis),
-  #         axis.title.x =element_text(size=size.axislabel),
-  #         axis.title.y = element_blank(),
-  #         panel.grid.major = element_blank(),
-  #         panel.grid.minor = element_blank(),
-  #         panel.background = element_rect(fill = "transparent",colour = NA),
-  #         plot.background = element_rect(fill = "transparent", colour = NA))+
-  #   # scale_y_continuous(limits = c(0, 7), breaks = seq(0, 7, 2)) +
-  #   # scale_x_continuous(breaks = seq(180,280,30))+
-  #   labs(title=element_blank(),
-  #        x=paste0('Day of Year (', years[i], ')'),
-  #        y='LAI')+
-  #   scale_color_manual(values = col.palette.muted)
-  # print(lai.ld11.figs[[i]])
 }

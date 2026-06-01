@@ -1,3 +1,7 @@
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+
 # define a function to update differential values
 update_differential_quantities <- function(r, updated_values, UPDATE_PARAMETERS, model, defoliate_ptc){
   ## Define remaining percentages
@@ -30,6 +34,7 @@ update_differential_quantities <- function(r, updated_values, UPDATE_PARAMETERS,
 # define a function to calculate yield reduction from pod removal
 calculate_pod_reduction <- function(defoliation_dvi, yr, defoliate_pct){
   weather.growingseason <- weather[sd.idx: hd.ind,]
+  RootVals <- data.frame("DOY"=ExpBiomass$DOY[3], "Root"=0.17*sum(ExpBiomass[5,2:4])) # See Ordonez et al. 2020, https://doi.org/10.1016/j.eja.2020.126130
   soybean$parameters$time_zone_offset <- -6
   ###### No Defoliation scenario #####
   soybean_utr_optsolver_no_defoliation <- partial_run_biocro(initial_values,
@@ -121,48 +126,24 @@ calculate_pod_reduction <- function(defoliation_dvi, yr, defoliate_pct){
   # Method 3: Assume seed:pod ratio to be fixed
   utr_yield_reduction3 <- 1 - tail(result_utr_defoliation$Pod, 1)/tail(result_utr_no_defoliation$Pod, 1)
   
-  # Method 1: Calculate Seed by taking out the final shell
-  final_shell <- (tail(ExpBiomass$Pod, 1) - tail(ExpBiomass$Seed, 1))
-  no_defoliation_seed <- tail(result_utr_no_defoliation$Pod, 1) - final_shell
-  shade_seed <- tail(result_utr_defoliation$Pod, 1) - final_shell
-  utr_yield_reduction1 <- 1 - shade_seed/no_defoliation_seed
-
-  # Method 2: Calculate Seed by taking out the shell when shading treatment started
-  estimated_shell_mass <- result_utr_defoliation$Pod[which.min(abs(result_utr_defoliation1$DVI - 1.45))]
-  no_defoliation_seed <- tail(result_utr_no_defoliation$Pod, 1) - estimated_shell_mass
-  defoliation_seed <- tail(result_utr_defoliation$Pod, 1) - estimated_shell_mass
-  utr_yield_reduction2 <- 1 - defoliation_seed/no_defoliation_seed
-  
-  # print('Estimated shell mass:')
-  # print(estimated_shell_mass)
-  # 
-  # full_shell_doy <- result_utr_defoliation$fractional_doy[which.min(abs(result_utr_defoliation1$DVI - 1.45))]     
-  # print(paste0('full shell DOY: ', full_shell_doy))
-  # 
-  # 
-  # ExpBiomass <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, '_ambient_biomass.csv'))
-  # closest_exp_idx <- which.min(abs(ExpBiomass$DOY-full_shell_doy))
-  # print('Closest experimental Pod mass')
-  # print(ExpBiomass$Rep_Mg_per_ha[closest_exp_idx])
-  
-  
   # Partitioning Model Yield Change
-  result_partitioning_defoliation$Pod <- result_partitioning_defoliation$Grain # + result_partitioning_defoliation$Shell
-  result_partitioning_no_defoliation$Pod <- result_partitioning_no_defoliation$Grain # + result_partitioning_no_defoliation$Shell
+  result_partitioning_defoliation$Pod <- result_partitioning_defoliation$Grain  + result_partitioning_defoliation$Shell
+  result_partitioning_no_defoliation$Pod <- result_partitioning_no_defoliation$Grain  + result_partitioning_no_defoliation$Shell
   partitioning_yield_reduction <- 1 - tail(result_partitioning_defoliation$Pod, 1) / tail(result_partitioning_no_defoliation$Pod, 1)
   
   return(list(year=yr, 
-              utr=utr_yield_reduction2, 
-              partitioning=partitioning_yield_reduction,
-              utr_shell_mass_1 = tail(result_utr_defoliation$Pod, 1) * (1-0.76),
-              utr_shell_mass_2 = estimated_shell_mass,
-              partitioning_shell_mass = tail(result_partitioning_defoliation$Shell, 1) ))
+              utr_nd <- result_utr_no_defoliation,
+              partitioning_nd <- result_partitioning_no_defoliation,
+              utr=result_utr_defoliation, 
+              partitioning=result_partitioning_defoliation))
 }
 
 
 reduction_df <- list()
 defoliate_pcts <- c(0, 0.25, 0.5, 0.75, 0.999)
-defoliate_DVIs <- c(1.35, 1.5)
+
+utr_rs <- list()
+partitioning_rs <- list()
 
 for (yr in c('2002', '2004', '2005', '2006')){
   weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength.csv'))
@@ -176,148 +157,121 @@ for (yr in c('2002', '2004', '2005', '2006')){
   
   sd.idx <- which(weather$doy == 147)[12] # Morgan et al. 2005
   hd.ind <- which(weather$doy == max(ExpBiomass$DOY))[24]
-  
-  for(defoliate_dvi in defoliate_DVIs){
-    for(defoliate_pct in defoliate_pcts){
-      pod_reduction <- calculate_pod_reduction(defoliate_dvi, yr, defoliate_pct)
-      print(pod_reduction)
+    
+  for(i in 1:length(defoliate_pcts)){
+      defoliate_dvi <- 1.5
+      pod_reduction <- calculate_pod_reduction(defoliate_dvi, yr, defoliate_pcts[i])
       # Append each result to the list
-      reduction_df[[length(reduction_df) + 1]] <- list(
-        year             = pod_reduction$year,
-        Defoliation_DVI  = defoliate_dvi,
-        Defoliation_PCT  = defoliate_pct,
-        UTR              = pod_reduction$utr * 100,
-        Partitioning     = pod_reduction$partitioning * 100,
-        utr_shell_mass_1 = pod_reduction$utr_shell_mass_1,
-        utr_shell_mass_2 = pod_reduction$utr_shell_mass_2,
-        partitioning_shell_mass = pod_reduction$partitioning_shell_mass
-      )
-    }
-  } 
+      utr_rs[[i]]             <- pod_reduction$utr 
+      partitioning_rs[[i]]     <- pod_reduction$partitioning 
+  }
+  
+  # Helper to reshape one dataframe to long format
+  to_long <- function(df, line_group) {
+    df %>%
+      pivot_longer(cols = c(Leaf, Stem, Root, Pod),
+                   names_to = "Organ",
+                   values_to = "Biomass") %>%
+      mutate(LineGroup = line_group)
+  }
+  
+  # Helper: reshape one df to long, tagging line group, source, and percentage
+  to_long <- function(df, line_group, source, pct_label) {
+    df %>%
+      pivot_longer(cols = c(Leaf, Stem, Root, Pod),
+                   names_to = "Organ",
+                   values_to = "Biomass") %>%
+      mutate(LineGroup = line_group,
+             Source = source,
+             Pct = pct_label)
+  }
+  
+  # Build one big combined dataframe across all comparisons
+  all_data <- bind_rows(lapply(2:length(defoliate_pcts), function(i) {
+    pct_label <- paste0(defoliate_pcts[i]*100, "%")
+    bind_rows(
+      to_long(utr_rs[[1]],          "Baseline",   "UTR",          pct_label),
+      to_long(utr_rs[[i]],          "Defoliated", "UTR",          pct_label),
+      to_long(partitioning_rs[[1]], "Baseline",   "Partitioning", pct_label),
+      to_long(partitioning_rs[[i]], "Defoliated", "Partitioning", pct_label)
+    )
+  }))
+  
+  # Keep facet rows in numeric order, columns in the order you want
+  all_data <- all_data %>%
+    mutate(
+      Pct    = factor(Pct, levels = paste0(defoliate_pcts[-1]*100, "%")),
+      Source = factor(Source, levels = c("UTR", "Partitioning")),
+      Organ  = factor(Organ, levels = c("Leaf", "Stem", "Root", "Pod"))
+    )
+  
+  # Plot
+  final_plot <- ggplot(all_data,
+                       aes(x = fractional_doy, y = Biomass,
+                           color = Organ, linetype = LineGroup)) +
+    geom_line(linewidth = 1) +
+    facet_grid(rows = vars(Pct), cols = vars(Source)) +   # shared axes by default
+    scale_color_manual(values = c("Leaf" = "#117733",
+                                  "Stem" = "#999933",
+                                  "Root" = "#332288",
+                                  "Pod"  = "#882255")) +
+    scale_linetype_manual(values = c("Baseline" = "dotted", "Defoliated" = "solid")) +
+    labs(x = "Day of Year", y = "Biomass",
+         color = NULL, linetype = NULL,
+         title = yr) +
+    theme_minimal() +
+    theme(strip.text.y = element_text(angle = 0))  # horizontal left-side labels
+  
+  print(final_plot)
+  
+  # Helper: find the fractional_doy where DVI first reaches a target value
+  dvi_to_doy <- function(df, target) {
+    idx <- which.min(abs(df$DVI - target))
+    df$fractional_doy[idx]
+  }
+  
+  # Build a dataframe of vline positions, one set per facet (Pct x Source)
+  vline_df <- bind_rows(lapply(2:length(defoliate_pcts), function(i) {
+    pct_label <- paste0(defoliate_pcts[i]*100, "%")
+    bind_rows(
+      data.frame(Pct = pct_label, Source = "UTR",
+                 DVI = c(1.35, 1.5),
+                 xint = c(dvi_to_doy(utr_rs[[1]], 1.35),
+                          dvi_to_doy(utr_rs[[1]], 1.5))),
+      data.frame(Pct = pct_label, Source = "Partitioning",
+                 DVI = c(1.35, 1.5),
+                 xint = c(dvi_to_doy(partitioning_rs[[1]], 1.35),
+                          dvi_to_doy(partitioning_rs[[1]], 1.5)))
+    )
+  }))
+  
+  vline_df <- vline_df %>%
+    mutate(
+      Pct    = factor(Pct, levels = paste0(defoliate_pcts[-1]*100, "%")),
+      Source = factor(Source, levels = c("UTR", "Partitioning")),
+      DVI    = factor(DVI, levels = c(1.35, 1.5))
+    )
+  
+  # Plot
+  final_plot <- ggplot(all_data,
+                       aes(x = fractional_doy, y = Biomass,
+                           color = Organ, linetype = LineGroup)) +
+    geom_vline(data = vline_df,
+               aes(xintercept = xint, group = DVI),
+               color = ifelse(vline_df$DVI == "1.35", "grey75", "grey45"),
+               linewidth = 0.6, inherit.aes = FALSE) +
+    geom_line(linewidth = 1) +
+    facet_grid(rows = vars(Pct), cols = vars(Source)) +
+    scale_color_manual(values = c("Leaf" = "#117733",
+                                  "Stem" = "#999933",
+                                  "Root" = "#332288",
+                                  "Pod"  = "#882255")) +
+    scale_linetype_manual(values = c("Baseline" = "dotted", "Defoliated" = "solid")) +
+    labs(x = "Day of Year", y = "Biomass",
+         color = NULL, linetype = NULL,
+         title = yr) +
+    theme_minimal() +
+    theme(strip.text.y = element_text(angle = 0))
+  
+  print(final_plot)
 }
-
-# Flatten reduction_df
-df <- bind_rows(lapply(reduction_df, function(r) {
-  if (any(sapply(r, length) == 0)) return(NULL)
-  as.data.frame(r)
-}))
-df$Defoliation_DVI <- as.factor(df$Defoliation_DVI)
-
-# Creating the digitized dataframe from Parvej et al. (2025)
-exp_yield_reduction <- data.frame(
-  location = c(
-    rep("Iowa", 10),    # 5 points for R4, 5 points for R5
-    rep("Indiana", 10)  # 5 points for R4, 5 points for R5
-  ),
-  Defoliation_DVI = c(
-    # Iowa
-    rep(1.35, 5), rep(1.5, 5),
-    # Indiana
-    rep(1.35, 5), rep(1.5, 5)
-  ),
-  Defoliation_PCT = rep(c(0, 25, 50, 75, 99.9), 4),
-  Yield_R = 100-c(
-    # Iowa - R4 (DVI 1.35)
-    95.1, 93.0, 82.0, 62.1, 33.3,
-    # Iowa - R5 (DVI 1.5)
-    95.1, 88.8, 73.6, 49.5, 16.4,
-    # Indiana - R4 (DVI 1.35)
-    95.7, 93.0, 79.5, 55.2, 20.3,
-    # Indiana - R5 (DVI 1.5) 
-    95.7, 93.0, 79.5, 55.2, 20.3
-  ),
-  Source = "Parvej et al. (2025)"
-)
-
-# --- 1. Data Preparation ---
-
-# Process the simulated data frame
-# Ensure Defoliation_PCT is on the same scale as exp_yield_reduction (0-100)
-df_long <- df %>%
-  mutate(Defoliation_PCT = Defoliation_PCT * 100) %>%
-  pivot_longer(cols = c("UTR", "Partitioning"), 
-               names_to = "Source", 
-               values_to = "Yield_R")
-
-# Calculate means for the bars (Models)
-df_bars_models <- df_long %>%
-  group_by(Defoliation_DVI, Defoliation_PCT, Source) %>%
-  summarise(Mean_YR = mean(Yield_R), .groups = "drop")
-
-
-# Calculate means for the bars (Parvej)
-exp_data_formatted <- exp_yield_reduction %>%
-  mutate(Defoliation_DVI = as.factor(Defoliation_DVI))
-
-df_bars_parvej <- exp_data_formatted %>%
-  group_by(Defoliation_DVI, Defoliation_PCT, Source) %>%
-  summarise(Mean_YR = mean(Yield_R), .groups = "drop")
-
-# Combine all bars and all points
-all_bars <- bind_rows(df_bars_models, df_bars_parvej)
-all_points <- bind_rows(
-  df_long %>% select(Defoliation_DVI, Defoliation_PCT, Source, Yield_R),
-  exp_data_formatted %>% select(Defoliation_DVI, Defoliation_PCT, Source, Yield_R)
-)
-
-# Set Factor levels for consistent coloring/ordering
-source_levels <- c("Parvej et al. (2025)", "UTR", "Partitioning")
-all_bars$Source <- factor(all_bars$Source, levels = source_levels)
-all_points$Source <- factor(all_points$Source, levels = source_levels)
-
-# --- 2. Plotting ---
-
-yield_reduction_fig <- ggplot() +
-  geom_bar(data = all_bars, 
-           aes(x = as.factor(Defoliation_PCT), y = Mean_YR, fill = Source),
-           stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
-  geom_point(data = all_points, 
-             aes(x = as.factor(Defoliation_PCT), y = Yield_R, 
-                 group = Source, fill = Source),   # <-- fill inside aes()
-             position = position_dodge(width = 0.8), 
-             shape = 21, size = 1.5, color = "black", alpha = 0.7) +
-  facet_wrap(~Defoliation_DVI, nrow = 2, 
-             labeller = as_labeller(c("1.35" = "R4 (DVI = 1.35)", 
-                                      "1.5" = "R5 (DVI = 1.5)"))) +
-  scale_fill_manual(values = c("Parvej et al. (2025)" = "#009E73",
-                               "UTR" =                  "#E65F00", 
-                               "Partitioning" =         "#0072B2")) +
-  labs(x = "Defoliation Percentage (%)",
-       y = "Yield Reduction (%)",
-       fill = "Source") +          # <-- overrides the legend title
-  theme_bw() +
-  theme(legend.position = "bottom",
-        strip.background = element_rect(fill = "gray90"),
-        strip.text = element_text(face = "bold"))
-
-print(yield_reduction_fig)
-
-# --- 3. Save ---
-ggsave('Fig-defoliation_comparison.png', 
-       plot = yield_reduction_fig, 
-       width = 6, height = 6, dpi = 600)
-
-
-
-
-shell_table <- do.call(rbind, lapply(reduction_df, function(x) {
-  data.frame(
-    year                    = x$year,
-    Defoliation_DVI         = x$Defoliation_DVI,
-    Defoliation_PCT         = x$Defoliation_PCT,
-    utr_shell_mass_1        = x$utr_shell_mass_1,
-    utr_shell_mass_2        = x$utr_shell_mass_2,
-    partitioning_shell_mass = x$partitioning_shell_mass,
-    stringsAsFactors = FALSE
-  )
-}))
-
-write.csv(shell_table, file = '../Data/shell_table.csv', row.names = FALSE)
-
-
-
-
-
-
-
-

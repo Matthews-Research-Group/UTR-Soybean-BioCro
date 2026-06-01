@@ -25,7 +25,7 @@ set_differential_modules<-function(current_differential_modules){
   return(differential_modules_new)
 }
 
-set_init_values<-function(current_initial_values, exp_mass){
+set_init_values<-function(current_initial_values){
   sub_frac <- 0.1           # substrate_fraction
   str_frac <- 1 - sub_frac  # structural_fraction
   seed_mass <- 0.0789

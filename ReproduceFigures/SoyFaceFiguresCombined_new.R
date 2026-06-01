@@ -52,7 +52,7 @@ differential_modules <- set_differential_modules(differential_modules)
 
 # Update UTR modules
 source('../Data/Soybean-BioCro_Parameters/set_up_UTRSoybeanBML.R')
-initial_values <- set_init_values(initial_values, ExpBiomass[[i]]) 
+initial_values       <- set_init_values(initial_values) 
 parameters           <- set_parameters(parameters)
 parameters$Catm      <- 372
 direct_modules       <- set_direct_modules(direct_modules) 
@@ -340,10 +340,60 @@ print(root_shoot_mean_plot)
 
 ggsave('Fig-root-shoot-ratio-mean.png',
        plot   = root_shoot_mean_plot,
-       width  = 6,
-       height = 4,
+       width  = 4,
+       height = 3,
        units  = "in",
        dpi    = 600)
+
+######### Plot Harvest Index #########
+# Build combined data frame across all years
+root_shoot_all <- do.call(rbind, lapply(1:length(years), function(i) {
+  data.frame(
+    year           = years[i],
+    fractional_doy = results[[i]]$fractional_doy,
+    DVI            = results[[i]]$DVI,
+    ambient_hi  = with(results[[i]],         0.761 * Pod / (Leaf + Stem + Pod)),
+    elevated_hi = with(results.elevCO2[[i]], 0.761 * Pod / (Leaf + Stem + Pod))
+  )
+}))
+
+# Pivot to long format for ggplot
+root_shoot_long <- root_shoot_all %>%
+  pivot_longer(
+    cols      = c(ambient_hi, elevated_hi),
+    names_to  = "co2_level",
+    values_to = "HI"
+  ) %>%
+  mutate(co2_level = recode(co2_level,
+                            ambient_hi  = "Ambient CO2",
+                            elevated_hi = "Elevated CO2"
+  ))
+
+# Plot
+hi_plot <- ggplot(root_shoot_long, aes(x = fractional_doy, y = HI, colour = co2_level)) +
+  geom_line() +
+  facet_wrap(~ year, ncol = 2) +
+  scale_colour_manual(values = c("Ambient CO2" = "steelblue", "Elevated CO2" = "tomato")) +
+  labs(
+    x      = "Day of Year",
+    y      = "Harvest Index",
+    colour = "CO2 Level"
+  ) +
+  theme_bw() +
+  theme(
+    legend.position = "bottom",
+    strip.background = element_rect(fill = "grey90"),
+    strip.text = element_text(face = "bold")
+  )
+print(hi_plot)
+ggsave('Fig-harvest-index.png', 
+       plot = hi_plot, 
+       width = 6,
+       height = 4,
+       units = "in",
+       dpi = 600
+)
+
 
 ####### Plot the shoot utilization ratio ########
 # Build combined data frame across all years
@@ -623,14 +673,19 @@ ggplot(leaf_saturation_diff, aes(x = fractional_doy, y = diff)) +
   theme_bw() +
   theme(strip.background = element_rect(fill = "grey90"),
         strip.text = element_text(face = "bold"))
-
+################################# Plot shade treatment ##################################
+source('plot_shade_R5.R')
+################################# Plot pod removal treatment ############################
+source('plot_depod_R5.R')
+################################# Plot defoliation treatment ############################
+source('plot_defoliation_parvej2025.R')
 #################################### Plot hail event ####################################
 source('plot_hail.R')
 ############################################# Plot LD11
 years <- c('2021', '2022', '2023', '2024')
 Catms <- c(414.7, 417.2, 419.3, 422.8) # from NOAA
 
-updated_parameters <- read.csv('../Data/Soybean-BioCro_Parameters/updated-ld11-parameters.csv')
+updated_parameters <- read.csv('../Data/Soybean-BioCro_Parameters/updated-ld11-parameters-2022.csv')
 updated_idx <- match(updated_parameters$New.variable.name, names(parameters))
 parameters[updated_idx] <- updated_parameters$LD11
 
@@ -892,7 +947,6 @@ combined_graph_v3 <- grid.arrange(arrangeGrob(
                                   )
 
 
-
 # Get the total height of the drawn object to calculate y positions
 total_h <- 11 + 0.4  # matches heights above
 plot_fraction <- 11 / total_h  # the fraction of the figure that is plots
@@ -916,6 +970,72 @@ grid.text("(C)", x = 0.03, y = y_C, just = c("left", "top"),
           gp = gpar(fontface = "bold", fontsize = 12))
 
 dev.off()
+
+combined_graph_v4 <- grid.arrange(
+  arrangeGrob(
+    arrangeGrob(
+      textGrob('Biomass (Mg / ha)', rot = 90), # Col1: y-axis Grob
+      arrangeGrob( # Col 2: Biomass figures
+        arrangeGrob( # Col 2, Row 1: Pioneer 93B15 Grob
+          arrangeGrob( # ambient CO2 Grob
+            arrangeGrob( # Parameterization Grob
+              figs[[1]] + theme(axis.title.x = element_blank(),
+                                axis.text.x = element_blank(),
+                                legend.position="none"),
+              figs[[3]] + theme(legend.position="none", 
+                                axis.title.x = element_blank()),
+              nrow = 2),
+            # top = textGrob("Parameterization", 
+            #                gp=gpar(fontface="bold", fontsize=12))),
+            arrangeGrob( # ambient CO2 2nd column Grob
+              figs[[2]] + theme(axis.title.x = element_blank(),
+                                axis.text.x = element_blank(),
+                                legend.position="none"),
+              figs[[4]] + theme(legend.position="none",
+                                axis.title.x = element_blank()),
+              nrow = 2), 
+            ncol = 2, top = '(A) Ambient CO2'),
+          arrangeGrob( # elevated CO2 Grob
+            arrangeGrob( # eCO2 col 1
+              figs.elevCO2[[1]] + theme(axis.title.x = element_blank(),
+                                        axis.text.x = element_blank(),
+                                        legend.position="none"),
+              figs.elevCO2[[3]] + theme(axis.title.x = element_blank(),
+                                        legend.position="none"),
+              nrow = 2), 
+            arrangeGrob(figs.elevCO2[[2]] + theme(axis.title.x = element_blank(),
+                                                  axis.text.x = element_blank(),
+                                                  legend.position="none"),
+                        figs.elevCO2[[4]] + theme(axis.title.x = element_blank(),
+                                                  legend.position="none"),
+                        nrow = 2),
+            ncol = 2, top = '(B) Elevated CO2'),
+          ncol = 2,
+          top = textGrob("Pioneer 93B15", 
+                         gp=gpar(fontface="bold", fontsize=12))), # end of the Pioneer 93B15 Grob
+        
+        textGrob(""), # spacer
+        
+        arrangeGrob( # Col 2, Row 2: LD11 figures
+          ld11.figs[[1]] + theme(legend.position="none"),
+          ld11.figs[[2]] + theme(legend.position="none"),
+          ld11.figs[[3]] + theme(legend.position="none"),
+          ld11.figs[[4]] + theme(legend.position="none"),
+          ncol = 4,
+          top = textGrob("(C) LD11-2170 at Ambient CO2", 
+                         gp=gpar(fontface="bold", fontsize=12))),
+        nrow = 3, heights = c(1.8, 0.1, 1)),
+      ncol = 2, widths = c(0.3, 10)),
+    common_legend_horizontal,
+    nrow = 2, heights = c(11, 0.5))
+)
+
+ggsave('Fig-Biomass.png', 
+       plot = combined_graph_v4, 
+       width = 10,
+       height = 8,
+       units = "in",
+       dpi = 600)
 
 total_precip <- sapply(1:4, function(i) {
   ld11.results[[i]] %>%
@@ -1156,6 +1276,8 @@ tnc_diurnal_plot <- ggplot(TNC.sampling.days, aes(hour, TNC, group = Source)) +
        x='Hour',
        y='Substrate C (mol C / kg)')
 # y='Substrate C (mol glucose eq./Mg)')
+
+print(tnc_diurnal_plot)
 ggsave('Fig5-substrate-diurnal.png', 
        plot = tnc_diurnal_plot, 
        width = 9,

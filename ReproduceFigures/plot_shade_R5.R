@@ -82,17 +82,27 @@ calculate_pod_reduction <- function(shade_dvi, yr, shade_pct){
   # fig_utr_with_shade <- plot_SoyFACE_biomass(result_utr_shade, ExpBiomass, ExpBiomass.std, co2_opt, yr)
   # fig_partitioning_with_shade <- plot_SoyFACE_biomass(result_partitioning_shade, ExpBiomass, ExpBiomass.std, co2_opt, yr)
   
-  # # Method 1: Calculate Seed by taking out the final shell
-  # final_shell <- (tail(ExpBiomass$Pod, 1) - tail(ExpBiomass$Seed, 1))
-  # no_shade_seed <- tail(result_utr_no_shade$Pod, 1) - final_shell
-  # shade_seed <- tail(result_utr_shade$Pod, 1) - final_shell
-  # utr_yield_reduction1 <- 1 - shade_seed/no_shade_seed
-  # 
-  # # Method 2: Calculate Seed by taking out the shell when shading treatment started
-  # pod_at_shade_start_time <- tail(result_utr_shade1$Pod, 1)
-  # no_shade_seed <- tail(result_utr_no_shade$Pod, 1) - pod_at_shade_start_time
-  # shade_seed <- tail(result_utr_shade$Pod, 1) - pod_at_shade_start_time
-  # utr_yield_reduction2 <- 1 - shade_seed/no_shade_seed
+  # Method 1: Calculate Seed by taking out the final shell
+  final_shell <- (tail(ExpBiomass$Pod, 1) - tail(ExpBiomass$Seed, 1))
+  no_shade_seed <- tail(result_utr_no_shade$Pod, 1) - final_shell
+  shade_seed <- tail(result_utr_shade$Pod, 1) - final_shell
+  utr_yield_reduction1 <- 1 - shade_seed/no_shade_seed
+
+  # Method 2: Calculate Seed by taking out the shell when shading treatment started
+  pod_at_shade_start_time <- tail(result_utr_shade1$Pod, 1)
+  no_shade_seed <- tail(result_utr_no_shade$Pod, 1) - pod_at_shade_start_time
+  shade_seed <- tail(result_utr_shade$Pod, 1) - pod_at_shade_start_time
+  utr_yield_reduction2 <- 1 - shade_seed/no_shade_seed
+  
+  
+  # Method 2_2: Calculate Seed by taking out the shell when shading treatment started
+  if(shade_dvi>1.45){
+    shell_at_shade_start_time <- result_utr_shade1$Pod[which.min(abs(result_utr_shade1$DVI - 1.45))]
+    no_shade_seed <- tail(result_utr_no_shade$Pod, 1) - shell_at_shade_start_time
+    shade_seed <- tail(result_utr_shade$Pod, 1) - shell_at_shade_start_time
+    utr_yield_reduction2 <- 1 - shade_seed/no_shade_seed
+  }
+  
   
   # Method 3: Assume seed:pod ratio to be fixed
   utr_yield_reduction3 <- 1 - tail(result_utr_shade$Pod, 1)/tail(result_utr_no_shade$Pod, 1)
@@ -105,7 +115,7 @@ calculate_pod_reduction <- function(shade_dvi, yr, shade_pct){
   return(list(year=yr, 
               #utr1=utr_yield_reduction1,
               #utr2=utr_yield_reduction2,
-              utr=utr_yield_reduction3, 
+              utr=utr_yield_reduction2, 
               partitioning=partitioning_yield_reduction))
 }
 
@@ -230,36 +240,34 @@ df_bars <- df_points %>%
   summarise(Mean_YR = mean(Yield_R), .groups = "drop")
 
 # Combine bars from all 3 sources
-all_bars <- bind_rows(df_bars, shade_exp)
-all_bars$Source <- factor(all_bars$Source, 
-                          levels = c(#"UTR1", "UTR2", 
+all_shade_bars <- bind_rows(df_bars, shade_exp)
+all_shade_bars$Source <- factor(all_shade_bars$Source, 
+                          levels = c(#"UTR1", "UTR2",
+                            "Proulx and Naeve (2009)",
                             "UTR", 
-                            "Partitioning", 
-                            "Proulx and Naeve (2009)"))
+                            "Partitioning"))
 
 # Plot
 df_points$Source <- factor(df_points$Source, 
                            levels = c(# "UTR1", "UTR2", 
-                                      "UTR", "Partitioning", "Proulx and Naeve (2009)"))
+                                    "Proulx and Naeve (2009)", 
+                                    "UTR", 
+                                    "Partitioning"))
 
-# Manually compute x positions to match dodged bars exactly
-# With 3 groups and dodge width 0.8, offsets are: -0.267, 0, +0.267
-# Convert Shade_PCT to numeric in all_bars too
 dodge_offset <- data.frame(
   Source = c(# "UTR1", "UTR2", 
-    "UTR", "Partitioning", 
-    "Proulx and Naeve (2009)"),
+    "Proulx and Naeve (2009)", "UTR", "Partitioning"),
   offset = c(#-0.267, -0.1335, 0, 0.1335, 0.267
     -0.267,  0, 0.267)
 )
 
-all_bars_pos <- all_bars %>%
+all_shade_bars_pos <- all_shade_bars %>%
   left_join(dodge_offset, by = "Source") %>%
   mutate(x_pos = as.numeric(as.character(Shade_PCT)) * 10 + offset)
-# Scale Shade_PCT to 1,2,3,4 index instead
+
 shade_levels <- c(0.5, 0.6, 0.7, 0.8)
 
-all_bars_pos <- all_bars %>%
+all_shade_bars_pos <- all_shade_bars %>%
   left_join(dodge_offset, by = "Source") %>%
   mutate(x_idx = match(as.numeric(as.character(Shade_PCT)), shade_levels),
          x_pos = x_idx + offset)
@@ -270,7 +278,7 @@ df_points_pos <- df_points %>%
          x_pos = x_idx + offset)
 
 shade_reduction_fig <- ggplot() +
-  geom_bar(data = all_bars_pos,
+  geom_bar(data = all_shade_bars_pos,
            aes(x = x_pos, y = Mean_YR, fill = Source),
            stat = "identity", width = 0.25) +
   geom_jitter(data = df_points_pos,
@@ -278,15 +286,12 @@ shade_reduction_fig <- ggplot() +
               width = 0.04, height = 0,
               shape = 21, size = 2.5, color = "black") +
   scale_fill_manual(name = "Source",
-                     values = c(# "UTR1"                    = "#E69F00",
-                                # "UTR2"                    = "#E67F00",
+                     values = c("Proulx and Naeve (2009)" = "#009E73",
                                 "UTR"                     = "#E65F00",
-                                "Partitioning"                = "#0072B2",
-                                "Proulx and Naeve (2009)" = "#009E73"),
-                     breaks = c(# "UTR1", "UTR2", 
+                                "Partitioning"            = "#0072B2"),
+                     breaks = c("Proulx and Naeve (2009)",
                                 "UTR",
-                                "Partitioning", 
-                                "Proulx and Naeve (2009)")) +
+                                "Partitioning")) +
   scale_x_continuous(breaks = 1:4, labels = c("50%", "60%", "70%", "80%")) +
   labs(x = "Shade (%)",
        y = "Yield Reduction (%)") +
