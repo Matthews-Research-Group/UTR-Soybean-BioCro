@@ -89,19 +89,10 @@ calculate_pod_reduction <- function(shade_dvi, yr, shade_pct){
   utr_yield_reduction1 <- 1 - shade_seed/no_shade_seed
 
   # Method 2: Calculate Seed by taking out the shell when shading treatment started
-  pod_at_shade_start_time <- tail(result_utr_shade1$Pod, 1)
-  no_shade_seed <- tail(result_utr_no_shade$Pod, 1) - pod_at_shade_start_time
-  shade_seed <- tail(result_utr_shade$Pod, 1) - pod_at_shade_start_time
+  shell_at_shade_start_time <- result_utr_shade1$Pod[which.min(abs(result_utr_shade1$DVI - 1.35))]
+  no_shade_seed <- tail(result_utr_no_shade$Pod, 1) - shell_at_shade_start_time
+  shade_seed <- tail(result_utr_shade$Pod, 1) - shell_at_shade_start_time
   utr_yield_reduction2 <- 1 - shade_seed/no_shade_seed
-  
-  
-  # Method 2_2: Calculate Seed by taking out the shell when shading treatment started
-  if(shade_dvi>1.45){
-    shell_at_shade_start_time <- result_utr_shade1$Pod[which.min(abs(result_utr_shade1$DVI - 1.45))]
-    no_shade_seed <- tail(result_utr_no_shade$Pod, 1) - shell_at_shade_start_time
-    shade_seed <- tail(result_utr_shade$Pod, 1) - shell_at_shade_start_time
-    utr_yield_reduction2 <- 1 - shade_seed/no_shade_seed
-  }
   
   
   # Method 3: Assume seed:pod ratio to be fixed
@@ -115,7 +106,7 @@ calculate_pod_reduction <- function(shade_dvi, yr, shade_pct){
   return(list(year=yr, 
               #utr1=utr_yield_reduction1,
               #utr2=utr_yield_reduction2,
-              utr=utr_yield_reduction2, 
+              utr=utr_yield_reduction3, 
               partitioning=partitioning_yield_reduction))
 }
 

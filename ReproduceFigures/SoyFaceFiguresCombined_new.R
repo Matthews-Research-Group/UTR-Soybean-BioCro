@@ -128,6 +128,11 @@ for (i in 1:length(years)) {
   result <- soybean_optsolver[[i]](optim_params_conversion(optim_params_short_SoyFACE)) 
   results[[i]] <- result
   
+  # figure out the DVI when shell stops growing
+  final_shell <- tail(ExpBiomass[[i]]$Pod,1) - tail(ExpBiomass[[i]]$Seed, 1) 
+  print(final_shell)
+  print(result$DVI[which.min(abs(result$Pod-final_shell))])
+  
   # plot simulation vs observation biomass and calculate mse
   figs[[i]] <- plot_SoyFACE_biomass(result, ExpBiomass[[i]], ExpBiomass.std[[i]], co2_opt, years[i])
   
@@ -288,7 +293,7 @@ root_shoot_ratio_plot <- ggplot(root_shoot_long, aes(x = fractional_doy, y = rat
   scale_colour_manual(values = c("Ambient CO2" = "steelblue", "Elevated CO2" = "tomato")) +
   labs(
     x      = "Day of Year",
-    y      = "Root - Shoot Ratio",
+    y      = "Root:Shoot Ratio",
     colour = "CO2 Level"
   ) +
   theme_bw() +
@@ -328,7 +333,7 @@ root_shoot_mean_plot <- ggplot(root_shoot_mean,
                     name = "CO2 Level") +
   labs(
     x = "DVI",
-    y = "Root - Shoot Ratio"
+    y = "Root:Shoot Ratio"
   ) +
   theme_bw() +
   theme(
@@ -637,7 +642,7 @@ utilization_saturation_plot <- ggplot(leaf_saturation_all, aes(x = fractional_do
   scale_colour_manual(values   = c("Ambient CO2" = "steelblue", "Elevated CO2" = "tomato")) +
   scale_linewidth_manual(values = c("Ambient CO2" = 0.8,         "Elevated CO2" = 0.4)) +
   scale_alpha_manual(values     = c("Ambient CO2" = 1,           "Elevated CO2" = 0.5)) +
-  labs(x = "Fractional Day of Year", y = "Leaf Utilization Rate Saturation",
+  labs(x = "Day of Year", y = "Leaf Utilization Rate Saturation",
        colour = "Treatment", linewidth = "Treatment", alpha = "Treatment") +
   theme_bw() +
   theme(legend.position  = "bottom",
@@ -668,7 +673,7 @@ ggplot(leaf_saturation_diff, aes(x = fractional_doy, y = diff)) +
   geom_line(colour = "steelblue") +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey40") +
   facet_wrap(~ year, ncol = 2) +
-  labs(x = "Fractional Day of Year", y = "Saturation Difference (Ambient − Elevated)",
+  labs(x = "Day of Year", y = "Saturation Difference (Ambient − Elevated)",
        title = "Difference in Leaf Utilization Rate Saturation") +
   theme_bw() +
   theme(strip.background = element_rect(fill = "grey90"),
@@ -882,7 +887,7 @@ get_legend_grob <- function(plot) {
 }
 
 common_legend_horizontal <- get_legend_grob(
-  figs[[1]] + 
+  ld11.figs[[1]] + 
     theme(legend.position = "bottom",
           legend.direction = "horizontal") +
     guides(color = guide_legend(nrow = 1, title.position = "left"),
@@ -994,7 +999,10 @@ combined_graph_v4 <- grid.arrange(
               figs[[4]] + theme(legend.position="none",
                                 axis.title.x = element_blank()),
               nrow = 2), 
-            ncol = 2, top = '(A) Ambient CO2'),
+            ncol = 2, 
+            top = textGrob("(A) Ambient CO2", 
+                           gp=gpar(fontface="bold", fontsize=12))
+            ),
           arrangeGrob( # elevated CO2 Grob
             arrangeGrob( # eCO2 col 1
               figs.elevCO2[[1]] + theme(axis.title.x = element_blank(),
@@ -1009,23 +1017,30 @@ combined_graph_v4 <- grid.arrange(
                         figs.elevCO2[[4]] + theme(axis.title.x = element_blank(),
                                                   legend.position="none"),
                         nrow = 2),
-            ncol = 2, top = '(B) Elevated CO2'),
+            ncol = 2, 
+            top = textGrob("(B) Elevated CO2", 
+                           gp=gpar(fontface="bold", fontsize=12))
+            ),
           ncol = 2,
           top = textGrob("Pioneer 93B15", 
-                         gp=gpar(fontface="bold", fontsize=12))), # end of the Pioneer 93B15 Grob
+                         gp=gpar(fontface="bold", fontsize=12))
+          ), # end of the Pioneer 93B15 Grob
         
-        textGrob(""), # spacer
+        textGrob(""), # Row 2: spacer
         
-        arrangeGrob( # Col 2, Row 2: LD11 figures
+        arrangeGrob( # Row 3: LD11 figures
           ld11.figs[[1]] + theme(legend.position="none"),
           ld11.figs[[2]] + theme(legend.position="none"),
           ld11.figs[[3]] + theme(legend.position="none"),
           ld11.figs[[4]] + theme(legend.position="none"),
           ncol = 4,
           top = textGrob("(C) LD11-2170 at Ambient CO2", 
-                         gp=gpar(fontface="bold", fontsize=12))),
-        nrow = 3, heights = c(1.8, 0.1, 1)),
-      ncol = 2, widths = c(0.3, 10)),
+                         gp=gpar(fontface="bold", fontsize=12))
+        ),
+        nrow = 3, heights = c(1.8, 0.1, 1)
+      ),
+      ncol = 2, widths = c(0.3, 10)
+    ),
     common_legend_horizontal,
     nrow = 2, heights = c(11, 0.5))
 )

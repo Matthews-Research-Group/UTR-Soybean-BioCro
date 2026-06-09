@@ -126,6 +126,8 @@ calculate_pod_reduction <- function(defoliation_dvi, yr, defoliate_pct){
   # Method 3: Assume seed:pod ratio to be fixed
   utr_yield_reduction3 <- 1 - tail(result_utr_defoliation$Pod, 1)/tail(result_utr_no_defoliation$Pod, 1)
   
+  
+  
   # Partitioning Model Yield Change
   result_partitioning_defoliation$Pod <- result_partitioning_defoliation$Grain  + result_partitioning_defoliation$Shell
   result_partitioning_no_defoliation$Pod <- result_partitioning_no_defoliation$Grain  + result_partitioning_no_defoliation$Shell

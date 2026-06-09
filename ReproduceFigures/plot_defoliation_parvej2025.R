@@ -121,6 +121,14 @@ calculate_pod_reduction <- function(defoliation_dvi, yr, defoliate_pct){
   # Method 3: Assume seed:pod ratio to be fixed
   utr_yield_reduction3 <- 1 - tail(result_utr_defoliation$Pod, 1)/tail(result_utr_no_defoliation$Pod, 1)
   
+  # if(defoliate_dvi==1.5){
+  #   if(defoliate_pct==0.5){utr_yield_reduction3 <- 1- (1-utr_yield_reduction3) * 0.95 }
+  #   if(defoliate_pct==0.75){utr_yield_reduction3 <- 1- (1-utr_yield_reduction3) * 0.86}
+  #   if(defoliate_pct==0.999){utr_yield_reduction3 <- 1- (1-utr_yield_reduction3) * 0.8 }
+  # }
+
+
+  
   # Method 1: Calculate Seed by taking out the final shell
   final_shell <- (tail(ExpBiomass$Pod, 1) - tail(ExpBiomass$Seed, 1))
   no_defoliation_seed <- tail(result_utr_no_defoliation$Pod, 1) - final_shell
@@ -128,7 +136,7 @@ calculate_pod_reduction <- function(defoliation_dvi, yr, defoliate_pct){
   utr_yield_reduction1 <- 1 - shade_seed/no_defoliation_seed
 
   # Method 2: Calculate Seed by taking out the shell when shading treatment started
-  estimated_shell_mass <- result_utr_defoliation$Pod[which.min(abs(result_utr_defoliation1$DVI - 1.45))]
+  estimated_shell_mass <- result_utr_defoliation$Pod[which.min(abs(result_utr_defoliation$DVI - 1.35))]
   no_defoliation_seed <- tail(result_utr_no_defoliation$Pod, 1) - estimated_shell_mass
   defoliation_seed <- tail(result_utr_defoliation$Pod, 1) - estimated_shell_mass
   utr_yield_reduction2 <- 1 - defoliation_seed/no_defoliation_seed
@@ -140,23 +148,24 @@ calculate_pod_reduction <- function(defoliation_dvi, yr, defoliate_pct){
   # print(paste0('full shell DOY: ', full_shell_doy))
   # 
   # 
-  # ExpBiomass <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, '_ambient_biomass.csv'))
+  ExpBiomass <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, '_ambient_biomass.csv'))
   # closest_exp_idx <- which.min(abs(ExpBiomass$DOY-full_shell_doy))
   # print('Closest experimental Pod mass')
   # print(ExpBiomass$Rep_Mg_per_ha[closest_exp_idx])
   
   
   # Partitioning Model Yield Change
-  result_partitioning_defoliation$Pod <- result_partitioning_defoliation$Grain # + result_partitioning_defoliation$Shell
-  result_partitioning_no_defoliation$Pod <- result_partitioning_no_defoliation$Grain # + result_partitioning_no_defoliation$Shell
+  result_partitioning_defoliation$Pod <- result_partitioning_defoliation$Grain + result_partitioning_defoliation$Shell
+  result_partitioning_no_defoliation$Pod <- result_partitioning_no_defoliation$Grain + result_partitioning_no_defoliation$Shell
   partitioning_yield_reduction <- 1 - tail(result_partitioning_defoliation$Pod, 1) / tail(result_partitioning_no_defoliation$Pod, 1)
   
   return(list(year=yr, 
-              utr=utr_yield_reduction2, 
+              utr=utr_yield_reduction3, 
               partitioning=partitioning_yield_reduction,
               utr_shell_mass_1 = tail(result_utr_defoliation$Pod, 1) * (1-0.76),
               utr_shell_mass_2 = estimated_shell_mass,
-              partitioning_shell_mass = tail(result_partitioning_defoliation$Shell, 1) ))
+              partitioning_shell = tail(result_partitioning_defoliation$Shell, 1),
+              exp_final_shell = tail(ExpBiomass$Rep_Mg_per_ha,1)-tail(ExpBiomass$Seed_Mg_per_ha,1)))
 }
 
 
@@ -190,7 +199,8 @@ for (yr in c('2002', '2004', '2005', '2006')){
         Partitioning     = pod_reduction$partitioning * 100,
         utr_shell_mass_1 = pod_reduction$utr_shell_mass_1,
         utr_shell_mass_2 = pod_reduction$utr_shell_mass_2,
-        partitioning_shell_mass = pod_reduction$partitioning_shell_mass
+        partitioning_shell = pod_reduction$partitioning_shell,
+        exp_final_shell  = pod_reduction$exp_final_shell
       )
     }
   } 
@@ -307,12 +317,13 @@ shell_table <- do.call(rbind, lapply(reduction_df, function(x) {
     Defoliation_PCT         = x$Defoliation_PCT,
     utr_shell_mass_1        = x$utr_shell_mass_1,
     utr_shell_mass_2        = x$utr_shell_mass_2,
-    partitioning_shell_mass = x$partitioning_shell_mass,
+    partitioning_shell      = x$partitioning_shell,
+    exp_final_shell         = x$exp_final_shell,
     stringsAsFactors = FALSE
   )
 }))
 
-write.csv(shell_table, file = '../Data/shell_table.csv', row.names = FALSE)
+write.csv(shell_table, file = 'shell_table.csv', row.names = FALSE)
 
 
 
