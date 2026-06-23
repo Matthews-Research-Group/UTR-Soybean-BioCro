@@ -1,5 +1,6 @@
 ## Optimization problem to solve for partitioning parameters for soybean
 library(BioCro)
+library(BioCroWater)
 library(UTRSoybeanBML)
 # library(profvis)
 multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_rows, weights, wts2, RootVals){

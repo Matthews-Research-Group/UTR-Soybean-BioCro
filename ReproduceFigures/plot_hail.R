@@ -23,7 +23,7 @@ RootVals <- data.frame("DOY"=ExpBiomass$DOY[3], "Root"=0.17*sum(ExpBiomass[5,2:4
 # define a function to update differential values
 update_differential_quantities <- function(r, updated_values, UPDATE_PARAMETERS, model){
   ## Define remaining percentages
-  leaf_remaining_percentage <- 0.2
+  leaf_remaining_percentage <- 0.4
   stem_remaining_percentage <- 0.5
   
   last_row <- nrow(r)
@@ -351,7 +351,7 @@ combined_with_hail <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot
                                                            axis.title.y = element_blank(),
                                                            legend.position="none"),
                                                    top = 'UTR model'),
-                                       ncol = 2, top = 'Ambient CO2'),
+                                       ncol = 2, top = '(A) Ambient CO2'),
                                      arrangeGrob(
                                        arrangeGrob(fig_2003_partitioning_eCO2_with_hail  +
                                                      theme(axis.title.x = element_blank(),
@@ -361,7 +361,7 @@ combined_with_hail <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot
                                                      theme(axis.title.x = element_blank(),
                                                            axis.title.y = element_blank(),
                                                            legend.position="none")),
-                                       ncol = 2, top = 'Elevated CO2'),
+                                       ncol = 2, top = '(B) Elevated CO2'),
                                      arrangeGrob(textGrob('Day of Year (2003)')),
                                      nrow = 3, heights = c(4, 4, 0.3)),
                                    common_legend,
@@ -403,12 +403,12 @@ combined_with_hail_utr <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)',
                                                      theme(axis.title.x = element_blank(),
                                                            axis.title.y = element_blank(),
                                                            legend.position="none"),
-                                                   top = 'Ambient CO2'),
+                                                   top = '(A) Ambient CO2'),
                                        arrangeGrob(fig_2003_utr_eCO2_with_hail +
                                                      theme(axis.title.x = element_blank(),
                                                            axis.title.y = element_blank(),
                                                            legend.position="none"),
-                                                   top = 'Elevated CO2'),
+                                                   top = '(B) Elevated CO2'),
                                        ncol= 2),
                                      arrangeGrob(textGrob('Day of Year (2003)')),
                                      nrow = 2, heights = c(4, 0.3)),
@@ -422,12 +422,12 @@ combined_with_hail_partitioning <- grid.arrange(arrangeGrob(textGrob('Biomass (M
                                                         theme(axis.title.x = element_blank(),
                                                               axis.title.y = element_blank(),
                                                               legend.position="none"),
-                                                      top = 'Ambient CO2'),
+                                                      top = '(A) Ambient CO2'),
                                           arrangeGrob(fig_2003_partitioning_eCO2_with_hail +
                                                         theme(axis.title.x = element_blank(),
                                                               axis.title.y = element_blank(),
                                                               legend.position="none"),
-                                                      top = 'Elevated CO2'),
+                                                      top = '(B) Elevated CO2'),
                                           ncol= 2),
                                         arrangeGrob(textGrob('Day of Year (2003)')),
                                         nrow = 2, heights = c(4, 0.3)),

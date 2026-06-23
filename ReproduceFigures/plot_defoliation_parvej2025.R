@@ -121,14 +121,6 @@ calculate_pod_reduction <- function(defoliation_dvi, yr, defoliate_pct){
   # Method 3: Assume seed:pod ratio to be fixed
   utr_yield_reduction3 <- 1 - tail(result_utr_defoliation$Pod, 1)/tail(result_utr_no_defoliation$Pod, 1)
   
-  # if(defoliate_dvi==1.5){
-  #   if(defoliate_pct==0.5){utr_yield_reduction3 <- 1- (1-utr_yield_reduction3) * 0.95 }
-  #   if(defoliate_pct==0.75){utr_yield_reduction3 <- 1- (1-utr_yield_reduction3) * 0.86}
-  #   if(defoliate_pct==0.999){utr_yield_reduction3 <- 1- (1-utr_yield_reduction3) * 0.8 }
-  # }
-
-
-  
   # Method 1: Calculate Seed by taking out the final shell
   final_shell <- (tail(ExpBiomass$Pod, 1) - tail(ExpBiomass$Seed, 1))
   no_defoliation_seed <- tail(result_utr_no_defoliation$Pod, 1) - final_shell
@@ -140,19 +132,8 @@ calculate_pod_reduction <- function(defoliation_dvi, yr, defoliate_pct){
   no_defoliation_seed <- tail(result_utr_no_defoliation$Pod, 1) - estimated_shell_mass
   defoliation_seed <- tail(result_utr_defoliation$Pod, 1) - estimated_shell_mass
   utr_yield_reduction2 <- 1 - defoliation_seed/no_defoliation_seed
-  
-  # print('Estimated shell mass:')
-  # print(estimated_shell_mass)
-  # 
-  # full_shell_doy <- result_utr_defoliation$fractional_doy[which.min(abs(result_utr_defoliation1$DVI - 1.45))]     
-  # print(paste0('full shell DOY: ', full_shell_doy))
-  # 
-  # 
+
   ExpBiomass <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, '_ambient_biomass.csv'))
-  # closest_exp_idx <- which.min(abs(ExpBiomass$DOY-full_shell_doy))
-  # print('Closest experimental Pod mass')
-  # print(ExpBiomass$Rep_Mg_per_ha[closest_exp_idx])
-  
   
   # Partitioning Model Yield Change
   result_partitioning_defoliation$Pod <- result_partitioning_defoliation$Grain + result_partitioning_defoliation$Shell
