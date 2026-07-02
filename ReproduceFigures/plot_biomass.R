@@ -1,3 +1,8 @@
+size.title <- 12
+size.axislabel <- 12
+size.axis <- 12
+size.legend <- 12
+
 plot_SoyFACE_biomass <- function(result, mea, mea.std, co2_opt, yr){
   # organize simulated data
   r.lsrp.doy <- reshape2::melt(result[,c("fractional_doy","Root","Leaf","Stem","Pod")],id.vars="fractional_doy")
@@ -48,16 +53,12 @@ plot_SoyFACE_biomass <- function(result, mea, mea.std, co2_opt, yr){
                                 "Stem"= "#999933", 
                                 "Root"="#332288", 
                                 "Pod"= "#882255")
-  size.title <- 12
-  size.axislabel <- 10
-  size.axis <- 10
-  size.legend <- 12
   
   f <- ggplot() + theme_classic()
   f <- f +
-    geom_line(data = subset(r.all, Source == "Simulated"),  
-              aes(x=fractional_doy,y=value, color=Organ), size=0.8, alpha = 0.8) +
-    geom_point(data = subset(r.all, Source == "Observed"), 
+    geom_line(data = subset(r.all, Source == "Simulated"), na.rm = TRUE, 
+              aes(x=fractional_doy,y=value, color=Organ), linewidth=1, alpha = 0.8) +
+    geom_point(data = subset(r.all, Source == "Observed"), na.rm = TRUE,
                aes(x=fractional_doy, y=value, color=Organ), shape=15, size=2, stroke=.5) +
     
     scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
@@ -78,6 +79,7 @@ plot_SoyFACE_biomass <- function(result, mea, mea.std, co2_opt, yr){
   f <- f + theme(plot.title=element_text(size=size.title, hjust=0.5),
                  axis.text=element_text(size=size.axis),
                  axis.title=element_text(size=size.axislabel),
+                 axis.title.y = element_blank(),
                  panel.grid.major = element_blank(),
                  panel.grid.minor = element_blank(), 
                  panel.background = element_rect(fill = "transparent",colour = NA))
@@ -115,16 +117,11 @@ plot_ld11_biomass <- function(result, mea){
   field_organ_biomass_tall <- melt(field_organ_biomass, id.vars = 'time')
   names(field_organ_biomass_tall) <- c('time','Organ', 'biomass')
   
-  size.title <- 12
-  size.axislabel <-12
-  size.axis <- 12
-  size.legend <- 8
-  
   col.palette.muted <- c( "#117733", "#999933", "#332288", "#882255")
   
   f <- ggplot() + theme_classic() +
-    geom_line(data = biocro_organ_biomass_tall, aes(x = time/24 + 1, y = biomass, color = Organ), linewidth = 1, alpha=0.8) +
-    geom_point(data = field_organ_biomass_tall, aes(x = time/24 + 1, y = biomass, color = Organ), shape = 15, size = 3)+
+    geom_line(data = biocro_organ_biomass_tall, na.rm = TRUE, aes(x = time/24 + 1, y = biomass, color = Organ), linewidth = 1, alpha=0.8) +
+    geom_point(data = field_organ_biomass_tall, na.rm = TRUE, aes(x = time/24 + 1, y = biomass, color = Organ), shape = 15, size = 2, stroke=.5)+
     theme(plot.title=element_text(size=size.title, hjust=0.5),
           axis.text=element_text(size=size.axis),
           axis.title.x =element_text(size=size.axislabel),
@@ -133,7 +130,7 @@ plot_ld11_biomass <- function(result, mea){
           panel.grid.minor = element_blank(), 
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
-    scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2)) +
+    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
     scale_x_continuous(breaks = seq(150,280,30))+
     labs(title=years[i], 
          x=paste0('Day of Year'), 

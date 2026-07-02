@@ -29,6 +29,7 @@ source('plot_biomass.R')
 source('plot_sla.R')
 RUN_SENSITIVITY <- FALSE # This takes a long time, so turn it off if not needed
 PLOT_SLA <- TRUE
+PLOT_SOURCE_SINK_MANIPULATION <- FALSE  # This takes a long time, so turn it off if not needed
 
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 years <- c('2002', '2004', '2005', '2006')
@@ -678,14 +679,18 @@ ggplot(leaf_saturation_diff, aes(x = fractional_doy, y = diff)) +
   theme_bw() +
   theme(strip.background = element_rect(fill = "grey90"),
         strip.text = element_text(face = "bold"))
-################################# Plot shade treatment ##################################
-source('plot_shade_R5.R')
-################################# Plot pod removal treatment ############################
-source('plot_depod_R5.R')
-################################# Plot defoliation treatment ############################
-source('plot_defoliation_parvej2025.R')
-#################################### Plot hail event ####################################
-source('plot_hail.R')
+
+if(PLOT_SOURCE_SINK_MANIPULATION){
+  ################################# Plot shade treatment ##################################
+  source('plot_shade_R5.R')
+  ################################# Plot pod removal treatment ############################
+  source('plot_depod_R5.R')
+  ################################# Plot defoliation treatment ############################
+  source('plot_defoliation_parvej2025.R')
+  #################################### Plot hail event ####################################
+  source('plot_hail.R')
+}
+
 ############################################# Plot LD11
 years <- c('2021', '2022', '2023', '2024')
 Catms <- c(414.7, 417.2, 419.3, 422.8) # from NOAA
@@ -879,6 +884,9 @@ ggsave('FigS-allocation-netimport.png',
        dpi = 600
 )
 
+# Plot usage based allocation
+source('plot_cumultive_use.R')
+
 
 get_legend_grob <- function(plot) {
   g <- ggplotGrob(plot)
@@ -894,157 +902,6 @@ common_legend_horizontal <- get_legend_grob(
            fill = guide_legend(nrow = 1, title.position = "left"))
 )
 
-combined_graph_v3 <- grid.arrange(arrangeGrob(
-                                    arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
-                                    arrangeGrob(
-                                      arrangeGrob(arrangeGrob(figs[[1]] + 
-                                                                theme(legend.position="none"),
-                                                              figs[[3]] + theme(legend.position="none"),
-                                                              ncol = 2),
-                                                  top = textGrob("Parameterization - Pioneer 93B15 at Ambient CO2", 
-                                                                 gp=gpar(fontface="bold", fontsize=12))),
-                                      textGrob(""), # spacer
-                                      arrangeGrob(arrangeGrob(figs[[2]] + 
-                                                                theme(axis.title.x = element_blank(),
-                                                                                axis.text.x = element_blank(),
-                                                                                legend.position="none"),
-                                                              figs[[4]] + theme(legend.position="none"),
-                                                              nrow = 2, 
-                                                              heights = heights, top = 'Ambient CO2'),
-                                                  
-                                                  arrangeGrob(figs.elevCO2[[1]] + theme(axis.title.x = element_blank(),
-                                                                                        axis.text.x = element_blank(),
-                                                                                        legend.position="none"),
-                                                              figs.elevCO2[[2]] + theme(legend.position="none"),
-                                                              nrow = 2, 
-                                                              heights = heights, top = 'Elevated CO2'),
-                                                  arrangeGrob(figs.elevCO2[[3]] + theme(axis.title.x = element_blank(),
-                                                                                        axis.text.x = element_blank(),
-                                                                                        legend.position="none"),
-                                                              figs.elevCO2[[4]] + theme(legend.position="none"),
-                                                              nrow = 2,
-                                                              heights = heights, top = 'Elevated CO2'),
-                                                  ncol = 3, 
-                                                  top = textGrob("Pioneer 93B15 at SoyFACE", 
-                                                                 gp=gpar(fontface="bold", fontsize=12))), 
-                                      textGrob(""), # spacer
-                                      arrangeGrob(arrangeGrob(ld11.figs[[1]] + 
-                                                                theme(axis.title.x = element_blank(),
-                                                                                        axis.text.x = element_blank(),
-                                                                                        legend.position="none"),
-                                                              ld11.figs[[3]] + theme(legend.position="none"),
-                                                              nrow = 2, 
-                                                              heights = heights),
-                                                  arrangeGrob(ld11.figs[[2]] + theme(axis.title.x = element_blank(),
-                                                                                        axis.text.x = element_blank(),
-                                                                                        legend.position="none"),
-                                                              ld11.figs[[4]] + theme(legend.position="none"),
-                                                              nrow = 2,
-                                                              heights = heights),
-                                                  ncol = 2, 
-                                                  top = textGrob("LD11-2170 at Ambient CO2", 
-                                                                 gp=gpar(fontface="bold", fontsize=12))),
-                                      
-                                      nrow = 5, heights = c(1.3, 0.1, 2, 0.1, 2.4)),
-                                    ncol = 2, widths = c(0.3, 10)),
-                                  common_legend_horizontal,
-                                  nrow = 2, heights = c(11, 0.4)  # adjust 1 to give legend more/less space
-                                  )
-
-
-# Get the total height of the drawn object to calculate y positions
-total_h <- 11 + 0.4  # matches heights above
-plot_fraction <- 11 / total_h  # the fraction of the figure that is plots
-
-sections_h <- 1.3 + 0.1 + 2 + 0.1 + 2.4 
-
-y_A <- 0.996
-y_B <- 0.996 - (1.3 + 0.1) / sections_h * plot_fraction
-y_C <- 0.996 - (1.3 + 0.1 + 2 + 0.1) / sections_h * plot_fraction
-
-png("Fig2-biomass.png", width = 5.5, height = 11, units = "in", res = 600)
-grid.newpage()
-grid.draw(combined_graph_v3)  # draw the plot FIRST
-
-# overlay the labels on top
-grid.text("(A)", x = 0.03, y = y_A, just = c("left", "top"),
-          gp = gpar(fontface = "bold", fontsize = 12))
-grid.text("(B)", x = 0.03, y = y_B, just = c("left", "top"),
-          gp = gpar(fontface = "bold", fontsize = 12))
-grid.text("(C)", x = 0.03, y = y_C, just = c("left", "top"),
-          gp = gpar(fontface = "bold", fontsize = 12))
-
-dev.off()
-
-combined_graph_v4 <- grid.arrange(
-  arrangeGrob(
-    arrangeGrob(
-      textGrob('Biomass (Mg / ha)', rot = 90), # Col1: y-axis Grob
-      arrangeGrob( # Col 2: Biomass figures
-        arrangeGrob( # Col 2, Row 1: Pioneer 93B15 Grob
-          arrangeGrob( # ambient CO2 Grob
-            arrangeGrob( # Parameterization Grob
-              figs[[1]] + theme(axis.title.x = element_blank(),
-                                axis.text.x = element_blank(),
-                                legend.position="none"),
-              figs[[3]] + theme(legend.position="none", 
-                                axis.title.x = element_blank()),
-              nrow = 2),
-            # top = textGrob("Parameterization", 
-            #                gp=gpar(fontface="bold", fontsize=12))),
-            arrangeGrob( # ambient CO2 2nd column Grob
-              figs[[2]] + theme(axis.title.x = element_blank(),
-                                axis.text.x = element_blank(),
-                                legend.position="none"),
-              figs[[4]] + theme(legend.position="none",
-                                axis.title.x = element_blank()),
-              nrow = 2), 
-            ncol = 2, 
-            top = textGrob("(A) Ambient CO2", 
-                           gp=gpar(fontface="bold", fontsize=12))
-            ),
-          arrangeGrob( # elevated CO2 Grob
-            arrangeGrob( # eCO2 col 1
-              figs.elevCO2[[1]] + theme(axis.title.x = element_blank(),
-                                        axis.text.x = element_blank(),
-                                        legend.position="none"),
-              figs.elevCO2[[3]] + theme(axis.title.x = element_blank(),
-                                        legend.position="none"),
-              nrow = 2), 
-            arrangeGrob(figs.elevCO2[[2]] + theme(axis.title.x = element_blank(),
-                                                  axis.text.x = element_blank(),
-                                                  legend.position="none"),
-                        figs.elevCO2[[4]] + theme(axis.title.x = element_blank(),
-                                                  legend.position="none"),
-                        nrow = 2),
-            ncol = 2, 
-            top = textGrob("(B) Elevated CO2", 
-                           gp=gpar(fontface="bold", fontsize=12))
-            ),
-          ncol = 2,
-          top = textGrob("Pioneer 93B15", 
-                         gp=gpar(fontface="bold", fontsize=12))
-          ), # end of the Pioneer 93B15 Grob
-        
-        textGrob(""), # Row 2: spacer
-        
-        arrangeGrob( # Row 3: LD11 figures
-          ld11.figs[[1]] + theme(legend.position="none"),
-          ld11.figs[[2]] + theme(legend.position="none"),
-          ld11.figs[[3]] + theme(legend.position="none"),
-          ld11.figs[[4]] + theme(legend.position="none"),
-          ncol = 4,
-          top = textGrob("(C) LD11-2170 at Ambient CO2", 
-                         gp=gpar(fontface="bold", fontsize=12))
-        ),
-        nrow = 3, heights = c(1.8, 0.1, 1)
-      ),
-      ncol = 2, widths = c(0.3, 10)
-    ),
-    common_legend_horizontal,
-    nrow = 2, heights = c(11, 0.5))
-)
-
 combined_graph_v5 <- grid.arrange(
   arrangeGrob(
     arrangeGrob(
@@ -1054,19 +911,19 @@ combined_graph_v5 <- grid.arrange(
               figs[[1]] + theme(axis.title.x = element_blank(),
                                 axis.text.x = element_blank(),
                                 legend.position="none")
-                        + labs(title = '(A) 2002'),
+                        + labs(title = '2002'),
               figs[[2]] + theme(axis.title.x = element_blank(),
                                 axis.text.x = element_blank(),
                                 legend.position="none")
-                        + labs(title = '(B) 2004'),
+                        + labs(title = '2004'),
               figs[[3]] + theme(legend.position="none", 
                                 axis.title.x = element_blank(),
                                 axis.text.x = element_blank())
-                        + labs(title = '(C) 2005'),
+                        + labs(title = '2005'),
               figs[[4]] + theme(legend.position="none",
                                 axis.title.x = element_blank(),
                                 axis.text.x = element_blank())
-                        + labs(title = '(D) 2006'),
+                        + labs(title = '2006'),
               ncol = 4,
               top = textGrob("Pioneer 93B15 at Ambient CO2", 
                            gp=gpar(fontface="bold", fontsize=12))
@@ -1076,48 +933,83 @@ combined_graph_v5 <- grid.arrange(
           figs.elevCO2[[1]] + theme(axis.title.x = element_blank(),
                             axis.text.x = element_blank(),
                             legend.position="none")
-                            + labs(title = '(E) 2002'),
+                            + labs(title = '2002'),
           figs.elevCO2[[2]] + theme(axis.title.x = element_blank(),
                             axis.text.x = element_blank(),
                             legend.position="none")
-                            + labs(title = '(F) 2004'),
+                            + labs(title = '2004'),
           figs.elevCO2[[3]] + theme(legend.position="none", 
                             axis.title.x = element_blank(),
                             axis.text.x = element_blank())
-                            + labs(title = '(G) 2005'),
+                            + labs(title = '2005'),
           figs.elevCO2[[4]] + theme(legend.position="none",
                             axis.title.x = element_blank(),
                             axis.text.x = element_blank())
-                            + labs(title = '(H) 2006'),
+                            + labs(title = '2006'),
           ncol = 4,
           top = textGrob("Pioneer 93B15 at Elevated CO2", 
                        gp=gpar(fontface="bold", fontsize=12))
         ),
         textGrob(""), # Row 4: spacer,
         arrangeGrob( # Row 5: LD11 figures
-          ld11.figs[[1]] + theme(legend.position="none") + labs(title = '(I) 2021'),
-          ld11.figs[[2]] + theme(legend.position="none") + labs(title = '(J) 2022'),
-          ld11.figs[[3]] + theme(legend.position="none") + labs(title = '(K) 2023'),
-          ld11.figs[[4]] + theme(legend.position="none") + labs(title = '(L) 2024'),
+          ld11.figs[[1]] + theme(legend.position="none") + labs(title = '2021'),
+          ld11.figs[[2]] + theme(legend.position="none") + labs(title = '2022'),
+          ld11.figs[[3]] + theme(legend.position="none") + labs(title = '2023'),
+          ld11.figs[[4]] + theme(legend.position="none") + labs(title = '2024'),
           ncol = 4,
           top = textGrob("LD11-2170 at Ambient CO2", 
                          gp=gpar(fontface="bold", fontsize=12))
         ),
-        nrow = 5, heights = c(1, 0.05, 1, 0.05, 1)
+        nrow = 5, heights = c(1, 0.05, 1, 0.05, 1.2)
       ),
       ncol = 2, widths = c(0.3, 10)
     ),
     common_legend_horizontal,
-    nrow = 2, heights = c(11, 0.5))
+    nrow = 2, heights = c(10, 0.5))
 )
 
+png("Fig-Biomass.png", width = 10, height = 8, units = "in", res = 600)
+grid.newpage()
+grid.draw(combined_graph_v5)
 
-ggsave('Fig-Biomass.png', 
-       plot = combined_graph_v5, 
-       width = 10,
-       height = 8,
-       units = "in",
-       dpi = 600)
+# Layout fractions
+x_left      <- 0.3 / 10.3          # left edge of the plot column (after y-axis grob)
+plot_width  <- 10  / 10.3          # width of the 4-column plot area
+col_width   <- plot_width / 4
+
+total_h     <- 10 + 0.5
+plot_h_frac <- 10 / total_h        # fraction of figure height used by plots
+
+row_heights <- c(1, 0.05, 1, 0.05, 1.2)
+row_total   <- sum(row_heights)    # = 3.2
+
+# Top y of each of the 3 plot rows (rows 1, 3, 5 in the 5-row layout)
+row_tops <- c(
+  1,                                           # row A-D  (row 1 top)
+  1 - (row_heights[1] + row_heights[2]) / row_total,  # row E-H
+  1 - (sum(row_heights[1:4])) / row_total              # row I-L
+) * plot_h_frac
+
+letters_labels <- c('A','B','C','D','E','F','G','H','I','J','K','L')
+label_idx <- 1
+
+for (row in 1:3) {
+  for (col in 1:4) {
+    x_pos <- x_left + (col - 1) * col_width + 0.01
+    y_pos <- row_tops[row] + 0.01
+    grid.text(
+      paste0("(", letters_labels[label_idx], ")"),
+      x    = x_pos,
+      y    = y_pos,
+      just = c("left", "top"),
+      gp   = gpar(fontsize = 12)
+    )
+    label_idx <- label_idx + 1
+  }
+}
+
+dev.off()
+
 
 total_precip <- sapply(1:4, function(i) {
   ld11.results[[i]] %>%
@@ -1244,19 +1136,32 @@ stem_tnc_plot <- ggplot(Stem.carb.data, aes(time, TNC, group = Source)) +
        x='Day of Year (2022)',
        y = NULL)
 
-tnc_growingseasion_plot <- grid.arrange(arrangeGrob(textGrob('Substrate C (mol C / kg)', rot = 90, gp=gpar(fontsize=12))),
-                                             arrangeGrob(arrangeGrob(leaf_tnc_plot, top = '(A) Leaf'),
-                                                         arrangeGrob(stem_tnc_plot, top = '(B) Stem'),
-                                                                     ncol = 2), #, top = 'LD11-2170 (2022) Leaf and Stem Substrate C Concentrations'),
-                                             ncol=2, widths=c(0.2, 10))
 
-ggsave('Fig-substrate-annual.png', 
-       plot = tnc_growingseasion_plot, 
-       width = 10,
-       height = 3.5,
-       units = "in",
-       dpi = 600
+png("Fig-substrate-annual.png", width = 10, height = 3.5, units = "in", res = 600)
+grid.newpage()
+
+tnc_growingseasion_plot <- grid.arrange(
+  arrangeGrob(textGrob('Substrate C (mol C / kg)', rot = 90, gp=gpar(fontsize=12))),
+  arrangeGrob(
+    arrangeGrob(leaf_tnc_plot, top = 'Leaf'),
+    arrangeGrob(stem_tnc_plot, top = 'Stem'),
+    ncol = 2
+  ),
+  ncol=2, widths=c(0.2, 10)
 )
+
+grid.draw(tnc_growingseasion_plot)
+
+# x positions: left edge of each panel
+# 0.2 / 10.2 ≈ 0.020 is the y-axis grob width fraction
+x_left      <- 0.2 / 10.2
+plot_width  <- 10  / 10.2
+col_width   <- plot_width / 2
+
+grid.text("(A)", x = x_left + 0.01,              y = 0.99, just = c("left", "top"), gp = gpar(fontsize = 12))
+grid.text("(B)", x = x_left + col_width + 0.01,  y = 0.99, just = c("left", "top"), gp = gpar(fontsize = 12))
+
+dev.off()
 
 # Diurnal changes of substrate C
 # take out the last TNC data because in simulation the crop has stopped growing

@@ -1,3 +1,4 @@
+library(ggtext)
 # define a function to update differential values
 update_differential_quantities <- function(r, updated_values, UPDATE_PARAMETERS, model, defoliate_ptc){
   ## Define remaining percentages
@@ -258,18 +259,22 @@ all_points$Source <- factor(all_points$Source, levels = source_levels)
 
 # --- 2. Plotting ---
 
+facet_labels <- c(
+  "1.35" = "(A)                                                             R4 (DVI = 1.35)",
+  "1.5"  = "(B)                                                             R5 (DVI = 1.5)"
+)
+
 yield_reduction_fig <- ggplot() +
   geom_bar(data = all_bars, 
            aes(x = as.factor(Defoliation_PCT), y = Mean_YR, fill = Source),
            stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
   geom_point(data = all_points, 
              aes(x = as.factor(Defoliation_PCT), y = Yield_R, 
-                 group = Source, fill = Source),   # <-- fill inside aes()
+                 group = Source, fill = Source),   
              position = position_dodge(width = 0.8), 
              shape = 21, size = 1.5, color = "black", alpha = 0.7) +
   facet_wrap(~Defoliation_DVI, nrow = 2, 
-             labeller = as_labeller(c("1.35" = "R4 (DVI = 1.35)", 
-                                      "1.5" = "R5 (DVI = 1.5)"))) +
+             labeller = as_labeller(facet_labels)) +
   scale_fill_manual(values = c("Parvej et al. (2025)" = "#009E73",
                                "UTR" =                  "#E65F00", 
                                "Partitioning" =         "#0072B2")) +
@@ -279,7 +284,7 @@ yield_reduction_fig <- ggplot() +
   theme_bw() +
   theme(legend.position = "bottom",
         strip.background = element_rect(fill = "gray90"),
-        strip.text = element_text(face = "bold"))
+        strip.text = element_text(hjust = 0))
 
 print(yield_reduction_fig)
 

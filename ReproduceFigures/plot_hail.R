@@ -396,51 +396,89 @@ combined_with_hail <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot
 #                                    common_legend,
 #                                    ncol = 3, widths = c(0.3, 5, 1))
 
-combined_with_hail_utr <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
-                                   arrangeGrob(
-                                     arrangeGrob(
-                                       arrangeGrob(fig_2003_utr_with_hail +
-                                                     theme(axis.title.x = element_blank(),
-                                                           axis.title.y = element_blank(),
-                                                           legend.position="none"),
-                                                   top = '(A) Ambient CO2'),
-                                       arrangeGrob(fig_2003_utr_eCO2_with_hail +
-                                                     theme(axis.title.x = element_blank(),
-                                                           axis.title.y = element_blank(),
-                                                           legend.position="none"),
-                                                   top = '(B) Elevated CO2'),
-                                       ncol= 2),
-                                     arrangeGrob(textGrob('Day of Year (2003)')),
-                                     nrow = 2, heights = c(4, 0.3)),
-                                   common_legend,
-                                   ncol = 3, widths = c(0.3, 5, 1))
 
-combined_with_hail_partitioning <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
-                                      arrangeGrob(
-                                        arrangeGrob(
-                                          arrangeGrob(fig_2003_partitioning_with_hail +
-                                                        theme(axis.title.x = element_blank(),
-                                                              axis.title.y = element_blank(),
-                                                              legend.position="none"),
-                                                      top = '(A) Ambient CO2'),
-                                          arrangeGrob(fig_2003_partitioning_eCO2_with_hail +
-                                                        theme(axis.title.x = element_blank(),
-                                                              axis.title.y = element_blank(),
-                                                              legend.position="none"),
-                                                      top = '(B) Elevated CO2'),
-                                          ncol= 2),
-                                        arrangeGrob(textGrob('Day of Year (2003)')),
-                                        nrow = 2, heights = c(4, 0.3)),
-                                      common_legend,
-                                      ncol = 3, widths = c(0.3, 5, 1))
+
+library(gridExtra)
+library(grid)
+
+make_strip_label <- function(letter, title, fontsize = 12, height_lines = 1.5) {
+  arrangeGrob(
+    grobTree(
+      textGrob(letter, x = 0.01, hjust = 0,
+               gp = gpar(fontsize = fontsize)),
+      textGrob(title,  x = 0.5,  hjust = 0.5,
+               gp = gpar(fontsize = fontsize))
+    ),
+    heights = unit(height_lines, "lines")  # reserves explicit vertical space
+  )
+}
+
+combined_with_hail_utr <- grid.arrange(
+  arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+  arrangeGrob(
+    arrangeGrob(
+      arrangeGrob(fig_2003_utr_with_hail +
+                    theme(axis.title.x = element_blank(),
+                          axis.title.y = element_blank(),
+                          legend.position = "none"),
+                  top = make_strip_label("(A)", "Ambient CO2")),
+      arrangeGrob(fig_2003_utr_eCO2_with_hail +
+                    theme(axis.title.x = element_blank(),
+                          axis.title.y = element_blank(),
+                          legend.position = "none"),
+                  top = make_strip_label("(B)", "Elevated CO2")),
+      ncol = 2),
+    arrangeGrob(textGrob('Day of Year (2003)')),
+    nrow = 2, heights = c(4, 0.3)),
+  common_legend,
+  ncol = 3, widths = c(0.3, 5, 1))
 
 ggsave('Fig7-hail.png',
        plot = combined_with_hail_utr,
-       width = 5,
-       height = 2.2,
+       width = 6,
+       height = 2.5,
        units = "in",
        dpi = 600
 )
+
+# 
+# combined_with_hail_utr <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+#                                    arrangeGrob(
+#                                      arrangeGrob(
+#                                        arrangeGrob(fig_2003_utr_with_hail +
+#                                                      theme(axis.title.x = element_blank(),
+#                                                            axis.title.y = element_blank(),
+#                                                            legend.position="none"),
+#                                                    top = '(A) Ambient CO2'),
+#                                        arrangeGrob(fig_2003_utr_eCO2_with_hail +
+#                                                      theme(axis.title.x = element_blank(),
+#                                                            axis.title.y = element_blank(),
+#                                                            legend.position="none"),
+#                                                    top = '(B) Elevated CO2'),
+#                                        ncol= 2),
+#                                      arrangeGrob(textGrob('Day of Year (2003)')),
+#                                      nrow = 2, heights = c(4, 0.3)),
+#                                    common_legend,
+#                                    ncol = 3, widths = c(0.3, 5, 1))
+
+combined_with_hail_partitioning <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+                                                arrangeGrob(
+                                                  arrangeGrob(
+                                                    arrangeGrob(fig_2003_partitioning_with_hail +
+                                                                  theme(axis.title.x = element_blank(),
+                                                                        axis.title.y = element_blank(),
+                                                                        legend.position="none"),
+                                                                top = '(A) Ambient CO2'),
+                                                    arrangeGrob(fig_2003_partitioning_eCO2_with_hail +
+                                                                  theme(axis.title.x = element_blank(),
+                                                                        axis.title.y = element_blank(),
+                                                                        legend.position="none"),
+                                                                top = '(B) Elevated CO2'),
+                                                    ncol= 2),
+                                                  arrangeGrob(textGrob('Day of Year (2003)')),
+                                                  nrow = 2, heights = c(4, 0.3)),
+                                                common_legend,
+                                                ncol = 3, widths = c(0.3, 5, 1))
 
 ggsave('FigS-hail-partitioning.png',
        plot = combined_with_hail_partitioning,
@@ -484,7 +522,6 @@ hail_utr_utilization_plot <-
     name = "CO2 Level"
   ) +
   labs(
-    title = "Leaf and Stem Utilization Rate by Day of Year",
     x = "2003 Day of Year (DOY)",
     y = expression(paste("Utilization Rate", "(mol m"^{-2}, "day"^{-1},")"))
   ) +

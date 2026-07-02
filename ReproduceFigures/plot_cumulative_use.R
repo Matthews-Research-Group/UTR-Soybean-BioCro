@@ -1,3 +1,5 @@
+library(patchwork)
+
 #__________________Plot the Accumulative Allocation_____________
 calculate_cumulative_values <- function(df, i) {
   df %>%
@@ -165,17 +167,6 @@ ggsave('Fig-stacked_cumulative_carbon_use_pct.png',
        units  = "in",
        dpi    = 600)
 
-summary_pct <- final_pct %>%
-  group_by(component) %>%
-  summarise(
-    mean = round(mean(pct), 2),
-    min  = round(min(pct),  2),
-    max  = round(max(pct),  2),
-    .groups = "drop"
-  ) %>%
-  arrange(component)
-
-print(summary_pct)
 
 # Summarise: sum growth + respiration for each organ
 organ_long <- cumulative_long %>%
@@ -396,30 +387,15 @@ p_right <- cumulative_long_2002 %>%
     plot.title      = element_text(hjust = 0.5)
   )
 
-# extract legend as a grob from a temporary plot
-p_for_legend <- p_left + theme(legend.position = "bottom",
-                               legend.key.size = unit(0.4, "cm"))
-legend_grob   <- gtable::gtable_filter(ggplotGrob(p_for_legend), "guide-box")
 
-p_left <- p_left + labs(title = "(A)") +
-  theme(plot.title = element_text(hjust = 0, size = 12, face = "bold"))
+p_left  <- p_left  + labs(title = "(A)")
+p_right <- p_right + labs(title = "(B)") + guides(fill = "none")   # <- the fix
 
-p_right <- p_right + labs(title = "(B)") +
-  theme(plot.title = element_text(hjust = 0, size = 12, face = "bold"))
-
-p_combined_2002 <- arrangeGrob(
-  arrangeGrob(ggplotGrob(p_left), ggplotGrob(p_right), ncol = 2),
-  legend_grob,
-  nrow        = 2,
-  heights     = unit(c(1, 0.1), c("null", "npc"))
-)
-
-grid::grid.newpage()
-grid::grid.draw(p_combined_2002)
+p_combined_2002 <- (p_left + p_right) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom",
+        legend.key.size = unit(0.4, "cm"))
 
 ggsave("Fig-2002_combined_cumulative_and_pct.png",
-       plot   = gridExtra::arrangeGrob(p_combined_2002),
-       width  = 8,
-       height = 3.5,
-       units  = "in",
-       dpi    = 600)
+       plot   = p_combined_2002,
+       width  = 8, height = 4, units = "in", dpi = 600)
