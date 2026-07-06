@@ -53,16 +53,16 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       
       cost <- cost + wts2$CummulativeLitter * err.litter
       
-      print(paste0('err.leaf: ', err.leaf))
-      print(paste0('err.stem: ', err.stem))
-      print(paste0('err.pod: ', err.pod))
-      print(paste0('err.root: ', err.root))
-      print(paste0('err.litter: ', err.litter))
-      print(paste0('cost: ', cost))
+      # print(paste0('err.leaf: ', err.leaf))
+      # print(paste0('err.stem: ', err.stem))
+      # print(paste0('err.pod: ', err.pod))
+      # print(paste0('err.root: ', err.root))
+      # print(paste0('err.litter: ', err.litter))
+      # print(paste0('cost: ', cost))
       
       if(is.nan(cost)){
         cost.avg <- 1e10
-        print('is nan')
+        # print('is nan')
         break
       }
       
@@ -70,9 +70,7 @@ multiyear_BioCro_optim <- function(optim_params_short, biocro.fun, ExpData, num_
       cost.avg <- cost.avg + cost
     }
   }
-  # print(paste0('Pod_v_max', optim_params_short[5]))
-  # print(paste0('Pod_Km', optim_params_short[9]))
-  # print(cost.avg)
+
   return(cost.avg)
   
 }

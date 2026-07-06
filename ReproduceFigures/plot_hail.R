@@ -150,51 +150,6 @@ result_partitioning_hail$Pod <- result_partitioning_hail$Grain + result_partitio
 fig_2003_utr_with_hail <- plot_SoyFACE_biomass(result_utr_hail, ExpBiomass, ExpBiomass.std, co2_opt, yr)
 fig_2003_partitioning_with_hail <- plot_SoyFACE_biomass(result_partitioning_hail, ExpBiomass, ExpBiomass.std, co2_opt, yr)
 
-### With Updated Parameters ###
-## UTR ##
-UPDATE_PARAMETERS <- TRUE
-differential_quantities_just_after_defoliation_utr_updatedParams <- update_differential_quantities(result_utr_hail1, 
-                                                                                     names(initial_values), 
-                                                                                     UPDATE_PARAMETERS, 'utr')
-updated_parameters <- parameters
-updated_parameters$Leaf_respiration_factor <- 0.2
-updated_parameters$Stem_respiration_factor <- updated_parameters$Stem_respiration_factor + 0.2
-
-soybean_utr_optsolver_hail2_updatedParams <- partial_run_biocro(differential_quantities_just_after_defoliation_utr_updatedParams,
-                                                  updated_parameters,
-                                                  weather.growingseason_2,
-                                                  direct_modules,
-                                                  differential_modules,
-                                                  solver,
-                                                  arg_names,
-                                                  verbose = FALSE)
-
-result_utr_hail2_updatedParams <- soybean_utr_optsolver_hail2_updatedParams(parameters_after_hail$Value)
-
-## Partitioning model ##
-differential_quantities_just_after_defoliation_partitioning_updatedParams <- update_differential_quantities(result_partitioning_hail1, 
-                                                                                              names(soybean$initial_values),
-                                                                                              UPDATE_PARAMETERS, 'partitioning')
-
-updated_soybean_parameters <- soybean$parameters
-updated_soybean_parameters$mrc_stem <- updated_soybean_parameters$mrc_stem *2
-result_partitioning_hail2_updatedParams <- run_biocro(differential_quantities_just_after_defoliation_partitioning_updatedParams,
-                                         updated_soybean_parameters,
-                                         weather.growingseason_2,
-                                         soybean$direct_modules,
-                                         soybean$differential_modules,
-                                         soybean$ode_solver,
-                                         verbose = FALSE)
-
-result_utr_hail_updatedParams <- rbind(result_utr_hail1[seq_len(nrow(result_utr_hail1) - 1), ], 
-                                       result_utr_hail2_updatedParams)
-result_partitioning_hail_updatedParams <- rbind(result_partitioning_hail1[seq_len(nrow(result_partitioning_hail1) - 1), ], 
-                                                result_partitioning_hail2_updatedParams)
-result_partitioning_hail_updatedParams$Pod <- result_partitioning_hail_updatedParams$Grain + 
-                                              result_partitioning_hail_updatedParams$Shell
-fig_2003_utr_with_hail_updatedParams <- plot_SoyFACE_biomass(result_utr_hail_updatedParams, ExpBiomass, ExpBiomass.std, co2_opt, yr)
-fig_2003_partitioning_with_hail_updatedParams <- plot_SoyFACE_biomass(result_partitioning_hail_updatedParams, ExpBiomass, ExpBiomass.std, co2_opt, yr)
-
 ########## Elevated CO2##########
 co2_opt <- '_CO2_'
 parameters$Catm <- 550
@@ -292,50 +247,6 @@ result_partitioning_eCO2_hail$Pod <- result_partitioning_eCO2_hail$Grain + resul
 fig_2003_utr_eCO2_with_hail <- plot_SoyFACE_biomass(result_utr_eCO2_hail, ExpBiomass.elevCO2, ExpBiomass.elevCO2.std, co2_opt, yr)
 fig_2003_partitioning_eCO2_with_hail <- plot_SoyFACE_biomass(result_partitioning_eCO2_hail, ExpBiomass.elevCO2, ExpBiomass.elevCO2.std, co2_opt, yr)
 
-### With Updated Parameters ###
-## UTR ##
-UPDATE_PARAMETERS <- TRUE
-differential_quantities_just_after_defoliation_utr_eCO2_updatedParams <- update_differential_quantities(result_utr_eCO2_hail1, 
-                                                                                                        names(initial_values), 
-                                                                                                        UPDATE_PARAMETERS, 'utr')
-updated_parameters <- parameters
-updated_parameters$Leaf_respiration_factor <- 0.2
-updated_parameters$Stem_respiration_factor <- updated_parameters$Stem_respiration_factor + 0.2
-
-soybean_utr_eCO2_optsolver_hail2_updatedParams <- partial_run_biocro(differential_quantities_just_after_defoliation_utr_eCO2_updatedParams,
-                                                                     updated_parameters,
-                                                                     weather.growingseason_2,
-                                                                     direct_modules,
-                                                                     differential_modules,
-                                                                     solver,
-                                                                     arg_names,
-                                                                     verbose = FALSE)
-
-result_utr_eCO2_hail2_updatedParams <- soybean_utr_eCO2_optsolver_hail2_updatedParams(parameters_after_hail$Value)
-
-## Partitioning model ##
-differential_quantities_just_after_defoliation_partitioning_eCO2_updatedParams <- update_differential_quantities(result_partitioning_eCO2_hail1, 
-                                                                                                                 names(soybean$initial_values),
-                                                                                                                 UPDATE_PARAMETERS, 'partitioning')
-
-updated_soybean_parameters <- soybean$parameters
-updated_soybean_parameters$mrc_stem <- updated_soybean_parameters$mrc_stem * 2
-result_partitioning_eCO2_hail2_updatedParams <- run_biocro(differential_quantities_just_after_defoliation_partitioning_eCO2_updatedParams,
-                                                           updated_soybean_parameters,
-                                                           weather.growingseason_2,
-                                                           soybean$direct_modules,
-                                                           soybean$differential_modules,
-                                                           soybean$ode_solver,
-                                                           verbose = FALSE)
-
-result_utr_eCO2_hail_updatedParams <- rbind(result_utr_eCO2_hail1[seq_len(nrow(result_utr_eCO2_hail1) - 1), ], 
-                                            result_utr_eCO2_hail2_updatedParams)
-result_partitioning_eCO2_hail_updatedParams <- rbind(result_partitioning_eCO2_hail1[seq_len(nrow(result_partitioning_eCO2_hail1) - 1), ], 
-                                                     result_partitioning_eCO2_hail2_updatedParams)
-result_partitioning_eCO2_hail_updatedParams$Pod <- result_partitioning_eCO2_hail_updatedParams$Grain + 
-  result_partitioning_eCO2_hail_updatedParams$Shell
-fig_2003_utr_eCO2_with_hail_updatedParams <- plot_SoyFACE_biomass(result_utr_eCO2_hail_updatedParams, ExpBiomass, ExpBiomass.std, co2_opt, yr)
-fig_2003_partitioning_eCO2_with_hail_updatedParams <- plot_SoyFACE_biomass(result_partitioning_eCO2_hail_updatedParams, ExpBiomass, ExpBiomass.std, co2_opt, yr)
 
 plot_partitioning(result_utr_hail, '2003') 
 combined_with_hail <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
@@ -366,36 +277,6 @@ combined_with_hail <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot
                                      nrow = 3, heights = c(4, 4, 0.3)),
                                    common_legend,
                                    ncol = 3, widths = c(0.3, 5, 1))
-# 
-# combined_with_hail_v2 <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
-#                                    arrangeGrob(
-#                                      arrangeGrob(
-#                                        arrangeGrob(fig_2003_utr_with_hail +
-#                                                      theme(axis.title.x = element_blank(),
-#                                                            axis.title.y = element_blank(),
-#                                                            legend.position="none"),
-#                                                    top = 'Ambient CO2'),
-#                                        arrangeGrob(fig_2003_utr_eCO2_with_hail +
-#                                                      theme(axis.title.x = element_blank(),
-#                                                            axis.title.y = element_blank(),
-#                                                            legend.position="none"),
-#                                                    top = 'Elevated CO2'),
-#                                        ncol= 2, top = 'Without Parameter Adjustment'),
-#                                      arrangeGrob(
-#                                        arrangeGrob(fig_2003_utr_with_hail_updatedParams  +
-#                                                      theme(axis.title.x = element_blank(),
-#                                                            axis.title.y = element_blank(),
-#                                                            legend.position="none")),
-#                                        arrangeGrob(fig_2003_utr_eCO2_with_hail_updatedParams  +
-#                                                      theme(axis.title.x = element_blank(),
-#                                                            axis.title.y = element_blank(),
-#                                                            legend.position="none")),
-#                                        ncol = 2, top = 'With Parameter Adjustment'),
-#                                      arrangeGrob(textGrob('Day of Year (2003)')),
-#                                      nrow = 3, heights = c(4, 4, 0.3)),
-#                                    common_legend,
-#                                    ncol = 3, widths = c(0.3, 5, 1))
-
 
 
 library(gridExtra)
@@ -413,6 +294,7 @@ make_strip_label <- function(letter, title, fontsize = 12, height_lines = 1.5) {
   )
 }
 
+# ───────────────────── Figure 11 Hail UTR ─────────────────────────────────────
 combined_with_hail_utr <- grid.arrange(
   arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
   arrangeGrob(
@@ -433,7 +315,7 @@ combined_with_hail_utr <- grid.arrange(
   common_legend,
   ncol = 3, widths = c(0.3, 5, 1))
 
-ggsave('Fig7-hail.png',
+ggsave('Fig-hail-utr.png',
        plot = combined_with_hail_utr,
        width = 6,
        height = 2.5,
@@ -441,26 +323,8 @@ ggsave('Fig7-hail.png',
        dpi = 600
 )
 
-# 
-# combined_with_hail_utr <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
-#                                    arrangeGrob(
-#                                      arrangeGrob(
-#                                        arrangeGrob(fig_2003_utr_with_hail +
-#                                                      theme(axis.title.x = element_blank(),
-#                                                            axis.title.y = element_blank(),
-#                                                            legend.position="none"),
-#                                                    top = '(A) Ambient CO2'),
-#                                        arrangeGrob(fig_2003_utr_eCO2_with_hail +
-#                                                      theme(axis.title.x = element_blank(),
-#                                                            axis.title.y = element_blank(),
-#                                                            legend.position="none"),
-#                                                    top = '(B) Elevated CO2'),
-#                                        ncol= 2),
-#                                      arrangeGrob(textGrob('Day of Year (2003)')),
-#                                      nrow = 2, heights = c(4, 0.3)),
-#                                    common_legend,
-#                                    ncol = 3, widths = c(0.3, 5, 1))
 
+# ─────── Figure S6 Hail Simulation with the Partitioning Model ────────────────
 combined_with_hail_partitioning <- grid.arrange(arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
                                                 arrangeGrob(
                                                   arrangeGrob(
@@ -488,7 +352,7 @@ ggsave('FigS-hail-partitioning.png',
        dpi = 600
 )
 
-
+# ─────── Figure S7 Leaf and Stem utilization rate change after hail ────────────────
 df1 <- result_utr_hail %>%
   group_by(doy) %>%
   summarise(
@@ -511,7 +375,7 @@ hail_utr_utilization_plot <-
   bind_rows(df1, df2) %>%
   ggplot(aes(x = doy, y = value, color = type, linetype = scenario)) +
   annotate("rect", xmin = 197.5, xmax = 198.5, ymin = -Inf, ymax = Inf,
-           fill = "grey70", alpha = 0.4) +
+           fill = "red", alpha = 0.5) +
   geom_line(linewidth = 1) +
   scale_color_manual(
     values = c("Leaf" = "#117733", "Stem" = "#999933"),

@@ -1,7 +1,3 @@
-# The work directory is hard coded since the previous one doesn't work well all the time. 
-# Please change it according to your own working directory.
-# Parameter loading and plotting are put into this R code to check the variables more easily.
-# To be moved to different files once everything works out.
 # Clear workspace
 rm(list=ls())
 
@@ -52,7 +48,7 @@ differential_modules <- set_differential_modules(differential_modules)
 
 # Update UTR modules
 source('../Data/Soybean-BioCro_Parameters/set_up_UTRSoybeanBML.R')
-initial_values <- set_init_values(initial_values, ExpBiomass[[i]]) 
+initial_values <- set_init_values(initial_values) 
 parameters           <- set_parameters(parameters)
 if (co2_opt == '_ambient_'){
   parameters$Catm <- 372 # 414.71ppm for 2021 from NOAA
@@ -72,7 +68,6 @@ parameters <-c(parameters, fitted.utr.params)[!duplicated(c(names(parameters),
 # initial_values$DVI <- 0 # simulate after emergence
 # Minor adjustments
 parameters$time_zone_offset <- -6
-parameters$iSp <- parameters$iSp * 1.12
 for (i in 1:length(year)) {
   yr <- year[i]
   # weather <- read.csv(file = paste0('../Data/Weather_data/', yr,'_Bondville_IL_daylength_wDVI.csv'))
@@ -120,11 +115,6 @@ cost_func <- function(x){
                          numrows[c(1,3)], weights[c(1,3)], wts2, RootVals[c(1,3)])
 }
 
-r <- soybean_optsolver[[1]](optim_params_conversion(optim_params_short))
-xyplot(data=r, Leaf+Stem+Root+Pod~fractional_doy)
-
-cost_func(optim_params_short_SoyFACE)
-
 
 # Parameter ranges
 upperlim <- c(
@@ -153,13 +143,13 @@ set.seed(rng.seed)
 # maximum number of iterations
 max.iter <- 1000
 # Call DEoptim function to run optimization
-cl <- makeCluster(48)
+cl <- makeCluster(10)
 parVars <- c('optim_params_conversion', 'multiyear_BioCro_optim','soybean_optsolver','ExpBiomass','numrows','weights','wts2','RootVals')
 clusterExport(cl, parVars,envir=environment())
 sink(paste0('Optmization_output_', Sys.Date(), '.txt'))
 optim_result <- DEoptim(fn=cost_func, lower=lowerlim, upper = upperlim, 
                         control=list(itermax=max.iter,parallelType=1,
-                                     packages=c('BioCro', 'UTRSoybeanBML'),
+                                     packages=c('BioCro', 'UTRSoybeanBML', 'BioCroWater'),
                                      parVar=parVars,
                                      cluster=cl))
 optim_params_short = optim_result$optim$bestmem

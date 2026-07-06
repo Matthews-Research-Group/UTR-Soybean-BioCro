@@ -62,6 +62,5 @@ plot_partitioning <- function(result, year){
       values = c('Leaf' = "#117733", 'Stem' = "#999933", 'Root' = "#332288", 'Pod' = "#882255"),
       breaks = c('Leaf', 'Stem', 'Root', 'Pod')
     )
-  ggsave(paste0("allocation__percentage_", year, '.png'), width = 4, height = 3, units = "in")
   return(p) # possible returns: allocation_percentage_tall, p, reuse.p, depending on different purposes
 }

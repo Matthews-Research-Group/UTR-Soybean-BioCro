@@ -1,8 +1,0 @@
-"","2021 x0.01","2021 x100"
-"Leaf_utilization_rate_constant","-53.31%","-82.57%"
-"Stem_utilization_rate_constant","-3.92%","-50%"
-"Root_utilization_rate_constant","-3.91%","-10.88%"
-"Pod_utilization_rate_constant","-35.33%","17.92%"
-"substrate_conductance_Leaf_to_Stem","-25.34%","-15.4%"
-"substrate_conductance_Stem_to_Root","-1.32%","0.22%"
-"substrate_conductance_Stem_to_Pod","-18.22%","9.31%"
