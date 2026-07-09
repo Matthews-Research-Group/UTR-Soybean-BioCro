@@ -17,7 +17,7 @@ Service: Illinois Computes
 Resource: Illinois Campus Cluster Program (ICCP)
 Hardware: Dual AMD EPYC 7713 CPU, 512GB RAM, 25G node
 
-Required R packages (the version included in Models folder):
+Required R packages (the version included in `BioCroModels` folder):
 - BioCro v3.3.1 
 - BioCroWater
 - UTRSoybeanBML
