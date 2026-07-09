@@ -1,0 +1,1 @@
+useDynLib(%1$s, .registration = TRUE)

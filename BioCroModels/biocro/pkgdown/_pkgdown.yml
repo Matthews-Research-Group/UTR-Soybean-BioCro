@@ -1,0 +1,68 @@
+template:
+  math-rendering: mathjax
+  bootstrap: 5
+  bootswatch: flatly
+  theme: arrow-light
+  bslib:
+    pkgdown-nav-height: 90px # This is slightly larger than the value
+                             # returned by running
+                             # $(".navbar").outerHeight() in the
+                             # JavaScript console (which is the value
+                             # recommended at
+                             # https://pkgdown.r-lib.org/articles/customise.html#theming).
+navbar:
+  structure:
+    left:  [about, reference, articles, dev_manual, news, doxygen_docs]
+    right: [search, github]
+  components:
+    about:
+      text: About
+      href: about_pkgdown_documentation.html
+    dev_manual:
+      text: Developer's Manual
+      href: ../bookdown/index.html
+    articles:
+      text: Articles
+      menu:
+      - text: GENERAL BIOCRO USAGE
+      - text: ---
+      - text: Getting Started with BioCro (HTML)
+        href: articles/BioCro.html
+      - text: Workshop I (PDF)
+        href: articles/web_only/workshop_I.pdf
+      - text: A Practical Guide to BioCro (PDF)
+        href: articles/web_only/a_practical_guide_to_biocro.pdf
+      - text: "    [R code]" # four non-breaking spaces (NO-BREAK SPACE, Unicode U+00A0) used for indentation here
+        href: articles/web_only/a_practical_guide_to_biocro.R
+      - text: Quantitative Comparison Between Two Photosynthesis Models (PDF)
+        href: articles/web_only/quantitative_model_comparison.pdf
+      - text: "    [R code]"
+        href: articles/web_only/quantitative_model_comparison.R
+      - text: "BioCro II Paper: Section 1.1 Example (HTML)"
+        href: articles/web_only/BioCro-II_Paper--Section-1.1-example.html
+      - text: BioCro as a Dynamical System
+        href: articles/web_only/dynamical_systems.pdf
+      - text: An Introduction to BioCro for Those Who Want to Add Models (PDF)
+        href: articles/web_only/an_introduction_to_biocro.pdf
+      - text: ---
+      - text: CROP GROWTH MODELING TOPICS
+      - text: ---
+      - text: Light Absorption by a Thick Layer (HTML)
+        href: articles/web_only/thick_layer_absorption.html
+      - text: Using the Ball-Berry Model (HTML)
+        href: articles/web_only/ball_berry_model.html
+      - text: Multi-layer Canopy Photosynthesis Models (HTML)
+        href: articles/web_only/canopy_photosynthesis.html
+      - text: Energy Balance, Leaf Temperature, and Transpiration (HTML)
+        href: articles/web_only/energy_balance.html
+    doxygen_docs:
+      text: C++ Library
+      menu:
+      - text: Complete Doxygen Documentation
+        href: ../doxygen/doxygen_docs_complete/index.html
+      - text: Framework Documentation
+        href: ../doxygen/doxygen_docs_framework/index.html
+      - text: BioCro Module Documentation
+        href: ../doxygen/doxygen_docs_modules/index.html
+      - text: BioCro Module Documentation (public members only)
+        href: ../doxygen/doxygen_docs_modules_public_members_only/index.html

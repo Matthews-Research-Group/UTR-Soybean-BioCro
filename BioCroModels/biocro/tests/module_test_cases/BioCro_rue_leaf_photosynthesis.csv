@@ -1,0 +1,3 @@
+input,input,output,output,output,output,output,output,"description"
+alpha_rue,incident_ppfd,Assim,GrossAssim,Gs,RL,Rp,TransR,NA
+1,1,1,1,0,0,0,0,"automatically-generated test case"

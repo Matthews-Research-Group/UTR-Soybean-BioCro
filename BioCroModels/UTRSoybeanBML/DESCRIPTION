@@ -1,0 +1,21 @@
+Package: UTRSoybeanBML
+Version: 1.0.0
+Title: Utilization-Transportation-Resistant Soybean BioCro Module Library
+Description: A dynamic Carbon allocation module library incorporating utilization, respiration, growth, transportation, and senescence processes in Soybean.
+Authors@R: c(
+    person('Ximin', 'Piao', role = c('cre', 'aut'),
+          email = 'xpiao2@illinois.edu')  
+    )
+Depends: R (>= 3.5.0)
+Imports:
+    stats
+Suggests:
+    BioCro (>= 3.0.0),
+    testthat,
+    knitr,
+    lattice
+VignetteBuilder: knitr
+SystemRequirements: C++11, GNU make
+License: MIT + file LICENSE
+LazyData: true
+ByteCompile: TRUE

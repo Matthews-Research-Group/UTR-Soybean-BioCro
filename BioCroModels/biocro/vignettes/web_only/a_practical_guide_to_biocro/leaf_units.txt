@@ -1,0 +1,15 @@
+string_vector total_biomass::get_inputs()
+{
+    return {
+        "Grain",          // Mg / ha
+        "Leaf",           // Mg / ha
+        "LeafLitter",     // Mg / ha
+        "Rhizome",        // Mg / ha
+        "RhizomeLitter",  // Mg / ha
+        "Root",           // Mg / ha
+        "RootLitter",     // Mg / ha
+        "Shell",          // Mg / ha
+        "Stem",           // Mg / ha
+        "StemLitter"      // Mg / ha
+    };
+}
