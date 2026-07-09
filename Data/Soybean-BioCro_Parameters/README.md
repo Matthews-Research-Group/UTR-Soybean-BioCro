@@ -1,12 +1,8 @@
-# Soybean-BioCro parameters
+# BioCroWater and UTRSoybeanBML parameters
 
-`soybean_parameters.R`: File that defines the constant parameters.
+`set_up_BioCroWater.R`: File that defines the required changes to use the soil water BioCro Module Library (BML).
 
-`soybean_initial_state.R`: File that defines the initial states of the soybean states that are updated by the derivative modules.
+`soybean_UTRSoybeanBML.R`: File that defines the required changes to use the UTRSoybean BioCro Module Library (BML).
 
-`soybean_modules.R`: Contains the modules and solver parameters needed to run this version of Soybean-BioCro.
-
-
-Note: The soybean parameters defined in these files are included in the BioCro package.
-
+`UTR-parameters.R`: Reads the optimization results for the UTRSoybeanBML parameters and generates a named lists of UTR parameters.
 

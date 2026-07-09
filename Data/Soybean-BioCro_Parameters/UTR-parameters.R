@@ -1,7 +1,7 @@
 # Read the file
-lines <- readLines("../ParameterOptimization/Optmization_output_2026-03-02.txt") # 2026-03-02
-optim_params_short_SoyFACE <- as.numeric(strsplit(trimws(sub(".*bestmemit:", "", lines[1000])), "\\s+")[[1]])
+lines <- readLines("../ParameterOptimization/Optmization_output_2026-03-02.txt")
 
+optim_params_short_SoyFACE <- as.numeric(strsplit(trimws(sub(".*bestmemit:", "", lines[1000])), "\\s+")[[1]])
 
 arg_names <- c('Leaf_utilization_rate_constant', 'Stem_utilization_rate_constant', 
                'Root_utilization_rate_constant', 'Pod_utilization_rate_constant',

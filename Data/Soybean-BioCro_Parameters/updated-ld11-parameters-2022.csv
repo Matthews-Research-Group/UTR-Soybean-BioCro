@@ -1,8 +1,0 @@
-﻿Variable meaning,Old variable name,New variable name,Unit,Pioneer,LD11
-Ball-Berry parameter intercept,b0,b0,mol / m^2 / s,0.008,0.061786674
-Ball-Berry parameter slope,b1,b1,dimensionless,10.6,5.776143593
-Maximum carboxylation velocity,vmax1,Vcmax_at_25,micromol / m^2 / s,110,119.4268317
-Light saturated potential rate of electron transport,jmax,Jmax_at_25,micromol / m^2 / s,195,181.7081315
-Max triose phosphate utilization rate,tpu_rate_max,Tp_at_25,micromol / m^2 / s,13,10.87954218
-Specific leaf area,iSp,iSp,Ha / Mg,3.5,3
-Atmospheric CO2 level,Catm,Catm,ppm,372.59,414.71
