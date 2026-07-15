@@ -37,8 +37,8 @@ dir.create(FIGURE_DIR, showWarnings = FALSE)
 # Toggle the RUN_SENSITIVITY / PLOT_SOURCE_SINK_MANIPULATION / PLOT_LAI flags
 # below to control which optional figures to produce or  
 # if sensitivity analysis is performed, which can take longer to run.
-RUN_SENSITIVITY <- TRUE                # pod mass sensitivity to +/-10% inputs; slow
-PLOT_SOURCE_SINK_MANIPULATION <- TRUE  # shade/pod-removal/defoliation/hail figures; slow
+RUN_SENSITIVITY <- FALSE                # pod mass sensitivity to +/-10% inputs; slow
+PLOT_SOURCE_SINK_MANIPULATION <- FALSE  # shade/pod-removal/defoliation/hail figures; slow
 PLOT_LAI <- FALSE                      # SoyFACE and LD11 simulated-vs-observed LAI figures
 
 if(PLOT_LAI){
@@ -646,7 +646,7 @@ ggsave(file.path(FIGURE_DIR, 'FigS-allocation-netimport.png'),
 
 # =============================================================================
 # Plot usage based allocation
-source('PlotScripts/plot_allocation_by_use.R') # Figures 3, 4, S2, S3, S5
+source('PlotScripts/plot_allocation_use.R') # Figures 3, 4, S2, S3, S5
 # =============================================================================
 
 
