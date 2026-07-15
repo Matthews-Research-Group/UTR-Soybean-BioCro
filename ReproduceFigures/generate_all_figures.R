@@ -12,7 +12,7 @@ library(grid)             # textGrob, gpar, unit, grid.newpage/draw/text
 library(gridExtra)        # grid.arrange, arrangeGrob
 library(dplyr)
 library(tidyr)            # pivot_longer, gather
-library(purrr)            # map_dfr, used in plot_allocation_by_use.R
+library(purrr)            # map, imap, walk, list_rbind() used in plot_allocation_use.R
 
 # Clear workspace
 rm(list=ls())
@@ -25,7 +25,7 @@ source('../ParameterOptimization/soybean_parameter_expansion.R')
 source('../Data/Soybean-BioCro_Parameters/UTR-parameters.R')
 
 # Source mse calculation and partitioning/biomass plotting functions
-source('CalculateScripts/calculate_mse.R')
+source('CalculateScripts/calculate_rmse.R')
 source('PlotScripts/plot_partitioning.R')
 source('PlotScripts/plot_biomass.R')
 
@@ -1046,3 +1046,4 @@ ggsave(file.path(FIGURE_DIR, 'FigS-layer_assim.png'),
        units = "in",
        dpi = 600
 )
+

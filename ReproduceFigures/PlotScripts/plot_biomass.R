@@ -101,7 +101,7 @@ plot_SoyFACE_biomass <- function(result, mea, mea.std, co2_opt, yr){
   # calculate mse
   names(r.lsrp.doy) <- c('time', 'Organ', 'biomass', 'Source')
   names(r.exp.ls) <- c('time', 'Organ', 'biomass', 'Source')
-  calculate_mse_soyFACE(yr,r.lsrp.doy, r.exp.ls)
+  calculate_rmse_soyFACE(yr,r.lsrp.doy, r.exp.ls)
   
   return(f)
 }
@@ -137,7 +137,7 @@ plot_ld11_biomass <- function(result, mea){
          y='Biomass (Mg/ha)')+
     scale_color_manual(values = col.palette.muted)
   
-  calculate_mse(years[[i]],biocro_organ_biomass_tall, field_organ_biomass_tall)
+  calculate_rmse(years[[i]],biocro_organ_biomass_tall, field_organ_biomass_tall)
   
   return(f)
 }
