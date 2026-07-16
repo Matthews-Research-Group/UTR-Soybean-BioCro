@@ -209,8 +209,14 @@ result_partitioning_hail$Pod <- result_partitioning_hail$Grain +
 # Simulated-vs-observed biomass at ambient CO2.
 fig_2003_utr_with_hail <- plot_SoyFACE_biomass(
   result_utr_hail, ExpBiomass, ExpBiomass.std, co2_opt, yr)
+fig_2003_utr_with_hail <- fig_2003_utr_with_hail +
+  geom_vline(xintercept = 198, color = "red", alpha = 0.5, linewidth = 1)
+
 fig_2003_partitioning_with_hail <- plot_SoyFACE_biomass(
   result_partitioning_hail, ExpBiomass, ExpBiomass.std, co2_opt, yr)
+fig_2003_partitioning_with_hail <- fig_2003_partitioning_with_hail +
+  geom_vline(xintercept = 198, color = "red", alpha = 0.5, linewidth = 1)
+
 
 # =============================================================================
 # Elevated CO2: repeat the hail simulation at Catm = 550 ppm
@@ -295,9 +301,17 @@ fig_2003_utr_eCO2_with_hail <- plot_SoyFACE_biomass(result_utr_eCO2_hail,
                                                     ExpBiomass.elevCO2, 
                                                     ExpBiomass.elevCO2.std, 
                                                     co2_opt, yr)
+
+fig_2003_utr_eCO2_with_hail <- fig_2003_utr_eCO2_with_hail +
+  geom_vline(xintercept = 198, color = "red", alpha = 0.5, linewidth = 1)
+
+
 fig_2003_partitioning_eCO2_with_hail <- 
   plot_SoyFACE_biomass(result_partitioning_eCO2_hail, ExpBiomass.elevCO2, 
                        ExpBiomass.elevCO2.std, co2_opt, yr)
+
+fig_2003_partitioning_eCO2_with_hail <- fig_2003_partitioning_eCO2_with_hail +
+  geom_vline(xintercept = 198, color = "red", alpha = 0.5, linewidth = 1)
 
 # Shared legend for the combined figures below
 common_legend <- g_legend(fig_2003_utr_eCO2_with_hail)

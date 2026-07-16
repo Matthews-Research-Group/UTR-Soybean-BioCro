@@ -242,6 +242,8 @@ if(PLOT_LAI){
 # =============================================================================
 # Figure 5 Root-Shoot Ratios
 # =============================================================================
+source("PlotScripts/plot_rs_ratio.R")
+
 # Build combined data frame across all years
 root_shoot_all <- do.call(rbind, lapply(1:length(years), function(i) {
   data.frame(
@@ -646,7 +648,7 @@ ggsave(file.path(FIGURE_DIR, 'FigS-allocation-netimport.png'),
 
 # =============================================================================
 # Plot usage based allocation
-source('PlotScripts/plot_allocation_use.R') # Figures 3, 4, S2, S3, S5
+source('PlotScripts/plot_allocation.R') # Figures 3, 4, S2, S3, S5
 # =============================================================================
 
 
@@ -676,7 +678,7 @@ all_biomass_plot <- grid.arrange(
               figs[[1]] + theme(axis.title.x = element_blank(),
                                 axis.text.x = element_blank(),
                                 legend.position="none")
-                        + labs(title = '2002'),
+                        + labs(title = '2002 (Training)'),
               figs[[2]] + theme(axis.title.x = element_blank(),
                                 axis.text.x = element_blank(),
                                 legend.position="none")
@@ -684,7 +686,7 @@ all_biomass_plot <- grid.arrange(
               figs[[3]] + theme(legend.position="none",
                                 axis.title.x = element_blank(),
                                 axis.text.x = element_blank())
-                        + labs(title = '2005'),
+                        + labs(title = '2005 (Training)'),
               figs[[4]] + theme(legend.position="none",
                                 axis.title.x = element_blank(),
                                 axis.text.x = element_blank())
@@ -809,9 +811,9 @@ sim_substrate_C_by_mass <- data.frame(
   Leaf = 10 * r$Leaf_substrate_carbon / r$Leaf, # convert from (mol/m2) / (Mg/ha) = 10^4 * mol / Mg = 10 mol / kg
   Stem = 10 * r$Stem_substrate_carbon / r$Stem
 )
-data_long_per_mass <- tidyr::gather(sim_substrate_C_by_mass[1:2600,
-                                                            c('time', 'Leaf', 'Stem')],
-                                    key="Type", value="Value", -time)
+data_long_per_mass <- tidyr::gather(
+  sim_substrate_C_by_mass[1:2600,c('time', 'Leaf', 'Stem')],
+  key="Type", value="Value", -time)
 
 
 # Simulated + Measured
@@ -927,7 +929,13 @@ sim_leaf_tnc_sampling_days <- sim_leaf_tnc_by_mass[ind.sampling.days,]
 
 date.list <- data.frame(
   DOY = c(186, 187, 209, 236, 258),
-  DOY_date = c('DOY 186: 07/05', 'DOY 187: 07/06', 'DOY 209: 07/28', 'DOY 236: 08/24', 'DOY 258: 09/15'))
+  DOY_date = c('DOY 186: Jul 5', 
+               'DOY 187: Jul 6',
+               'DOY 209: Jul 28', 
+               'DOY 236: Aug 24',
+               'DOY 258: Sep 15'))
+
+
 
 sim_leaf_tnc_sampling_days <- left_join(sim_leaf_tnc_sampling_days, date.list, by = 'DOY')
 
@@ -943,9 +951,12 @@ sim_stem_tnc_sampling_days <- sim_stem_tnc_by_mass[ind.sampling.days,]
 
 date.list <- data.frame(
   DOY = c(186, 187, 209, 236, 258, 278),
-  DOY_date = c('DOY 186: 07/05', 'DOY 187: 07/06',
-               'DOY 209: 07/28', 'DOY 236: 08/24',
-               'DOY 258: 09/15', 'DOY 278: 10/05'))
+  DOY_date = c('DOY 186: Jul 5', 
+               'DOY 187: Jul 6',
+               'DOY 209: Jul 28', 
+               'DOY 236: Aug 24',
+               'DOY 258: Sep 15', 
+               'DOY 278: Oct 5'))
 
 sim_stem_tnc_sampling_days <- left_join(sim_stem_tnc_sampling_days, date.list, by = 'DOY')
 
@@ -959,7 +970,7 @@ stem.tnc.sampling.days$Organ <- 'Stem'
 
 TNC.sampling.days <- rbind(leaf.tnc.sampling.days, stem.tnc.sampling.days)
 
-TNC.sampling.days <- TNC.sampling.days[-which(TNC.sampling.days$DOY_date=='DOY 278: 10/05'),]
+TNC.sampling.days <- TNC.sampling.days[-which(TNC.sampling.days$DOY_date=='DOY 278: Oct 5'),]
 
 # =============================================================================
 # Figure 7 diurnal substrate C concentration
