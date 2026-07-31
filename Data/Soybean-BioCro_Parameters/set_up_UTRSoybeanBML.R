@@ -57,12 +57,30 @@ set_init_values<-function(current_initial_values){
     Root_substrate_carbon =  sub_frac * seed_mass * root_frac / cf,
     Root_structural_carbon = str_frac * seed_mass * root_frac / cf,
     Pod_substrate_carbon = 1e-4,
-    Pod_structural_carbon = 9e-4)
+    Pod_structural_carbon = 9e-4,
+    # additional outputs of cumulative values
+    Leaf_cumulative_utilization = 0,
+    Stem_cumulative_utilization = 0,
+    Root_cumulative_utilization = 0,
+    Pod_cumulative_utilization = 0,
+    
+    Leaf_cumulative_growth = 0,
+    Stem_cumulative_growth = 0,
+    Root_cumulative_growth = 0,
+    Pod_cumulative_growth = 0,
+    
+    Leaf_cumulative_net_assimilation = 0,
+    Stem_cumulative_net_assimilation = 0,
+    Root_cumulative_net_assimilation = 0,
+    Pod_cumulative_net_assimilation = 0,
+    
+    cumulative_gross_assimilation = 0
+    )
   
   initial_values_to_remove <- c("Leaf", "Stem", "Root", "Grain", "Shell")
   initial_values_new <- current_initial_values[!(names(current_initial_values) %in% initial_values_to_remove)]
   initial_values_new <- c(initial_values_new, utr_initial_values)
-  initial_values_new$Sp
+  initial_values_new$Sp <- NULL
   return(initial_values_new)
 }
 
@@ -99,7 +117,7 @@ set_parameters<-function(current_parameters){
     substrate_conductance_Stem_to_Root = 0.4 * base_conductance,
     substrate_conductance_Stem_to_Pod = 2*base_conductance,
     
-    transportation_beta_exponent = 1,
+    transportation_gamma_exponent = 1,
     Pod_start_dvi = 1.0,
     stop_growth_dvi = 2.0,
     

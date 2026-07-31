@@ -1,3 +1,4 @@
+library(rlang)
 # Build combined data frame across all years
 root_shoot_all <- do.call(rbind, lapply(1:length(years), function(i) {
   data.frame(

@@ -1,5 +1,5 @@
 # Read the file
-lines <- readLines("../ParameterOptimization/Optmization_output_2026-03-02.txt")
+lines <- readLines("../ParameterOptimization/Optmization_output_2026-07-30.txt") # 07-29
 
 optim_params_short_SoyFACE <- as.numeric(strsplit(trimws(sub(".*bestmemit:", "", lines[1000])), "\\s+")[[1]])
 

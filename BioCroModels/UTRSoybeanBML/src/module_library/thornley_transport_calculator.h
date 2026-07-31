@@ -77,7 +77,7 @@ class thornley_transport_calculator : public direct_module
     std::vector<double const*> const substrate_conductance_ips;
 
     // References to input parameters
-    double const& transportation_beta_exponent;
+    double const& transportation_gamma_exponent;
     double const& Pod_start_dvi;
     double const& stop_growth_dvi;
     double const& DVI;

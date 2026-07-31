@@ -121,9 +121,9 @@ upperlim <- c(
   10.0, 10.0, 2.0, # senescence alpha, LSR [dimensionless]
   2.5, 2.5, 2.5,  # senescence beta, LSR [DVI^-1]
   1.0,
-  1.2, 2.2) # senescence beta, LSR [/dvi]
+  1.3, 2.2) # senescence beta, LSR [/dvi]
 lowerlim <- c(
-  0.0, 0.0, 0.0, 0.1, 
+  0.0, 0.0, 0.0, 0.0, 
   0.0, 0.0, 0.0, 0.0,
   0.2, 
   0.0, 0.0 ,0.0, 
@@ -131,9 +131,9 @@ lowerlim <- c(
   0.0, 0.0, 0.0,
   1.5, 1.5, 1.5,
   0.0,
-  0.8, 1.8)
+  1.0, 1.8)
 
-rng.seed <- 123 # seed for random number generator
+rng.seed <- 1234 # seed for random number generator
 set.seed(rng.seed)
 # maximum number of iterations
 max.iter <- 1000

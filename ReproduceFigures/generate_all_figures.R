@@ -45,6 +45,7 @@ if(PLOT_LAI){
   source('PlotScripts/plot_lai_comparison.R')
 }
 
+
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 years <- c('2002', '2004', '2005', '2006')
 sow.date <- c(152, 149, 148, 148)
@@ -108,6 +109,7 @@ pod_sensitivity_upper <- NULL  # for +10%
 # =============================================================================
 co2_opt = '_ambient_'
 parameters$Catm      <- 372
+# solver$type <- 'boost_rosenbrock'
 
 for (i in 1:length(years)) {
   yr <- years[i]
@@ -155,7 +157,6 @@ for (i in 1:length(years)) {
 
   # calculate sensitivity
   if (RUN_SENSITIVITY) {source('CalculateScripts/calculate_sensitivity.R')}
-
 }
 # =============================================================================
 # Pioneer 93B15 @ elevated CO2: 2002, 2004-2006 growing seasons

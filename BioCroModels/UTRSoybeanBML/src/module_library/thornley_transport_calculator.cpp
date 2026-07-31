@@ -28,7 +28,7 @@ thornley_transport_calculator::thornley_transport_calculator(
       
       // Get references to input parameters
       substrate_conductance_ips(get_ip(input_quantities, generate_pairwise_names("substrate_conductance", organ_links))),
-      transportation_beta_exponent(get_input(input_quantities, "transportation_beta_exponent")),
+      transportation_gamma_exponent(get_input(input_quantities, "transportation_gamma_exponent")),
       Pod_start_dvi(get_input(input_quantities, "Pod_start_dvi")),
       stop_growth_dvi(get_input(input_quantities, "stop_growth_dvi")),
       DVI(get_input(input_quantities, "DVI")), // Q: any difference from {}?
@@ -56,7 +56,7 @@ std::vector<std::string> thornley_transport_calculator::get_inputs(std::vector<t
     inputs.insert(inputs.end(), substrate_conductance_names.begin(), substrate_conductance_names.end());
 
     // Add other inputs that don't depend on the organ_links
-    inputs.push_back("transportation_beta_exponent");  // dimensionless 
+    inputs.push_back("transportation_gamma_exponent");  // dimensionless 
     inputs.push_back("Pod_start_dvi");
     inputs.push_back("stop_growth_dvi");
     inputs.push_back("DVI");
@@ -75,7 +75,7 @@ void thornley_transport_calculator::do_multi_organ_operation() const
     // Calculate transport rates between organs and update the relevant outputs
     for (size_t i = 0; i < organ_links.size(); ++i) {
         double const pairwise_mass = std::min(*structural_carbon_ips[i].first, *structural_carbon_ips[i].second);  ;  // mol / m^2
-        double const beta_factor = pow(pairwise_mass, transportation_beta_exponent);   // [mol/m^2]^beta
+        double const beta_factor = pow(pairwise_mass, transportation_gamma_exponent);   // [mol/m^2]^beta
         double const substrate_gradient = (*substrate_carbon_ips[i].first / *structural_carbon_ips[i].first -
                                           *substrate_carbon_ips[i].second / *structural_carbon_ips[i].second);   // [dimensionless]
         double transport_rate = beta_factor * *substrate_conductance_ips[i] * substrate_gradient;  // mol / m^2 / hr

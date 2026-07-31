@@ -89,7 +89,7 @@ void thornley_utilization_calculator::do_multi_organ_operation() const
     for (size_t i = 0; i < organs.size(); ++i) {
         // double total_C_per_m2 = *structural_carbon_ips[i] + *substrate_carbon_ips[i] ; // mol C / m^2 
         double structural_C_per_m2 = *structural_carbon_ips[i]; // mol C / m^2 
-        double substrate_C_per_m2 = *structural_carbon_ips[i]; // mol C / m^2 
+        double substrate_C_per_m2 = *substrate_carbon_ips[i]; // mol C / m^2 
         double substrate_C_concentration = *substrate_carbon_ips[i] / structural_C_per_m2;
         double structural_senescence_rate;
         double substrate_senescence_rate;
