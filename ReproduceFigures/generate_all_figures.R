@@ -34,17 +34,11 @@ source('PlotScripts/plot_biomass.R')
 FIGURE_DIR <- 'GeneratedFigures'
 dir.create(FIGURE_DIR, showWarnings = FALSE)
 
-# Toggle the RUN_SENSITIVITY / PLOT_SOURCE_SINK_MANIPULATION / PLOT_LAI flags
+# Toggle the RUN_SENSITIVITY / PLOT_SOURCE_SINK_MANIPULATION
 # below to control which optional figures to produce or  
 # if sensitivity analysis is performed, which can take longer to run.
 RUN_SENSITIVITY <- FALSE                # pod mass sensitivity to +/-10% inputs; slow
-PLOT_SOURCE_SINK_MANIPULATION <- FALSE  # shade/pod-removal/defoliation/hail figures; slow
-PLOT_LAI <- FALSE                      # SoyFACE and LD11 simulated-vs-observed LAI figures
-
-if(PLOT_LAI){
-  source('PlotScripts/plot_lai_comparison.R')
-}
-
+PLOT_SOURCE_SINK_MANIPULATION <- TRUE  # shade/pod-removal/defoliation/hail figures; slow
 
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 years <- c('2002', '2004', '2005', '2006')
@@ -91,13 +85,10 @@ weather.growingseason <- list()
 soybean_optsolver <- list()
 ExpBiomass <- list()
 ExpBiomass.elevCO2 <- list()
-LAI <- list()
-LAI.elevCO2 <- list()
 ExpBiomass.std <- list()
 ExpBiomass.elevCO2.std <- list()
 figs <- list()
 figs.elevCO2 <- list()
-lai.figs <- list()
 allocation.figs <- list()
 allocation.elevCO2.figs <- list()
 
@@ -124,11 +115,6 @@ for (i in 1:length(years)) {
 
   ExpBiomass.std[[i]] <- read.csv(file=paste0('../Data/SoyFACE_data/biomasses/',yr, '_ambient_biomass_std.csv'))
   colnames(ExpBiomass.std[[i]])<-c("DOY","Leaf","Stem","Pod", "Seed", "Litter", "CumLitter")
-
-  if(PLOT_LAI && i>1){
-    LAI[[i]]<-read.csv(file=paste0('../Data/lai/',yr,'_ambient_lai.csv'))
-    LAI.elevCO2[[i]]<-read.csv(file=paste0('../Data/SoyFACE_data/lai',yr,'_elevated_lai.csv'))
-  }
 
   soybean_optsolver[[i]] <- partial_run_biocro(initial_values,
                                                parameters,
@@ -208,37 +194,6 @@ g_legend <-function(a.gplot){
   leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
   legend <- tmp$grobs[[leg]]
   return(legend)}
-
-# =============================================================================
-# Figure S: SoyFACE simulated vs observed LAI
-# =============================================================================
-if(PLOT_LAI){
-  for (i in 2:4){
-    lai.figs[[i-1]] <- plot_amb_elev_lai(
-      results[[i]], results.elevCO2[[i]],
-      years[[i]], LAI[[i]], LAI.elevCO2[[i]])
-  }
-
-  combined_graph.lai <-
-    grid.arrange(
-      arrangeGrob(
-        textGrob(bquote("LAI"~(m^2~"/"~m^2)), rot = 90, gp=gpar(fontsize=12))),
-        arrangeGrob(
-          arrangeGrob(
-            lai.figs[[1]] + theme(legend.position="none"),
-            lai.figs[[2]] + theme(legend.position="none"),
-            lai.figs[[3]] + theme(legend.position="none"),
-            ncol = 3), ncol = 1),
-      ncol=2, widths=c(0.3, 5))
-
-  ggsave(file.path(FIGURE_DIR, 'FigS-soyface-lai.png'),
-         plot = combined_graph.lai,
-         width = 8,
-         height = 2,
-         units = "in",
-         dpi = 600
-  )
-}
 
 # =============================================================================
 # Figure 5 Root-Shoot Ratios
@@ -548,70 +503,6 @@ if (RUN_SENSITIVITY) {
   print(pod_sensitivity_lower)
   print(pod_sensitivity_upper)
 }
-
-# =============================================================================
-# Plot LAI
-# =============================================================================
-if(PLOT_LAI){
-  # Combine all years into one data frame
-  lai_df <- do.call(rbind, lapply(1:4, function(i) {
-    # Simulated LAI (line)
-    sim <- data.frame(
-      time  = ld11.results[[i]]$time,
-      value = ld11.results[[i]]$lai,
-      type  = "Simulated",
-      year  = years[i]
-    )
-
-    # Observed LAI (dots) - reshape 3 columns to long format
-    obs_wide <- data.frame(
-      time                          = ExpBiomass[[i]]$time,
-      LAI_from_LMA                  = ExpBiomass[[i]]$LAI_from_LMA,
-      LAI_from_planting_density     = ExpBiomass[[i]]$LAI_from_planting_density,
-      LAI_from_measured_population  = ExpBiomass[[i]]$LAI_from_measured_population
-    )
-
-    obs_long <- pivot_longer(obs_wide,
-                             cols      = -time,
-                             names_to  = "type",
-                             values_to = "value")
-    obs_long$year <- years[i]
-
-    rbind(sim, obs_long)
-  }))
-
-  # Separate simulated and observed for different geoms
-  sim_df <- subset(lai_df, type == "Simulated")
-  obs_df <- subset(lai_df, type != "Simulated")
-
-  ld11_lai_comparison <- ggplot() +
-    geom_line(data = sim_df,
-              aes(x = (time/24 + 1), y = value),
-              color = "black", linewidth = 0.8) +
-    geom_point(data = obs_df,
-               aes(x = (time/24 + 1), y = value, color = type, shape = type),
-               na.rm = TRUE, size = 2.5) +
-    facet_wrap(~ year, ncol = 2, scales = "free_x") +
-    labs(
-      x      = "DOY",
-      y      = "LAI",
-      color  = "Observed",
-      shape  = "Observed",
-      title  = "Simulated vs Observed LD11 LAI"
-    ) +
-    theme_bw() +
-    theme(legend.position = "bottom")
-
-  print(ld11_lai_comparison)
-  ggsave(file.path(FIGURE_DIR, 'FigS-ld11-lai.png'),
-         plot = ld11_lai_comparison,
-         width = 8,
-         height = 6,
-         units = "in",
-         dpi = 600
-  )
-}
-
 
 # =============================================================================
 # Figure S1 C allocation based on net import

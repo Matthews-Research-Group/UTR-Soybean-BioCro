@@ -687,14 +687,14 @@ r_wdiff <- r %>%
     Pod_substrate_senescence_rate
   )
 
-library(lattice)
-xyplot(data=r_wdiff, 
-         Leaf_diff+
-         Stem_diff+
-         Root_diff+
-         Pod_diff~
-         fractional_doy,
-       auto.key=TRUE)
+# library(lattice)
+# xyplot(data=r_wdiff, 
+#          Leaf_diff+
+#          Stem_diff+
+#          Root_diff+
+#          Pod_diff~
+#          fractional_doy,
+#        auto.key=TRUE)
 
 l_diff_sum <- sum(r_wdiff$Leaf_diff)
 s_diff_sum <- sum(r_wdiff$Stem_diff)
@@ -703,4 +703,42 @@ p_diff_sum <- sum(r_wdiff$Pod_diff)
 all_diff <- l_diff_sum + s_diff_sum + r_diff_sum + p_diff_sum
 print(all_diff)
 
-r$Leaf_
+# plot adjustment to the negative assimilation rate
+for(i in 1:4){
+  print(xyplot(data=results[[i]], (Leaf_substrate_carbon_source_rate_updated-canopy_assimilation_rate/0.3)~fractional_doy))
+  print(xyplot(data=results.elevCO2[[i]], (Leaf_substrate_carbon_source_rate_updated-canopy_assimilation_rate/0.3)~fractional_doy))
+}
+
+# ggplot version (combined)
+combine_list <- function(lst, co2_level) {
+  purrr::imap_dfr(lst, function(df, i) {
+    df %>% mutate(yr = years[i], CO2_level = co2_level)
+  })
+}
+
+plot_data <- bind_rows(
+  combine_list(results, "ambient"),
+  combine_list(results.elevCO2, "elevated")
+) %>%
+  mutate(assim_adj = Leaf_substrate_carbon_source_rate_updated - canopy_assimilation_rate * 0.6/180.156E-3)
+
+ggplot(plot_data, aes(x = fractional_doy, y = assim_adj)) +
+  geom_point(alpha = 0.4, size = 1) +
+  facet_grid(CO2_level ~ yr) +
+  labs(
+    x = "DOY",
+    y = "Canopy Assimilation Adjustment (mol/m^2/hr)"
+  ) +
+  theme_bw(base_size = 12) +
+  theme(
+    strip.background = element_rect(fill = "grey90", color = NA),
+    panel.grid.minor = element_blank()
+  )
+
+adjustment_df <- plot_data %>%
+  filter(assim_adj > 0) %>%
+  select(i, CO2_level, fractional_doy, hour, solar, assim_adj) %>%
+  arrange(desc(assim_adj))
+
+print(unique(adjustment_df$hour))
+View(adjustment_df)

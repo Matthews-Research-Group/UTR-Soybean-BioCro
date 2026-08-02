@@ -117,7 +117,7 @@ upperlim <- c(
   0.5, 0.5, 0.5, 0.5, # Km [/]
   0.8, # respiration factor [/]
   1.0, 1.0, 5, # substrate conductance [Mg / hr / [Mg / ha]^beta]
-  0.1, 0.01, 0.01, # senescence rate max, LSR
+  0.1, 0.1, 0.01, # senescence rate max, LSR
   10.0, 10.0, 2.0, # senescence alpha, LSR [dimensionless]
   2.5, 2.5, 2.5,  # senescence beta, LSR [DVI^-1]
   1.0,
