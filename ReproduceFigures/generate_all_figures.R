@@ -38,7 +38,7 @@ dir.create(FIGURE_DIR, showWarnings = FALSE)
 # below to control which optional figures to produce or  
 # if sensitivity analysis is performed, which can take longer to run.
 RUN_SENSITIVITY <- FALSE                # pod mass sensitivity to +/-10% inputs; slow
-PLOT_SOURCE_SINK_MANIPULATION <- TRUE  # shade/pod-removal/defoliation/hail figures; slow
+PLOT_SOURCE_SINK_MANIPULATION <- FALSE  # shade/pod-removal/defoliation/hail figures; slow
 
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 years <- c('2002', '2004', '2005', '2006')

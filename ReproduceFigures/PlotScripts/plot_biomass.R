@@ -61,7 +61,7 @@ plot_SoyFACE_biomass <- function(result, mea, mea.std, co2_opt, yr){
     geom_point(data = subset(r.all, Source == "Observed"), na.rm = TRUE,
                aes(x=fractional_doy, y=value, color=Organ), shape=15, size=2, stroke=.5) +
     
-    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
+    scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2)) +
     scale_color_manual(values = col.palette.muted.organs)
   
   
@@ -130,7 +130,7 @@ plot_ld11_biomass <- function(result, mea){
           panel.grid.minor = element_blank(), 
           panel.background = element_rect(fill = "transparent",colour = NA),
           plot.background = element_rect(fill = "transparent", colour = NA))+
-    scale_y_continuous(limits = c(0, 9), breaks = seq(0, 9, 2)) +
+    scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, 2)) +
     scale_x_continuous(breaks = seq(150,280,30))+
     labs(title=years[i], 
          x=paste0('Day of Year'), 
