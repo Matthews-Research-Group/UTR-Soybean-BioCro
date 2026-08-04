@@ -138,7 +138,7 @@ set.seed(rng.seed)
 # maximum number of iterations
 max.iter <- 1000
 # Call DEoptim function to run optimization
-cl <- makeCluster(10)
+cl <- makeCluster(97)
 parVars <- c('optim_params_conversion', 'multiyear_UTR_optim','soybean_optsolver','ExpBiomass','numrows','weights','wts2','RootVals')
 clusterExport(cl, parVars,envir=environment())
 sink(paste0('Optmization_output_', Sys.Date(), '.txt'))
