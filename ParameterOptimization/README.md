@@ -10,15 +10,15 @@ The `soybean_parameter_expansion.R` script has the `optim_params_conversion` fun
 
 Note: This optimization can take several hours to days to run. 
 
-The optimization results in `Optimization_output_2026_03_02.txt` was completed on University of Illinois Urbana-Champaign Campus Cluster.
+The optimization results in `Optmization_output_2026-08-04.txt` were completed on University of Illinois Urbana-Champaign Campus Cluster.
 
 Service provider: National Center for Supercomputing Applications (NCSA) 
 Service: Illinois Computes
 Resource: Illinois Campus Cluster Program (ICCP)
 Hardware: Dual AMD EPYC 7713 CPU, 512GB RAM, 25G node
 
-Required R packages (the version included in `BioCroModels` folder):
-- BioCro v3.3.1 
-- BioCroWater
-- UTRSoybeanBML
+Required R packages:
+- BioCro v3.3.1 (version included in `BioCroModels` folder)
+- BioCroWater (version included in `BioCroModels` folder)
+- UTRSoybeanBML (included in an independent repository)
 - DEoptim (tested on version 2.2-8)

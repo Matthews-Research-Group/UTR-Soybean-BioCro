@@ -327,12 +327,12 @@ combined_with_hail_utr <- grid.arrange(
                     theme(axis.title.x = element_blank(),
                           axis.title.y = element_blank(),
                           legend.position = "none"),
-                  top = make_strip_label("(A)", "Ambient CO2")),
+                  top = make_strip_label("(A)", expression("Ambient CO"[2]))),
       arrangeGrob(fig_2003_utr_eCO2_with_hail +
                     theme(axis.title.x = element_blank(),
                           axis.title.y = element_blank(),
                           legend.position = "none"),
-                  top = make_strip_label("(B)", "Elevated CO2")),
+                  top = make_strip_label("(B)", expression("Elevated CO"[2]))),
       ncol = 2),
     arrangeGrob(textGrob('Day of Year (2003)')),
     nrow = 2, heights = c(4, 0.3)),
@@ -357,12 +357,12 @@ combined_with_hail_partitioning <- grid.arrange(
                     theme(axis.title.x = element_blank(),
                           axis.title.y = element_blank(),
                           legend.position = "none"),
-                  top = make_strip_label("(A)", "Ambient CO2")),
+                  top = make_strip_label("(A)", expression("Ambient CO"[2]))),
       arrangeGrob(fig_2003_partitioning_eCO2_with_hail +
                     theme(axis.title.x = element_blank(),
                           axis.title.y = element_blank(),
                           legend.position = "none"),
-                  top = make_strip_label("(B)", "Elevated CO2")),
+                  top = make_strip_label("(B)", expression("Elevated CO"[2]))),
       ncol = 2),
     arrangeGrob(textGrob('Day of Year (2003)')),
     nrow = 2, heights = c(4, 0.3)),
@@ -409,11 +409,11 @@ hail_utr_utilization_plot <-
   geom_line(linewidth = 1) +
   scale_color_manual(
     values = c("Leaf" = "#117733", "Stem" = "#999933"),
-    name = "Utilization Rate"
+    name = "Organ"
   ) +
   scale_linetype_manual(
     values = c("Ambient" = "solid", "Elevated" = "dotted"),
-    name = "CO2 Level"
+    name = expression("CO"[2]*" Level")
   ) +
   labs(
     x = "2003 Day of Year (DOY)",

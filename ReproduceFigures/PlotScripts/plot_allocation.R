@@ -237,21 +237,21 @@ cumulative_all <- bind_rows(
   map(seq_along(results),
         function(i) calculate_cumulative_values(results[[i]], i)) %>%
   list_rbind() %>%
-  mutate(treatment = "Ambient CO2"),
+  mutate(co2_level = "Ambient CO2"),
   map(seq_along(results.elevCO2),
       function(i) calculate_cumulative_values(results.elevCO2[[i]], i)) %>%
     list_rbind() %>%
-    mutate(treatment = "Elevated CO2")
+    mutate(co2_level = "Elevated CO2")
 ) %>%
-  group_by(treatment, year_id) %>%
+  group_by(co2_level, year_id) %>%
   ungroup() %>%
-  mutate(treatment =
-           factor(treatment,
+  mutate(co2_level =
+           factor(co2_level,
                   levels = c("Ambient CO2", "Elevated CO2")))
 
-treatment_year_labeller <- labeller(
+co2_level_year_labeller <- labeller(
   year_id   = year_labeller,
-  treatment = label_value
+  co2_level = label_value
 )
 
 #  Figure S5: Difference between cumulative carbon use and net assimilation 
@@ -260,8 +260,8 @@ p_diff <- cumulative_all %>%
   ggplot(aes(x = fractional_doy, y = diff)) +
   geom_line(linewidth = 0.5) +
   geom_hline(yintercept = 0, linetype = "dashed", colour = "grey40") +
-  facet_grid(treatment ~ year_id, 
-             labeller = treatment_year_labeller, 
+  facet_grid(co2_level ~ year_id, 
+             labeller = co2_level_year_labeller, 
              scales = "free_y") +
   labs(
     title = NULL,
@@ -289,7 +289,7 @@ usage_long <- bind_rows(
              Pod  = Pod_utilization_rate)
   }) %>%
     list_rbind() %>%
-    mutate(treatment = "Ambient CO2"),
+    mutate(co2_level = "Ambient CO2"),
   imap(results.elevCO2, \(df, i) {
     df %>%
       mutate(year_id = i) %>%
@@ -300,9 +300,9 @@ usage_long <- bind_rows(
              Pod  = Pod_utilization_rate)
   }) %>%
     list_rbind() %>%
-    mutate(treatment = "Elevated CO2")
+    mutate(co2_level = "Elevated CO2")
 ) %>%
-  mutate(treatment = factor(treatment, levels = c("Ambient CO2", "Elevated CO2"))) %>%
+  mutate(co2_level = factor(co2_level, levels = c("Ambient CO2", "Elevated CO2"))) %>%
   pivot_longer(cols      = c(Leaf, Stem, Root, Pod),
                names_to  = "organ",
                values_to = "utilization_rate") %>%
@@ -314,7 +314,7 @@ y_min <- min(usage_long$utilization_rate, na.rm = TRUE)
 p_use <- ggplot(usage_long,
                    aes(x = fractional_doy, y = utilization_rate, colour = organ)) +
   geom_line(linewidth = 0.6, na.rm = TRUE, alpha = 0.6) +
-  facet_grid(treatment ~ year_id, labeller = treatment_year_labeller, scales = "fixed") +
+  facet_grid(co2_level ~ year_id, labeller = co2_level_year_labeller, scales = "fixed") +
   scale_colour_manual(values = organ_pal, name = "Organ") +
   scale_y_continuous(limits = c(y_min, y_max)) +
   labs(title = NULL,
@@ -382,7 +382,7 @@ ggsave(file.path(FIGURE_DIR, 'FigS-organ_utilization_rate_doy_ld11.png'),
 
 #  Sum organ usage by day of year 
 usage_long_doy <- usage_long %>%
-  group_by(treatment, year_id, organ, doy) %>%
+  group_by(co2_level, year_id, organ, doy) %>%
   summarise(
     daily_use = sum(utilization_rate, na.rm = TRUE), 
     DVI       = mean(DVI, na.rm = TRUE),
@@ -390,7 +390,7 @@ usage_long_doy <- usage_long %>%
 
 #  Convert to % of total use on each day 
 organ_pct_long_doy <- usage_long_doy %>%
-  group_by(treatment, year_id, doy) %>%
+  group_by(co2_level, year_id, doy) %>%
   mutate(
     total_use = sum(daily_use, na.rm = TRUE),
     pct       = ifelse(total_use == 0, NA, daily_use / total_use * 100)
@@ -400,7 +400,7 @@ organ_pct_long_doy <- usage_long_doy %>%
 #  Summarise across years: mean/min/max % per organ per day 
 organ_use_summary <- organ_pct_long_doy %>%
   filter(!is.na(pct)) %>%
-  group_by(treatment, organ, doy) %>%
+  group_by(co2_level, organ, doy) %>%
   summarise(
     mean_pct = mean(pct, na.rm = TRUE),
     min_pct  = min(pct,  na.rm = TRUE),
@@ -409,8 +409,8 @@ organ_use_summary <- organ_pct_long_doy %>%
     .groups  = "drop"
   )
 
-ambient_summary  <- organ_use_summary %>% filter(treatment == "Ambient CO2")
-elevated_summary <- organ_use_summary %>% filter(treatment == "Elevated CO2")
+ambient_summary  <- organ_use_summary %>% filter(co2_level == "Ambient CO2")
+elevated_summary <- organ_use_summary %>% filter(co2_level == "Elevated CO2")
 
 #  Figure: growth-rate based carbon allocation, ambient vs elevated CO2, by DVI 
 p_organ_overlap_use_dvi <- ggplot(mapping = aes(x = DVI, 
@@ -431,9 +431,11 @@ p_organ_overlap_use_dvi <- ggplot(mapping = aes(x = DVI,
             linewidth = 0.9) +
   scale_colour_manual(values = organ_pal, name = "Organ") +
   scale_fill_manual(values = organ_pal, name = "Organ") +
-  scale_linetype_manual(name   = "Treatment",
-                        values = c("Ambient CO2" = "solid", 
-                                   "Elevated CO2" = "dashed")) +
+  scale_linetype_manual(name   = expression("CO"[2]*" Level"),
+                        values = c("Ambient CO2" = "solid",
+                                   "Elevated CO2" = "dashed"),
+                        labels = c(expression("Ambient CO"[2]),
+                                   expression("Elevated CO"[2]))) +
   scale_y_continuous(limits = c(0, 100),
                      breaks = seq(0, 100, 20),
                      labels = scales::label_number(suffix = "%")) +
@@ -492,7 +494,7 @@ flux_pct_long <- bind_rows(
     df
   }) %>%
     list_rbind() %>%
-    mutate(treatment = "Ambient CO2"),
+    mutate(co2_level = "Ambient CO2"),
   imap(results.elevCO2, \(result, i) {
     df <- calculate_flux_allocation_daily(result)
     df <- df[1:which.min(abs(df$DVI - parameters$stop_growth_dvi)), ]
@@ -500,9 +502,9 @@ flux_pct_long <- bind_rows(
     df
   }) %>%
     list_rbind() %>%
-    mutate(treatment = "Elevated CO2")
+    mutate(co2_level = "Elevated CO2")
 ) %>%
-  mutate(treatment = factor(treatment, levels = c("Ambient CO2", "Elevated CO2"))) %>%
+  mutate(co2_level = factor(co2_level, levels = c("Ambient CO2", "Elevated CO2"))) %>%
   pivot_longer(cols      = c(Leaf, Stem, Root, Pod),
                names_to  = "organ",
                values_to = "pct") %>%
@@ -511,7 +513,7 @@ flux_pct_long <- bind_rows(
 #  Summarise across years: mean/min/max flux % per organ per day 
 flux_summary <- flux_pct_long %>%
   filter(!is.na(pct)) %>%
-  group_by(treatment, organ, doy) %>%
+  group_by(co2_level, organ, doy) %>%
   summarise(
     mean_pct = mean(pct, na.rm = TRUE),
     min_pct  = min(pct,  na.rm = TRUE),
@@ -520,8 +522,8 @@ flux_summary <- flux_pct_long %>%
     .groups  = "drop"
   )
 
-flux_ambient_summary  <- flux_summary %>% filter(treatment == "Ambient CO2")
-flux_elevated_summary <- flux_summary %>% filter(treatment == "Elevated CO2")
+flux_ambient_summary  <- flux_summary %>% filter(co2_level == "Ambient CO2")
+flux_elevated_summary <- flux_summary %>% filter(co2_level == "Elevated CO2")
 
 #  Panel B: flux-based carbon allocation, ambient vs elevated CO2, by DVI 
 p_organ_overlap_flux_dvi <- ggplot(mapping = aes(x = DVI,
@@ -542,9 +544,11 @@ p_organ_overlap_flux_dvi <- ggplot(mapping = aes(x = DVI,
             linewidth = 0.9) +
   scale_colour_manual(values = organ_pal, name = "Organ") +
   scale_fill_manual(values = organ_pal, name = "Organ") +
-  scale_linetype_manual(name   = "Treatment",
+  scale_linetype_manual(name   = expression("CO"[2]*" Level"),
                         values = c("Ambient CO2" = "solid",
-                                   "Elevated CO2" = "dashed")) +
+                                   "Elevated CO2" = "dashed"),
+                        labels = c(expression("Ambient CO"[2]),
+                                   expression("Elevated CO"[2]))) +
   scale_y_continuous(limits = c(-20, 140),
                      breaks = seq(-20, 140, 20),
                      labels = scales::label_number(suffix = "%")) +

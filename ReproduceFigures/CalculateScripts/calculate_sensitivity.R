@@ -38,6 +38,7 @@ if (is.null(pod_sensitivity_upper)) {
   pod_sensitivity_upper <- cbind(pod_sensitivity_upper, result_sensitivity$upper)
 }
 
+# Generate .tex file for the manuscript
 generate_latex_table <- function(pod_sensitivity_lower, pod_sensitivity_upper){
   print(pod_sensitivity_lower)
   print(pod_sensitivity_upper)

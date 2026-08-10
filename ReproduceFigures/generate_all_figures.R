@@ -38,7 +38,7 @@ dir.create(FIGURE_DIR, showWarnings = FALSE)
 # below to control which optional figures to produce or  
 # if sensitivity analysis is performed, which can take longer to run.
 RUN_SENSITIVITY <- FALSE                # pod mass sensitivity to +/-10% inputs; slow
-PLOT_SOURCE_SINK_MANIPULATION <- TRUE  # shade/pod-removal/defoliation/hail figures; slow
+PLOT_SOURCE_SINK_MANIPULATION <- FALSE  # shade/pod-removal/defoliation/hail figures; slow
 
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 years <- c('2002', '2004', '2005', '2006')
@@ -215,10 +215,10 @@ root_shoot_all <- do.call(rbind, lapply(1:length(years), function(i) {
 root_shoot_long <- root_shoot_all %>%
   pivot_longer(
     cols      = c(ambient_ratio, elevated_ratio),
-    names_to  = "treatment",
+    names_to  = "co2_level",
     values_to = "ratio"
   ) %>%
-  mutate(treatment = recode(treatment,
+  mutate(co2_level = recode(co2_level,
                             ambient_ratio  = "Ambient CO2",
                             elevated_ratio = "Elevated CO2"
   ))
@@ -227,15 +227,17 @@ root_shoot_long <- root_shoot_all %>%
 root_shoot_ratio_plot <- ggplot(root_shoot_long, 
                                 aes(x = fractional_doy, 
                                     y = ratio, 
-                                    colour = treatment)) +
+                                    colour = co2_level)) +
   geom_line() +
   facet_wrap(~ year, ncol = 2) +
-  scale_colour_manual(values = c("Ambient CO2" = "steelblue", 
-                                 "Elevated CO2" = "tomato")) +
+  scale_colour_manual(values = c("Ambient CO2" = "steelblue",
+                                 "Elevated CO2" = "tomato"),
+                      labels = c(expression("Ambient CO"[2]),
+                                 expression("Elevated CO"[2]))) +
   labs(
     x      = "Day of Year",
     y      = "Root:Shoot Ratio",
-    colour = "CO2 Level"
+    colour = expression("CO"[2]*" Level")
   ) +
   theme_bw() +
   theme(
@@ -256,7 +258,7 @@ ggsave(file.path(FIGURE_DIR, 'Fig-root-shoot-ratio.png'),
 
 root_shoot_mean <- root_shoot_long %>%
   mutate(dvi_bin = round(DVI / 0.01) * 0.01) %>%   # bin on DVI instead of fractional_doy
-  group_by(dvi_bin, treatment) %>%
+  group_by(dvi_bin, co2_level) %>%
   summarise(
     mean_ratio = mean(ratio, na.rm = TRUE),
     min_ratio  = min(ratio,  na.rm = TRUE),
@@ -265,15 +267,19 @@ root_shoot_mean <- root_shoot_long %>%
   )
 
 root_shoot_mean_plot <- ggplot(root_shoot_mean,
-                               aes(x = dvi_bin, colour = treatment, fill = treatment)) +
+                               aes(x = dvi_bin, colour = co2_level, fill = co2_level)) +
   geom_ribbon(aes(ymin = min_ratio, ymax = max_ratio), alpha = 0.2, colour = NA) +
   geom_line(aes(y = mean_ratio), linewidth = 0.8) +
   scale_colour_manual(values = c("Ambient CO2"  = "steelblue",
                                  "Elevated CO2" = "tomato"),
-                      name = "CO2 Level") +
+                      labels = c(expression("Ambient CO"[2]),
+                                 expression("Elevated CO"[2])),
+                      name = expression("CO"[2]*" Level")) +
   scale_fill_manual(values = c("Ambient CO2"  = "steelblue",
                                "Elevated CO2" = "tomato"),
-                    name = "CO2 Level") +
+                    labels = c(expression("Ambient CO"[2]),
+                               expression("Elevated CO"[2])),
+                    name = expression("CO"[2]*" Level")) +
   labs(
     x = "DVI",
     y = "Root:Shoot Ratio"
@@ -308,7 +314,7 @@ transportation_all <- do.call(rbind, lapply(1:4, function(i) {
       .groups = "drop"
     ) %>%
     mutate(ratio = Stem_to_Root / total_assimilation,
-           treatment = "Ambient CO2")
+           co2_level = "Ambient CO2")
   
   # Elevated: daily sums then ratio
   elevated_daily <- results.elevCO2[[i]] %>%
@@ -319,22 +325,24 @@ transportation_all <- do.call(rbind, lapply(1:4, function(i) {
       .groups = "drop"
     ) %>%
     mutate(ratio = Stem_to_Root / total_assimilation,
-           treatment = "Elevated CO2")
+           co2_level = "Elevated CO2")
   
   rbind(ambient_daily, elevated_daily) %>%
     mutate(year = years[i])
 }))
 
 transport_assimilation_ratio_plot <- 
-  ggplot(transportation_all, aes(x = doy, y = ratio, colour = treatment)) +
+  ggplot(transportation_all, aes(x = doy, y = ratio, colour = co2_level)) +
   geom_line() +
   facet_wrap(~ year, ncol = 2) +
-  scale_colour_manual(values = c("Ambient CO2" = "steelblue", 
-                                 "Elevated CO2" = "tomato")) +
+  scale_colour_manual(values = c("Ambient CO2" = "steelblue",
+                                 "Elevated CO2" = "tomato"),
+                      labels = c(expression("Ambient CO"[2]),
+                                 expression("Elevated CO"[2]))) +
   labs(
     x      = "Day of Year",
     y      = "Daily Stem to Root Transport / Daily Canopy Assimilation",
-    colour = "Treatment"
+    colour = expression("CO"[2]*" Level")
   ) +
   theme_bw() +
   theme(
@@ -370,10 +378,10 @@ leaf_saturation_all <- do.call(rbind, lapply(1:4, function(i) {
 })) %>%
   pivot_longer(
     cols      = c(ambient, elevated),
-    names_to  = "treatment",
+    names_to  = "co2_level",
     values_to = "saturation"
   ) %>%
-  mutate(treatment = recode(treatment,
+  mutate(co2_level = recode(co2_level,
                             ambient  = "Ambient CO2",
                             elevated = "Elevated CO2"
   ))
@@ -381,19 +389,27 @@ leaf_saturation_all <- do.call(rbind, lapply(1:4, function(i) {
 # Plot
 utilization_saturation_plot <- 
   ggplot(leaf_saturation_all, aes(x = fractional_doy, y = saturation,
-                                  colour = treatment, 
-                                  linewidth = treatment, 
-                                  alpha = treatment)) +
+                                  colour = co2_level,
+                                  linewidth = co2_level,
+                                  alpha = co2_level)) +
   geom_line() +
   facet_wrap(~ year, ncol = 2) +
-  scale_colour_manual(values = c("Ambient CO2" = "steelblue", 
-                                 "Elevated CO2" = "tomato")) +
-  scale_linewidth_manual(values = c("Ambient CO2" = 0.8,         
-                                    "Elevated CO2" = 0.4)) +
-  scale_alpha_manual(values = c("Ambient CO2" = 1,           
-                                "Elevated CO2" = 0.5)) +
+  scale_colour_manual(values = c("Ambient CO2" = "steelblue",
+                                 "Elevated CO2" = "tomato"),
+                      labels = c(expression("Ambient CO"[2]),
+                                 expression("Elevated CO"[2]))) +
+  scale_linewidth_manual(values = c("Ambient CO2" = 0.8,
+                                    "Elevated CO2" = 0.4),
+                         labels = c(expression("Ambient CO"[2]),
+                                    expression("Elevated CO"[2]))) +
+  scale_alpha_manual(values = c("Ambient CO2" = 1,
+                                "Elevated CO2" = 0.5),
+                     labels = c(expression("Ambient CO"[2]),
+                                expression("Elevated CO"[2]))) +
   labs(x = "Day of Year", y = "Leaf Utilization Rate Saturation",
-       colour = "Treatment", linewidth = "Treatment", alpha = "Treatment") +
+       colour = expression("CO"[2]*" Level"),
+       linewidth = expression("CO"[2]*" Level"),
+       alpha = expression("CO"[2]*" Level"))+
   theme_bw() +
   theme(legend.position  = "bottom",
         strip.background = element_rect(fill = "grey90"),
@@ -588,7 +604,7 @@ all_biomass_plot <- grid.arrange(
                                 axis.text.x = element_blank())
                         + labs(title = '2006'),
               ncol = 4,
-              top = textGrob("Pioneer 93B15 at Ambient CO2",
+              top = textGrob(expression("Pioneer 93B15 at Ambient CO"[2]),
                            gp=gpar(fontface="bold", fontsize=12))
         ),
         textGrob(""), # Row 2: spacer,
@@ -610,7 +626,7 @@ all_biomass_plot <- grid.arrange(
                             axis.text.x = element_blank())
                             + labs(title = '2006'),
           ncol = 4,
-          top = textGrob("Pioneer 93B15 at Elevated CO2",
+          top = textGrob(expression("Pioneer 93B15 at Elevated CO"[2]),
                        gp=gpar(fontface="bold", fontsize=12))
         ),
         textGrob(""), # Row 4: spacer,
@@ -620,7 +636,7 @@ all_biomass_plot <- grid.arrange(
           ld11.figs[[3]] + theme(legend.position="none") + labs(title = '2023'),
           ld11.figs[[4]] + theme(legend.position="none") + labs(title = '2024'),
           ncol = 4,
-          top = textGrob("LD11-2170 at Ambient CO2",
+          top = textGrob(expression("LD11-2170 at Ambient CO"[2]),
                          gp=gpar(fontface="bold", fontsize=12))
         ),
         nrow = 5, heights = c(1, 0.05, 1, 0.05, 1.2)
