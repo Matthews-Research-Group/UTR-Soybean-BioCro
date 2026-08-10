@@ -222,6 +222,14 @@ df_bars <- df_points %>%
 
 # Combine simulated bar means with the observed bar values.
 all_shade_bars <- bind_rows(df_bars, shade_exp)
+print("UTR yield reduction ranges: ")
+print(min(all_shade_bars$Mean_YR[which(all_shade_bars$Source=='UTR')]))
+print(max(all_shade_bars$Mean_YR[which(all_shade_bars$Source=='UTR')]))
+
+print("Partitioning yield reduction ranges: ")
+print(min(all_shade_bars$Mean_YR[which(all_shade_bars$Source=='Partitioning')]))
+print(max(all_shade_bars$Mean_YR[which(all_shade_bars$Source=='Partitioning')]))
+
 
 # Fix factor level order so bars/points are colored and legended consistently:
 # observed data first, then the two simulated models.

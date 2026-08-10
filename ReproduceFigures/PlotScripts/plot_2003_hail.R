@@ -320,7 +320,7 @@ common_legend <- g_legend(fig_2003_utr_eCO2_with_hail)
 # Figure: Hail simulation, UTR model (ambient vs. elevated CO2)
 # =============================================================================
 combined_with_hail_utr <- grid.arrange(
-  arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+  arrangeGrob(textGrob(expression('Biomass (Mg ha'^{-1}*')'), rot = 90)),
   arrangeGrob(
     arrangeGrob(
       arrangeGrob(fig_2003_utr_with_hail +
@@ -350,19 +350,19 @@ ggsave(file.path(FIGURE_DIR, 'Fig-hail-utr.png'),
 # Figure: Hail simulation, Partitioning model (ambient vs. elevated CO2)
 # =============================================================================
 combined_with_hail_partitioning <- grid.arrange(
-  arrangeGrob(textGrob('Biomass (Mg / ha)', rot = 90)),
+  arrangeGrob(textGrob(expression('Biomass (Mg ha'^{-1}*')'), rot = 90)),
   arrangeGrob(
     arrangeGrob(
       arrangeGrob(fig_2003_partitioning_with_hail +
                     theme(axis.title.x = element_blank(),
                           axis.title.y = element_blank(),
                           legend.position = "none"),
-                  top = '(A) Ambient CO2'),
+                  top = make_strip_label("(A)", "Ambient CO2")),
       arrangeGrob(fig_2003_partitioning_eCO2_with_hail +
                     theme(axis.title.x = element_blank(),
                           axis.title.y = element_blank(),
                           legend.position = "none"),
-                  top = '(B) Elevated CO2'),
+                  top = make_strip_label("(B)", "Elevated CO2")),
       ncol = 2),
     arrangeGrob(textGrob('Day of Year (2003)')),
     nrow = 2, heights = c(4, 0.3)),
@@ -371,8 +371,8 @@ combined_with_hail_partitioning <- grid.arrange(
 
 ggsave(file.path(FIGURE_DIR, 'FigS-hail-partitioning.png'),
        plot = combined_with_hail_partitioning,
-       width = 5,
-       height = 2.2,
+       width = 6,
+       height = 2.5,
        units = "in",
        dpi = 600)
 

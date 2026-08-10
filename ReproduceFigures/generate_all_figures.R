@@ -38,7 +38,7 @@ dir.create(FIGURE_DIR, showWarnings = FALSE)
 # below to control which optional figures to produce or  
 # if sensitivity analysis is performed, which can take longer to run.
 RUN_SENSITIVITY <- FALSE                # pod mass sensitivity to +/-10% inputs; slow
-PLOT_SOURCE_SINK_MANIPULATION <- FALSE  # shade/pod-removal/defoliation/hail figures; slow
+PLOT_SOURCE_SINK_MANIPULATION <- TRUE  # shade/pod-removal/defoliation/hail figures; slow
 
 # years, sowing dates, and harvesting dates of growing seasons being fit to
 years <- c('2002', '2004', '2005', '2006')
@@ -500,8 +500,12 @@ for (i in 1:length(years)){
 }
 
 if (RUN_SENSITIVITY) {
-  print(pod_sensitivity_lower)
-  print(pod_sensitivity_upper)
+  generate_latex_table(pod_sensitivity_lower, pod_sensitivity_upper)
+
+  # raw pod-mass sensitivity results (fractional change per growing season),
+  # one row per UTR parameter (rownames = arg_names)
+  write.csv(pod_sensitivity_lower, 'pod_sensitivity_lower.csv', row.names = TRUE)
+  write.csv(pod_sensitivity_upper, 'pod_sensitivity_upper.csv', row.names = TRUE)
 }
 
 # =============================================================================
@@ -564,7 +568,7 @@ common_legend_horizontal <- get_legend_grob(
 all_biomass_plot <- grid.arrange(
   arrangeGrob(
     arrangeGrob(
-      textGrob('Biomass (Mg / ha)', rot = 90), # Col1: y-axis Grob
+      textGrob(expression('Biomass (Mg ha'^{-1}*')'), rot = 90), # Col1: y-axis Grob
       arrangeGrob( # Col 2: Biomass figures
         arrangeGrob( # Col 2, Row 1: Pioneer 93B15 ambient CO2 Grob
               figs[[1]] + theme(axis.title.x = element_blank(),
@@ -790,7 +794,7 @@ png(file.path(FIGURE_DIR, "Fig-substrate-annual.png"), width = 10, height = 3.5,
 grid.newpage()
 
 tnc_growingseasion_plot <- grid.arrange(
-  arrangeGrob(textGrob('Substrate C (mol C / kg)', rot = 90, gp=gpar(fontsize=12))),
+  arrangeGrob(textGrob(expression('Substrate C (mol C kg'^{-1}*')'), rot = 90, gp=gpar(fontsize=12))),
   arrangeGrob(
     arrangeGrob(leaf_tnc_plot, top = 'Leaf'),
     arrangeGrob(stem_tnc_plot, top = 'Stem'),
@@ -882,15 +886,15 @@ tnc_diurnal_plot <- ggplot(TNC.sampling.days, aes(hour, TNC, group = Source)) +
         panel.grid.minor = element_blank(), panel.background = element_rect(fill = "transparent",colour = NA),
         plot.background = element_rect(fill = "transparent", colour = NA))+
   scale_x_continuous(breaks = seq(0,24,6))+
-  labs(title=element_blank(),
-       x='Hour',
-       y='Substrate C (mol C / kg)')
+  labs(title = element_blank(),
+       x = 'Hour',
+       y = expression('Substrate C (mol C kg'^{-1}*')'))
 
 print(tnc_diurnal_plot)
 ggsave(file.path(FIGURE_DIR, 'Fig-substrate-diurnal.png'),
        plot = tnc_diurnal_plot,
        width = 9,
-       height = 3.5,
+       height = 4,
        units = "in",
        dpi = 600
 )
@@ -919,6 +923,9 @@ for (t in 1:length(times)){
     layer_assim <- rbind(layer_assim, new_row)
   }
 }
+
+print(paste0("Min layer assim rate on DOY 236: ", min(layer_assim$layer_assimilation[which(layer_assim$DOY==236)])))
+print(paste0("Max layer assim rate on DOY 236: ", max(layer_assim$layer_assimilation[which(layer_assim$DOY==236)])))
 
 # ==============================================================================
 # Figure S4 Layer assimilation rate

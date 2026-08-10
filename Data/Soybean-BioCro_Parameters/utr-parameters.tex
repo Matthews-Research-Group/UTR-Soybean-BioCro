@@ -1,0 +1,39 @@
+\begin{table}[H]
+\caption{UTR model parameters, estimation ranges, parameterization results, and corresponding equations. L: Leaf. S: Stem. R: Root. P: Pod}
+\label{tab:utr-param-range-value}
+\centering
+\begin{tabular}{lllrrrc}
+  \toprule
+  Parameter & Symbol & Unit & Min & Max & Fit & Eq \\
+  \midrule
+  \multicolumn{7}{l}{\textbf{Utilization Parameters}} \\
+  Max utilization rate constant (L) & $v_{\max,L}$ & hr$^{-1}$ & 0 & 0.1 & 0.003548 & (\ref{eq:utilizationrate}) \\
+  Max utilization rate constant (S) & $v_{\max,S}$ & hr$^{-1}$ & 0 & 0.1 & 0.009276 & (\ref{eq:utilizationrate}) \\
+  Max utilization rate constant (R) & $v_{\max,R}$ & hr$^{-1}$ & 0 & 0.1 & 0.044412 & (\ref{eq:utilizationrate}) \\
+  Max utilization rate constant (P) & $v_{\max,P}$ & hr$^{-1}$ & 0 & 1 & 0.974662 & (\ref{eq:utilizationrate}) \\
+  Half-saturation constant (L) & $K_{L}$ & -- & 0 & 0.5 & 0.157163 & (\ref{eq:utilizationrate}) \\
+  Half-saturation constant (S) & $K_{S}$ & -- & 0 & 0.5 & 0.205616 & (\ref{eq:utilizationrate}) \\
+  Half-saturation constant (R) & $K_{R}$ & -- & 0 & 0.5 & 0.487155 & (\ref{eq:utilizationrate}) \\
+  Half-saturation constant (P) & $K_{P}$ & -- & 0 & 0.5 & 0.018651 & (\ref{eq:utilizationrate}) \\
+  Respiration fraction (SRP) & $k_{res,O}$ & -- & 0.2 & 0.8 & 0.230973 & (\ref{eq:respirationrate}) \\
+  \multicolumn{7}{l}{\textbf{Transport Parameters}} \\
+  Transport conductance from leaf to stem & $\sigma_{L \to S}$ & hr$^{-1}$ & 0 & 1 & 0.153715 & (\ref{eq:transportrate}) \\
+  Transport conductance from stem to root & $\sigma_{S \to R}$ & hr$^{-1}$ & 0 & 1 & 0.195506 & (\ref{eq:transportrate}) \\
+  Transport conductance from stem to pod & $\sigma_{S \to P}$ & hr$^{-1}$ & 0 & 5 & 2.527349 & (\ref{eq:transportrate}) \\
+  \multicolumn{7}{l}{\textbf{Senescence Parameters}} \\
+  Max senescence fraction rate (L) & $v_{sene,\max,L}$ & hr$^{-1}$ & 0 & 0.1 & 0.032867 & (\ref{eq:senesce_fraction}) \\
+  Max senescence fraction rate (S) & $v_{sene,\max,S}$ & hr$^{-1}$ & 0 & 0.1 & 0.040548 & (\ref{eq:senesce_fraction}) \\
+  Max senescence fraction rate (R) & $v_{sene,\max,R}$ & hr$^{-1}$ & 0 & 0.01 & 0.002179 & (\ref{eq:senesce_fraction}) \\
+  Senescence transition steepness with DVI (L) & $\alpha_{L}$ & -- & 0 & 10 & 9.190201 & (\ref{eq:senesce_fraction}) \\
+  Senescence transition steepness with DVI (S) & $\alpha_{S}$ & -- & 0 & 10 & 8.423220 & (\ref{eq:senesce_fraction}) \\
+  Senescence transition steepness with DVI (R) & $\alpha_{R}$ & -- & 0 & 2 & 0.184008 & (\ref{eq:senesce_fraction}) \\
+  Senescence midpoint DVI (L) & $\beta_{L}$ & DVI & 1.5 & 2.5 & 1.815131 & (\ref{eq:senesce_fraction}) \\
+  Senescence midpoint DVI (S) & $\beta_{S}$ & DVI & 1.5 & 2.5 & 2.286124 & (\ref{eq:senesce_fraction}) \\
+  Senescence midpoint DVI (R) & $\beta_{R}$ & DVI & 1.5 & 2.5 & 2.446758 & (\ref{eq:senesce_fraction}) \\
+  Retained substrate fraction (LSR) & $f_{r}$ & -- & 0 & 1 & 0.012971 & (\ref{eq:substratesenescencerate})(\ref{eq:retainsenescencerate}) \\
+  \multicolumn{7}{l}{\textbf{DVI switches}} \\
+  DVI threshold for start of pod growth & $\text{DVI}_\text{pod start}$ & -- & 1 & 1.3 & 1.198307 & -- \\
+  DVI threshold for end of crop growth & $\text{DVI}_\text{stop growth}$ & -- & 1.8 & 2.2 & 1.920997 & -- \\
+  \bottomrule
+\end{tabular}
+\end{table}

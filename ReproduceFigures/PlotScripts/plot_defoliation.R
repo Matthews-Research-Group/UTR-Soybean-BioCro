@@ -321,6 +321,26 @@ df_bars_parvej <- exp_data_formatted %>%
 # Combine simulated and observed data: bars show the mean, 
 # points show the individual underlying observations/replicates.
 all_bars <- bind_rows(df_bars_models, df_bars_parvej)
+
+print("R4: ")
+print("UTR yield reduction ranges: ")
+print(min(all_bars$Mean_YR[which(all_bars$Source=='UTR' & all_bars$Defoliation_frac !=0 & all_bars$Defoliation_DVI == 1.35)]))
+print(max(all_bars$Mean_YR[which(all_bars$Source=='UTR' & all_bars$Defoliation_DVI == 1.35)]))
+
+print("Partitioning yield reduction ranges: ")
+print(min(all_bars$Mean_YR[which(all_bars$Source=='Partitioning'& all_bars$Defoliation_frac !=0 & all_bars$Defoliation_DVI == 1.35)]))
+print(max(all_bars$Mean_YR[which(all_bars$Source=='Partitioning' & all_bars$Defoliation_DVI == 1.35)]))
+
+print("R5: ")
+print("UTR yield reduction ranges: ")
+print(min(all_bars$Mean_YR[which(all_bars$Source=='UTR' & all_bars$Defoliation_frac !=0 & all_bars$Defoliation_DVI == 1.5)]))
+print(max(all_bars$Mean_YR[which(all_bars$Source=='UTR' & all_bars$Defoliation_DVI == 1.5)]))
+
+print("Partitioning yield reduction ranges: ")
+print(min(all_bars$Mean_YR[which(all_bars$Source=='Partitioning'& all_bars$Defoliation_frac !=0 & all_bars$Defoliation_DVI == 1.5)]))
+print(max(all_bars$Mean_YR[which(all_bars$Source=='Partitioning' & all_bars$Defoliation_DVI == 1.5)]))
+
+
 all_points <- bind_rows(
   df_long %>% select(Defoliation_DVI, Defoliation_frac, Source, Yield_R),
   exp_data_formatted %>% select(Defoliation_DVI, Defoliation_frac, Source, Yield_R)

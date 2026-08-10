@@ -31,38 +31,3 @@ ggplot(
   scale_y_continuous(limits = c(0, NA)) +
   labs(y = 'Root:Shoot Ratio from the Partitioning Model', x = 'DVI', color = 'CO2 treatment') +
   theme_bw()
-
-xyplot(
-  r_s_ratio ~ DVI,
-  group = co2_treatment,
-  data = full_res,
-  type = 'l',
-  auto = TRUE,
-  ylab = 'Root / (Leaf + Stem + Pod)',
-  ylim = c(0, NA)
-)
-
-print(full_res$DVI[which.max(full_res$r_s_ratio)]) 
-print(full_res$kRoot[which.max(full_res$r_s_ratio)]) 
-
-xyplot(
-  Root ~ DVI,
-  group = co2_treatment,
-  data = full_res,
-  type = 'l',
-  auto = TRUE,
-  ylab = 'Root (Mg / ha)',
-  ylim = c(0, 2)
-)
-
-
-
-xyplot(
-  DVI ~ fractional_doy,
-  group = co2_treatment,
-  data = full_res,
-  type = 'l',
-  auto = TRUE,
-  ylab = 'Root (Mg / ha)',
-  ylim = c(0, 2)
-)

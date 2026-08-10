@@ -1,3 +1,0 @@
-input,input,input,input,input,input,input,input,output,output,output,output,"description"
-Leaf_carbon_to_mass_factor,Leaf_total_C_change_per_m2,Pod_carbon_to_mass_factor,Pod_total_C_change_per_m2,Root_carbon_to_mass_factor,Root_total_C_change_per_m2,Stem_carbon_to_mass_factor,Stem_total_C_change_per_m2,Leaf,Pod,Root,Stem,NA
-1,1,1,1,1,1,1,1,1,1,1,1,"automatically-generated test case"

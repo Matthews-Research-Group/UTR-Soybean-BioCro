@@ -273,6 +273,14 @@ df_bars <- df_points %>%
 # Combine simulated means with the observed means.
 all_depod_bars <- bind_rows(df_bars, obs_df)
 
+print("UTR yield reduction ranges: ")
+print(min(all_depod_bars$Mean_YR[which(all_depod_bars$Source=='UTR')]))
+print(max(all_depod_bars$Mean_YR[which(all_depod_bars$Source=='UTR')]))
+
+print("Partitioning yield reduction ranges: ")
+print(min(all_depod_bars$Mean_YR[which(all_depod_bars$Source=='Partitioning')]))
+print(max(all_depod_bars$Mean_YR[which(all_depod_bars$Source=='Partitioning')]))
+
 # Fix factor level order so bars/points have consistent legends
 source_levels <- c("Proulx and Naeve (2009)", "UTR", "Partitioning")
 all_depod_bars$Source <- factor(all_depod_bars$Source, levels = source_levels)
