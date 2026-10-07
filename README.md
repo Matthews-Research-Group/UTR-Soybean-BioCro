@@ -5,7 +5,7 @@ Code and data to reproduce the results in:
 > Piao, Ximin, Edward B. Lochocki, Justin M. McGrath, and Megan L. Matthews. “Integrating Carbon Utilization and Transport Processes into a Crop Growth Model Enables the Prediction of Emergent Soybean Carbon Allocation Behavior.” bioRxiv, Aug 28, 2026, 2026.08.27.747615. https://doi.org/10.64898/2026.08.27.747615.
 
 This work applies a utilization–transport–resistance (UTR) carbon allocation framework to [Soybean-BioCro](https://doi.org/10.1093/insilicoplants/diab032). 
-The UTR processes are included the **UTRSoybeanBML** BioCro Module Library (BML). 
+The UTR processes are included the [UTRSoybeanBML](https://github.com/Matthews-Research-Group/UTRSoybeanBML) BioCro Module Library (BML). 
 Soil water is simulated with the **BioCroWater** BML. 
 The model is calibrated against 2002 and 2005 SoyFACE biomass data, and the scripts in the "ReproduceFigures" folder regenerate every figure, RMSE statistic, and sensitivity analysis in the manuscript.
 
