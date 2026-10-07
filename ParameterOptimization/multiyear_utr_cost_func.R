@@ -43,11 +43,6 @@ multiyear_UTR_optim <- function(
       err.stem <- sum(wts$Stem*((Pred$Stem-TrueValues$Stem)^2)/(TrueValues$Stem+0.1))/length(Pred$Stem)
       err.pod <- sum(wts$Pod*((Pred$Pod-TrueValues$Pod)^2)/(TrueValues$Pod+0.1))/length(Pred$Pod)
       err.root <- sum(((Pred.Root$Vals-RootValues$Root)^2)/(RootValues$Root+0.1))/length(Pred.Root$Vals)
-      
-      # err.leaf <- sum(wts$Leaf*((Pred$Leaf-TrueValues$Leaf)^2))/length(Pred$Leaf)
-      # err.stem <- sum(wts$Stem*((Pred$Stem-TrueValues$Stem)^2))/length(Pred$Stem)
-      # err.pod <- sum(wts$Pod*((Pred$Pod-TrueValues$Pod)^2))/length(Pred$Pod)
-      # err.root <- sum((Pred.Root$Vals-RootValues$Root)^2)/length(Pred.Root$Vals)
      
       cost <- wts2$Leaf*err.leaf + wts2$Stem*err.stem + wts2$Pod*err.pod + wts2$Root*err.root
       

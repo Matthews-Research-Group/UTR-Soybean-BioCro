@@ -590,7 +590,7 @@ all_biomass_plot <- grid.arrange(
               figs[[1]] + theme(axis.title.x = element_blank(),
                                 axis.text.x = element_blank(),
                                 legend.position="none")
-                        + labs(title = '2002 (Training)'),
+                        + labs(title = '2002 (Calibration)'),
               figs[[2]] + theme(axis.title.x = element_blank(),
                                 axis.text.x = element_blank(),
                                 legend.position="none")
@@ -598,7 +598,7 @@ all_biomass_plot <- grid.arrange(
               figs[[3]] + theme(legend.position="none",
                                 axis.title.x = element_blank(),
                                 axis.text.x = element_blank())
-                        + labs(title = '2005 (Training)'),
+                        + labs(title = '2005 (Calibration)'),
               figs[[4]] + theme(legend.position="none",
                                 axis.title.x = element_blank(),
                                 axis.text.x = element_blank())
@@ -972,5 +972,7 @@ ggsave(file.path(FIGURE_DIR, 'FigS-layer_assim.png'),
        units = "in",
        dpi = 600
 )
+
+
 
 
